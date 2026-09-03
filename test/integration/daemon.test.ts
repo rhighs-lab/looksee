@@ -1,6 +1,8 @@
 import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -10,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   discover,
   ensureServer,
+  findFreePort,
   type Running,
   recordPath,
   repoRootOf,
@@ -51,6 +54,20 @@ const deadPid = (): Promise<number> =>
     const p = spawn(process.execPath, ['-e', '']);
     p.once('exit', () => resolve(p.pid!));
   });
+
+const until = async (f: () => Promise<boolean>): Promise<void> => {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    if (await f()) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error('timed out');
+};
+
+const up = (url: string): Promise<boolean> =>
+  fetch(`${url}/healthz`)
+    .then((r) => r.ok)
+    .catch(() => false);
 
 const serversFor = async (root: string): Promise<number> => {
   const { stdout } = await exec('pgrep', ['-f', `serve --repo ${root}`]).catch(
@@ -193,5 +210,59 @@ describe('daemon lifecycle', () => {
     expect(await run(['stop'], s.io)).toBe(0);
     expect(JSON.parse(s.out.join(''))).toEqual({ stopped: true });
     expect(alive(a.pid)).toBe(false);
+  });
+
+  it('reuses a live server whose healthz fails once', async () => {
+    let hits = 0;
+    const srv = http.createServer((req, res) => {
+      hits++;
+      if (hits === 1) return void req.socket.destroy();
+      const h: HealthResponse = {
+        ok: true,
+        app: 'looksee',
+        repoRoot: root,
+        version: 1,
+        pkgVersion: '0',
+      };
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify(h));
+    });
+    await new Promise<void>((r) => srv.listen(0, '127.0.0.1', r));
+    const port = (srv.address() as AddressInfo).port;
+    await fs.writeFile(
+      recordPath(root),
+      JSON.stringify({ pid: process.pid, port, repoRoot: root })
+    );
+    expect(await discover(root)).toEqual({
+      port,
+      pid: process.pid,
+      url: `http://127.0.0.1:${port}`,
+    });
+    expect(hits).toBe(2);
+    expect(existsSync(recordPath(root))).toBe(true);
+    await fs.rm(recordPath(root));
+    await new Promise((r) => srv.close(r));
+  });
+
+  it('a manual serve on another port keeps the daemon record', async () => {
+    const d = await ensureServer(root);
+    pids.add(d.pid);
+    const port = await findFreePort(d.port + 1);
+    const child = spawn(
+      process.execPath,
+      [entry, 'serve', '--repo', root, '--port', String(port)],
+      { env: process.env, stdio: 'ignore' }
+    );
+    pids.add(child.pid!);
+    await until(() => up(`http://127.0.0.1:${port}`));
+    const exited = new Promise<void>((r) => child.once('exit', () => r()));
+    child.kill('SIGTERM');
+    await exited;
+    const rec = JSON.parse(await fs.readFile(recordPath(root), 'utf8')) as {
+      pid: number;
+    };
+    expect(rec.pid).toBe(d.pid);
+    expect(await discover(root)).toEqual(d);
+    expect(await stopServer(root)).toBe(true);
   });
 });

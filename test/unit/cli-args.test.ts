@@ -96,6 +96,15 @@ describe('run', () => {
     expect(t.out).toEqual([]);
     expect(t.err).toEqual(['thread not found\n']);
   });
+
+  it('serve rejects a non-numeric or out-of-range port', async () => {
+    for (const p of ['abc', '0', '70000', '12abc']) {
+      const t = io();
+      expect(await run(['serve', '--port', p], t.io)).toBe(1);
+      expect(t.out).toEqual([]);
+      expect(t.err).toEqual([`invalid port: ${p}\n`]);
+    }
+  });
 });
 
 describe('resolveActor', () => {
@@ -108,6 +117,15 @@ describe('resolveActor', () => {
   it('refuses user', () => {
     expect(() => resolveActor({ as: 'user' }, {})).toThrow(/user/);
     expect(() => resolveActor({}, { LOOKSEE_ACTOR: 'user' })).toThrow(/user/);
+  });
+
+  it('rejects names outside [A-Za-z0-9_.-]{1,64}', () => {
+    expect(resolveActor({ as: 'bot.v2_x-1' }, {})).toBe('bot.v2_x-1');
+    expect(() => resolveActor({ as: 'a b' }, {})).toThrow(/invalid actor/);
+    expect(() => resolveActor({ as: 'a/b' }, {})).toThrow(/invalid actor/);
+    expect(() => resolveActor({}, { LOOKSEE_ACTOR: 'x'.repeat(65) })).toThrow(
+      /invalid actor/
+    );
   });
 });
 

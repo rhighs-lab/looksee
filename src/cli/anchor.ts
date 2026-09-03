@@ -33,7 +33,7 @@ export const readAnchor = async (root: string, s: string): Promise<Anchor> => {
   const text = await fs.readFile(abs, 'utf8').catch(() => {
     throw new Error(`no such file: ${file}`);
   });
-  const lines = text.split('\n');
+  const lines = text.replace(/\n$/, '').split('\n');
   if (endLine > lines.length)
     throw new Error(`${file} has ${lines.length} lines, not ${endLine}`);
   return {

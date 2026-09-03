@@ -439,4 +439,47 @@ describe('reviews API', () => {
       as('reviewer')
     );
   });
+
+  it('hides draft replies with their root and reveals them on submit', async () => {
+    const mark = tap.all().length;
+    const { body } = await start();
+    const root = await draft(body.review.id, 14, 'draft root');
+    const reply = await post({ parentId: root.id, body: 'draft reply' });
+    expect(reply.status).toBe(200);
+    expect(reply.body.comment.reviewId).toBe(body.review.id);
+    expect(
+      (await post({ parentId: root.id, body: 'nope' }, 'reviewer')).status
+    ).toBe(404);
+    expect((await patch(root.id, { status: 'resolved' })).status).toBe(200);
+    const ids = [root.id, reply.body.comment.id];
+    expect((await list('', 'reviewer')).some((c) => ids.includes(c.id))).toBe(
+      false
+    );
+    await settle();
+    expect(eventsSince(mark)).toEqual([]);
+    expect((await submit(body.review.id, { verdict: 'comment' })).status).toBe(
+      200
+    );
+    const ev = await tap.next('review.submitted');
+    if (ev.type !== 'review.submitted') throw new Error('wrong event');
+    expect(ev.comments.map((c) => c.id).sort()).toEqual(ids.sort());
+    expect(
+      (await list('', 'reviewer')).filter((c) => ids.includes(c.id))
+    ).toHaveLength(2);
+    await settle();
+    expect(eventsSince(mark).map((e) => e.type)).toEqual(['review.submitted']);
+  });
+
+  it('rejects malformed actor headers', async () => {
+    for (const actor of ['a'.repeat(70), 'bad actor!']) {
+      const r = await srv.json<{ error: string }>(
+        'GET',
+        '/api/comments',
+        undefined,
+        as(actor)
+      );
+      expect(r.status).toBe(400);
+      expect(r.body.error).toBe('invalid actor');
+    }
+  });
 });

@@ -223,7 +223,8 @@ export interface DecoratedComment extends Comment {
 }
 
 export type ReviewState = 'pending' | 'submitted';
-export type Verdict = 'comment' | 'approve' | 'request_changes';
+export const VERDICTS = ['comment', 'approve', 'request_changes'] as const;
+export type Verdict = (typeof VERDICTS)[number];
 
 export interface Review {
   id: string;

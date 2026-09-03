@@ -236,6 +236,14 @@ describe('cli commands', () => {
     const past = await cli(['comment', `${FILE}:9999`, 'x']);
     expect(past.code).toBe(1);
     expect(past.err).toMatch(/9999/);
+    const eof = await cli(['comment', `${FILE}:41`, 'x']);
+    expect(eof.code).toBe(1);
+    expect(eof.err).toMatch(/40 lines, not 41/);
+    const last = await cli(['comment', `${FILE}:40`, 'x']);
+    expect(last.code).toBe(0);
+    expect(json<DecoratedComment>(last.out).lineSnapshot).toEqual([
+      '// line 40',
+    ]);
   });
 
   it('review comment without a pending review exits 1 with a hint', async () => {

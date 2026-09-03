@@ -47,19 +47,21 @@ import {
   updateComment,
 } from '@/server/review/store.js';
 import { parseSuggestions } from '@/server/review/suggestion.js';
-import type {
-  CommentSide,
-  DecoratedComment,
-  Review,
-  ServerEvent,
-  Verdict,
+import {
+  type Comment,
+  type CommentSide,
+  type DecoratedComment,
+  type Review,
+  type ServerEvent,
+  USER_ACTOR,
+  VERDICTS,
+  type Verdict,
 } from '@/shared/protocol.js';
-import { USER_ACTOR } from '@/shared/protocol.js';
 
 type Json = Record<string, unknown>;
 type Req = { req: { header(n: string): string | undefined } };
 
-const VERDICTS: readonly Verdict[] = ['comment', 'approve', 'request_changes'];
+const ACTOR = /^[A-Za-z0-9_.-]{1,64}$/;
 const isVerdict = (v: unknown): v is Verdict => VERDICTS.includes(v as Verdict);
 const str = (v: unknown): string | null =>
   typeof v === 'string' && v ? v : null;
@@ -84,6 +86,11 @@ export function reviewRoutes(ctx: AppContext): Hono {
   const visibleComment = async (id: string, actor: string) => {
     const x = await getComment(repoRoot!, id);
     return x && (await canSee(repoRoot!, x, actor)) ? x : null;
+  };
+  const isDraft = async (x: Comment) => {
+    if (!x.reviewId) return false;
+    const rv = await getReview(repoRoot!, x.reviewId);
+    return rv?.state === 'pending';
   };
   const reviewComments = async (rv: Review) => {
     const decorate = decorator(repoRoot);
@@ -115,8 +122,11 @@ export function reviewRoutes(ctx: AppContext): Hono {
   };
 
   app.use('/api/*', async (c, next) => {
-    if (c.req.header('x-looksee-actor') === USER_ACTOR)
+    const actor = c.req.header('x-looksee-actor');
+    if (actor === USER_ACTOR)
       return c.json({ error: 'actor "user" is reserved for the browser' }, 400);
+    if (actor !== undefined && !ACTOR.test(actor))
+      return c.json({ error: 'invalid actor' }, 400);
     await next();
   });
 
@@ -261,10 +271,11 @@ export function reviewRoutes(ctx: AppContext): Hono {
         body: b['body'],
         branch: parent.branch,
         lineSnapshot: [],
-        reviewId: null,
+        reviewId: parent.reviewId,
       });
       const out = await decorator(repoRoot)(reply);
-      emit({ type: 'comment.replied', comment: out, origin: originOf(c) });
+      if (!(await isDraft(parent)))
+        emit({ type: 'comment.replied', comment: out, origin: originOf(c) });
       return c.json({ comment: out });
     }
     const reviewId = str(b['reviewId']);
@@ -316,10 +327,10 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const actor = actorOf(c);
     const cur = await visibleComment(c.req.param('id'), actor);
     if (!cur) return c.json({ error: 'not found' }, 404);
+    const draft = await isDraft(cur);
     const patch: CommentPatch = {};
     if (typeof b['body'] === 'string') {
-      const rv = cur.reviewId ? await getReview(repoRoot, cur.reviewId) : null;
-      if (rv?.state !== 'pending')
+      if (!draft)
         return c.json({ error: 'body is immutable once published' }, 409);
       patch.body = b['body'];
     }
@@ -327,7 +338,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
       patch.status = b['status'];
     const comment = await updateComment(repoRoot, cur.id, patch);
     if (!comment) return c.json({ error: 'not found' }, 404);
-    if (patch.status && patch.status !== cur.status)
+    if (patch.status && patch.status !== cur.status && !draft)
       emit({
         type:
           patch.status === 'resolved' ? 'thread.resolved' : 'thread.reopened',
@@ -343,7 +354,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const cur = await visibleComment(c.req.param('id'), actorOf(c));
     if (!cur) return c.json({ ok: false, removed: 0 });
     const removed = await deleteComment(repoRoot, cur.id);
-    if (removed && !cur.reviewId)
+    if (removed && !(await isDraft(cur)))
       emit({ type: 'comment.deleted', id: cur.id, origin: originOf(c) });
     return c.json({ ok: Boolean(removed), removed });
   });

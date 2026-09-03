@@ -34,6 +34,8 @@ const FIRST_PORT = 4711;
 const WAIT_MS = 5000;
 const LOCK_TTL_MS = 5000;
 const TICK_MS = 100;
+const HEALTH_TRIES = 3;
+const RETRY_MS = 200;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((r) => setTimeout(r, ms));
@@ -99,14 +101,41 @@ const sameRoot = async (a: string, b: string): Promise<boolean> => {
   }
 };
 
+const alive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const probe = async (rec: ServerRecord): Promise<HealthResponse | null> => {
+  for (let i = 0; i < HEALTH_TRIES; i++) {
+    const h = await health(rec.port);
+    if (h) return h;
+    if (!alive(rec.pid)) return null;
+    await sleep(RETRY_MS * (i + 1));
+  }
+  return null;
+};
+
 export const discover = async (root: string): Promise<Running | null> => {
   const rec = await readRecord(root);
   if (!rec) return null;
-  const h = await health(rec.port);
+  const h = alive(rec.pid) ? await probe(rec) : null;
   if (h?.ok && h.repoRoot && (await sameRoot(h.repoRoot, root)))
     return { port: rec.port, pid: rec.pid, url: urlOf(rec.port) };
-  await fs.rm(recordPath(root), { force: true });
+  if (h || !alive(rec.pid)) await fs.rm(recordPath(root), { force: true });
   return null;
+};
+
+export const releaseRecord = async (
+  root: string,
+  pid: number
+): Promise<void> => {
+  const rec = await readRecord(root);
+  if (rec?.pid === pid) await fs.rm(recordPath(root), { force: true });
 };
 
 const cliEntry = (): string => {
@@ -206,11 +235,7 @@ export const ensureServer = async (
 const waitExit = async (pid: number): Promise<void> => {
   const deadline = Date.now() + WAIT_MS;
   while (Date.now() < deadline) {
-    try {
-      process.kill(pid, 0);
-    } catch {
-      return;
-    }
+    if (!alive(pid)) return;
     await sleep(TICK_MS);
   }
   throw new Error(`looksee server ${pid} did not stop`);

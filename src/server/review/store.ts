@@ -2,7 +2,13 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { Comment, DoneMark, Review, Verdict } from '@/shared/protocol.js';
+import {
+  type Comment,
+  type DoneMark,
+  type Review,
+  VERDICTS,
+  type Verdict,
+} from '@/shared/protocol.js';
 
 export const lookseeHome = (): string =>
   process.env['LOOKSEE_HOME'] || path.join(os.homedir(), '.looksee');
@@ -94,8 +100,6 @@ function normalize(c: StoredComment): Comment {
     updatedAt: c.updatedAt ?? c.createdAt ?? new Date(0).toISOString(),
   };
 }
-
-const VERDICTS: readonly Verdict[] = ['comment', 'approve', 'request_changes'];
 
 function normalizeReview(r: StoredReview): Review {
   return {

@@ -2,16 +2,15 @@ import { anchorArgs, postAnchored } from '@/cli/cmd/comment.js';
 import type { RunCtx } from '@/cli/commands.js';
 import { type Conn, connect } from '@/cli/connect.js';
 import { format } from '@/cli/output.js';
-import type {
-  DecoratedComment,
-  RepoState,
-  Review,
-  Verdict,
+import {
+  type DecoratedComment,
+  type RepoState,
+  type Review,
+  VERDICTS,
+  type Verdict,
 } from '@/shared/protocol.js';
 
 type ReviewRes = { review: Review; comments: DecoratedComment[] };
-
-const VERDICTS: readonly Verdict[] = ['comment', 'approve', 'request_changes'];
 
 const pending = async (conn: Conn): Promise<Review> => {
   const { reviews } = await conn.http.get<{ reviews: Review[] }>(
