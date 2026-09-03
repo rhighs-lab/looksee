@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { Comment } from '@/shared/protocol.js';
+import type { Comment, DoneMark, Review, Verdict } from '@/shared/protocol.js';
 
 export const lookseeHome = (): string =>
   process.env['LOOKSEE_HOME'] || path.join(os.homedir(), '.looksee');
@@ -61,14 +61,28 @@ function fileFor(repoRoot: string): string {
   return path.join(lookseeHome(), `${hash}.json`);
 }
 
-type Stored = Partial<Comment> & { id: string };
+type StoredComment = Partial<Comment> & { id: string };
+type StoredReview = Partial<Review> & { id: string };
 
-function normalize(c: Stored): Comment {
+interface StoreData {
+  reviews: Review[];
+  comments: Comment[];
+  done: DoneMark[];
+}
+
+const STORE_VERSION = 2;
+
+const normAuthor = (a: unknown): string => {
+  if (a === 'claude') return 'agent';
+  return typeof a === 'string' && a ? a : 'user';
+};
+
+function normalize(c: StoredComment): Comment {
   return {
     id: c.id,
     repoRoot: c.repoRoot ?? '',
     parentId: c.parentId ?? null,
-    author: c.author === 'claude' ? 'claude' : 'user',
+    author: normAuthor(c.author),
     filePath: c.filePath ?? '',
     side: c.side ?? 'new',
     startLine: c.startLine ?? 0,
@@ -77,37 +91,84 @@ function normalize(c: Stored): Comment {
     branch: c.branch ?? null,
     lineSnapshot: Array.isArray(c.lineSnapshot) ? c.lineSnapshot : [],
     status: c.status === 'resolved' ? 'resolved' : 'open',
-    handoff: c.handoff === 'agent' ? 'agent' : null,
+    reviewId: c.reviewId ?? null,
     applied: c.applied ?? null,
     createdAt: c.createdAt ?? new Date(0).toISOString(),
     updatedAt: c.updatedAt ?? c.createdAt ?? new Date(0).toISOString(),
   };
 }
 
-const readAll = async (repoRoot: string): Promise<Comment[]> =>
-  (await readJsonArray<Stored>(fileFor(repoRoot), 'comments')).map(normalize);
-const writeAll = (repoRoot: string, comments: Comment[]) =>
-  writeJsonAtomic(fileFor(repoRoot), { repoRoot, comments });
+const VERDICTS: readonly Verdict[] = ['comment', 'approve', 'request_changes'];
+
+function normalizeReview(r: StoredReview): Review {
+  return {
+    id: r.id,
+    repoRoot: r.repoRoot ?? '',
+    author: normAuthor(r.author),
+    branch: r.branch ?? null,
+    state: r.state === 'submitted' ? 'submitted' : 'pending',
+    verdict: r.verdict && VERDICTS.includes(r.verdict) ? r.verdict : null,
+    body: r.body ?? '',
+    createdAt: r.createdAt ?? new Date(0).toISOString(),
+    submittedAt: r.submittedAt ?? null,
+  };
+}
+
+const normalizeDone = (d: Partial<DoneMark>): DoneMark => ({
+  actor: normAuthor(d.actor),
+  body: d.body ?? '',
+  at: d.at ?? new Date(0).toISOString(),
+});
+
+const list = <T>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
+
+async function readStore(repoRoot: string): Promise<StoreData> {
+  let raw: string;
+  try {
+    raw = await fs.readFile(fileFor(repoRoot), 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT')
+      return { reviews: [], comments: [], done: [] };
+    throw err;
+  }
+  const data = JSON.parse(raw) as Record<string, unknown>;
+  return {
+    reviews: list<StoredReview>(data['reviews']).map(normalizeReview),
+    comments: list<StoredComment>(data['comments']).map(normalize),
+    done: list<Partial<DoneMark>>(data['done']).map(normalizeDone),
+  };
+}
+
+const writeStore = (repoRoot: string, data: StoreData) =>
+  writeJsonAtomic(fileFor(repoRoot), {
+    version: STORE_VERSION,
+    repoRoot,
+    ...data,
+  });
 const locked = <T>(repoRoot: string, fn: () => Promise<T>) =>
   withLock(`comments:${repoRoot}`, fn);
 
+const visibleTo =
+  (reviews: Review[], viewer: string | undefined) =>
+  (c: Comment): boolean => {
+    if (!c.reviewId) return true;
+    const rv = reviews.find((r) => r.id === c.reviewId);
+    return rv?.state !== 'pending' || rv.author === viewer;
+  };
+
 export async function listComments(
   repoRoot: string,
-  branch: string | null
+  branch: string | null,
+  viewer?: string
 ): Promise<Comment[]> {
-  const all = await readAll(repoRoot);
+  const { reviews, comments } = await readStore(repoRoot);
+  const all = comments.filter(visibleTo(reviews, viewer));
   return branch ? all.filter((c) => c.branch === branch) : all;
 }
 
 export type NewComment = Omit<
   Comment,
-  | 'id'
-  | 'repoRoot'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'status'
-  | 'handoff'
-  | 'applied'
+  'id' | 'repoRoot' | 'createdAt' | 'updatedAt' | 'status' | 'applied'
 >;
 
 export function addComment(
@@ -115,7 +176,7 @@ export function addComment(
   data: NewComment
 ): Promise<Comment> {
   return locked(repoRoot, async () => {
-    const all = await readAll(repoRoot);
+    const store = await readStore(repoRoot);
     const now = new Date().toISOString();
     const comment: Comment = {
       ...data,
@@ -124,11 +185,10 @@ export function addComment(
       createdAt: now,
       updatedAt: now,
       status: 'open',
-      handoff: null,
       applied: null,
     };
-    all.push(comment);
-    await writeAll(repoRoot, all);
+    store.comments.push(comment);
+    await writeStore(repoRoot, store);
     return comment;
   });
 }
@@ -137,12 +197,12 @@ export async function getComment(
   repoRoot: string,
   id: string
 ): Promise<Comment | null> {
-  const all = await readAll(repoRoot);
-  return all.find((c) => c.id === id) ?? null;
+  const { comments } = await readStore(repoRoot);
+  return comments.find((c) => c.id === id) ?? null;
 }
 
 export type CommentPatch = Partial<
-  Pick<Comment, 'body' | 'status' | 'handoff' | 'applied'>
+  Pick<Comment, 'body' | 'status' | 'applied'>
 >;
 
 export function updateComment(
@@ -151,22 +211,23 @@ export function updateComment(
   patch: CommentPatch
 ): Promise<Comment | null> {
   return locked(repoRoot, async () => {
-    const all = await readAll(repoRoot);
-    const comment = all.find((c) => c.id === id);
+    const store = await readStore(repoRoot);
+    const comment = store.comments.find((c) => c.id === id);
     if (!comment) return null;
     Object.assign(comment, patch, { updatedAt: new Date().toISOString() });
-    await writeAll(repoRoot, all);
+    await writeStore(repoRoot, store);
     return comment;
   });
 }
 
 export function deleteComment(repoRoot: string, id: string): Promise<number> {
   return locked(repoRoot, async () => {
-    const all = await readAll(repoRoot);
+    const store = await readStore(repoRoot);
+    const all = store.comments;
     if (!all.some((c) => c.id === id)) return 0;
-    const kept = all.filter((c) => c.id !== id && c.parentId !== id);
-    await writeAll(repoRoot, kept);
-    return all.length - kept.length;
+    store.comments = all.filter((c) => c.id !== id && c.parentId !== id);
+    await writeStore(repoRoot, store);
+    return all.length - store.comments.length;
   });
 }
 
@@ -177,13 +238,14 @@ export function clearComments(
   branch: string | null
 ): Promise<number> {
   return locked(repoRoot, async () => {
-    const all = await readAll(repoRoot);
+    const store = await readStore(repoRoot);
+    const all = store.comments;
     const cleared = branch
       ? all.filter((c) => c.branch === branch)
       : all.slice();
-    const kept = branch ? all.filter((c) => c.branch !== branch) : [];
+    store.comments = branch ? all.filter((c) => c.branch !== branch) : [];
     lastCleared.set(repoRoot, cleared);
-    await writeAll(repoRoot, kept);
+    await writeStore(repoRoot, store);
     return cleared.length;
   });
 }
@@ -192,10 +254,127 @@ export function restoreCleared(repoRoot: string): Promise<number> {
   return locked(repoRoot, async () => {
     const cleared = lastCleared.get(repoRoot);
     if (!cleared?.length) return 0;
-    const all = await readAll(repoRoot);
-    all.push(...cleared);
+    const store = await readStore(repoRoot);
+    store.comments.push(...cleared);
     lastCleared.delete(repoRoot);
-    await writeAll(repoRoot, all);
+    await writeStore(repoRoot, store);
     return cleared.length;
   });
+}
+
+export class PendingReviewError extends Error {
+  readonly code = 'pending_review';
+  readonly review: Review;
+  constructor(review: Review) {
+    super(`${review.author} already has a pending review`);
+    this.name = 'PendingReviewError';
+    this.review = review;
+  }
+}
+
+export interface ReviewFilter {
+  author?: string;
+  state?: Review['state'];
+  branch?: string | null;
+}
+
+export async function listReviews(
+  repoRoot: string,
+  filter: ReviewFilter = {}
+): Promise<Review[]> {
+  const { reviews } = await readStore(repoRoot);
+  return reviews.filter(
+    (r) =>
+      (filter.author === undefined || r.author === filter.author) &&
+      (filter.state === undefined || r.state === filter.state) &&
+      (filter.branch === undefined || r.branch === filter.branch)
+  );
+}
+
+export async function getReview(
+  repoRoot: string,
+  id: string
+): Promise<Review | null> {
+  const { reviews } = await readStore(repoRoot);
+  return reviews.find((r) => r.id === id) ?? null;
+}
+
+export function startReview(
+  repoRoot: string,
+  data: { author: string; branch: string | null }
+): Promise<Review> {
+  return locked(repoRoot, async () => {
+    const store = await readStore(repoRoot);
+    const open = store.reviews.find(
+      (r) => r.author === data.author && r.state === 'pending'
+    );
+    if (open) throw new PendingReviewError(open);
+    const review: Review = {
+      id: crypto.randomUUID(),
+      repoRoot,
+      author: data.author,
+      branch: data.branch,
+      state: 'pending',
+      verdict: null,
+      body: '',
+      createdAt: new Date().toISOString(),
+      submittedAt: null,
+    };
+    store.reviews.push(review);
+    await writeStore(repoRoot, store);
+    return review;
+  });
+}
+
+export function submitReview(
+  repoRoot: string,
+  id: string,
+  data: { verdict: Verdict; body: string }
+): Promise<Review | null> {
+  return locked(repoRoot, async () => {
+    const store = await readStore(repoRoot);
+    const review = store.reviews.find((r) => r.id === id);
+    if (!review) return null;
+    Object.assign(review, {
+      state: 'submitted',
+      verdict: data.verdict,
+      body: data.body,
+      submittedAt: new Date().toISOString(),
+    });
+    await writeStore(repoRoot, store);
+    return review;
+  });
+}
+
+export function discardReview(repoRoot: string, id: string): Promise<boolean> {
+  return locked(repoRoot, async () => {
+    const store = await readStore(repoRoot);
+    if (!store.reviews.some((r) => r.id === id)) return false;
+    const gone = new Set(
+      store.comments.filter((c) => c.reviewId === id).map((c) => c.id)
+    );
+    store.reviews = store.reviews.filter((r) => r.id !== id);
+    store.comments = store.comments.filter(
+      (c) => !gone.has(c.id) && !(c.parentId && gone.has(c.parentId))
+    );
+    await writeStore(repoRoot, store);
+    return true;
+  });
+}
+
+export function addDone(
+  repoRoot: string,
+  data: { actor: string; body: string }
+): Promise<DoneMark> {
+  return locked(repoRoot, async () => {
+    const store = await readStore(repoRoot);
+    const mark: DoneMark = { ...data, at: new Date().toISOString() };
+    store.done.push(mark);
+    await writeStore(repoRoot, store);
+    return mark;
+  });
+}
+
+export async function listDone(repoRoot: string): Promise<DoneMark[]> {
+  return (await readStore(repoRoot)).done;
 }

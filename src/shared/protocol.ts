@@ -190,7 +190,8 @@ export interface FileViewResponse {
 }
 
 export type CommentSide = 'new' | 'old' | 'file';
-export type CommentAuthor = 'user' | 'claude';
+export type CommentAuthor = string;
+export const USER_ACTOR = 'user';
 export type CommentStatus = 'open' | 'resolved';
 export type CommentKind = 'suggestion' | 'question' | 'comment';
 
@@ -207,7 +208,7 @@ export interface Comment {
   branch: string | null;
   lineSnapshot: string[];
   status: CommentStatus;
-  handoff: 'agent' | null;
+  reviewId: string | null;
   applied: { at: string; lines: string[] } | null;
   createdAt: string;
   updatedAt: string;
@@ -218,6 +219,31 @@ export interface DecoratedComment extends Comment {
   kind: CommentKind;
   suggestion: { lines: string[] } | null;
   applicable: boolean | null;
+}
+
+export type ReviewState = 'pending' | 'submitted';
+export type Verdict = 'comment' | 'approve' | 'request_changes';
+
+export interface Review {
+  id: string;
+  repoRoot: string;
+  author: string;
+  branch: string | null;
+  state: ReviewState;
+  verdict: Verdict | null;
+  body: string;
+  createdAt: string;
+  submittedAt: string | null;
+}
+
+export interface DoneMark {
+  actor: string;
+  body: string;
+  at: string;
+}
+
+export interface ReviewsResponse {
+  reviews: Review[];
 }
 
 export interface SavedReply {
@@ -242,7 +268,37 @@ export type ServerEvent =
       origin: string | null;
     }
   | { type: 'comment.deleted'; id: string; origin: string | null }
-  | { type: 'comments.reset'; origin: string | null };
+  | { type: 'comments.reset'; origin: string | null }
+  | {
+      type: 'review.submitted';
+      review: Review;
+      comments: DecoratedComment[];
+      origin: string | null;
+    }
+  | {
+      type: 'comment.replied';
+      comment: DecoratedComment;
+      origin: string | null;
+    }
+  | {
+      type: 'thread.resolved';
+      id: string;
+      actor: string;
+      origin: string | null;
+    }
+  | {
+      type: 'thread.reopened';
+      id: string;
+      actor: string;
+      origin: string | null;
+    }
+  | {
+      type: 'done.requested';
+      actor: string;
+      body: string;
+      at: string;
+      origin: string | null;
+    };
 
 export interface BranchesResponse {
   current: string | null;
@@ -260,6 +316,7 @@ export interface HealthResponse {
   app: 'looksee';
   repoRoot: string | null;
   version: number;
+  pkgVersion: string;
 }
 
 export const MAX_HIGHLIGHT_LINES = 5000;
