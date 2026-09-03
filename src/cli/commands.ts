@@ -2,6 +2,7 @@ import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
 import { runComment } from '@/cli/cmd/comment.js';
 import { runComments } from '@/cli/cmd/comments.js';
 import { runDone } from '@/cli/cmd/done.js';
+import { runListen } from '@/cli/cmd/listen.js';
 import { runReply } from '@/cli/cmd/reply.js';
 import { runResolve } from '@/cli/cmd/resolve.js';
 import { runReview } from '@/cli/cmd/review.js';
@@ -21,6 +22,7 @@ export interface Io {
   err: (s: string) => void;
   env: NodeJS.ProcessEnv;
   stdin: () => Promise<string>;
+  signal?: AbortSignal;
 }
 
 export interface RunCtx extends Parsed {
@@ -149,22 +151,28 @@ const COMMANDS: CommandSpec[] = [
     },
     runReviewShow
   ),
-  placeholder({
-    name: 'listen',
-    summary: 'Stream review events as JSON lines until killed',
-    args: '',
-    flags: [
-      AS,
-      { name: 'not-me', takesValue: false, help: 'Drop own events' },
-      {
-        name: 'pending',
-        takesValue: false,
-        help: 'Replay unanswered items on connect',
-      },
-      { name: 'quiet', takesValue: false, help: 'Skip the guide in hello' },
-    ],
-    output: 'One JSON event per line',
-  }),
+  placeholder(
+    {
+      name: 'listen',
+      summary: 'Stream review events as JSON lines until killed',
+      args: '',
+      flags: [
+        AS,
+        { name: 'not-me', takesValue: false, help: 'Drop own events' },
+        {
+          name: 'pending',
+          takesValue: false,
+          help: 'Replay unanswered items on connect, marked replay: true',
+        },
+        { name: 'quiet', takesValue: false, help: 'Skip the guide in hello' },
+      ],
+      output:
+        'One JSON event per line: { type: "hello", actor, guide } first, then review.submitted { review, comments, expects }, comment.created { comment }, comment.replied { comment }, thread.resolved { id, actor }, thread.reopened { id, actor }, done.requested { actor, body, at }; every comment carries expects',
+      notes:
+        'Exits 1 with one stderr line when the server stays unreachable for ten seconds',
+    },
+    runListen
+  ),
   placeholder(
     {
       name: 'comments',

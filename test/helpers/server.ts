@@ -120,6 +120,7 @@ export async function startTestServer(opts: AppOpts): Promise<TestServer> {
     async close() {
       for (const t of taps) t.close();
       looksee.stop();
+      if ('closeAllConnections' in server) server.closeAllConnections();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     },
   };
