@@ -4,6 +4,7 @@ const MAX_BUFFER = 256 * 1024 * 1024;
 
 export interface GitOpts {
   okCodes?: number[];
+  env?: Record<string, string>;
 }
 
 export class GitError extends Error {
@@ -26,7 +27,7 @@ export function git(
     execFile(
       'git',
       ['-c', 'core.quotePath=false', '-C', repoRoot, ...args],
-      { maxBuffer: MAX_BUFFER },
+      { maxBuffer: MAX_BUFFER, env: { ...process.env, ...opts.env } },
       (err, stdout, stderr) => {
         const code = err ? (typeof err.code === 'number' ? err.code : null) : 0;
         if (err && !(code !== null && okCodes.includes(code))) {

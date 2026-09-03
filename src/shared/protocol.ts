@@ -140,6 +140,35 @@ export interface Hunk {
 
 export type Rev = 'WORKTREE' | 'INDEX' | string;
 
+export type Endpoint =
+  | { kind: 'head' }
+  | { kind: 'index' }
+  | { kind: 'worktree' }
+  | { kind: 'commit'; oid: string }
+  | { kind: 'ref'; name: string }
+  | { kind: 'merge-base'; left: string; right: string }
+  | { kind: 'pin'; name: 'opened' | 'approved' };
+
+export interface Comparison {
+  baseline: Endpoint;
+  endpoint: Endpoint;
+}
+
+export type ScopePreset = 'session' | 'working' | 'branch' | 'custom';
+
+export interface Pin {
+  tree: string;
+  head: string;
+  at: string;
+}
+
+export interface Resolved {
+  kind: Endpoint['kind'];
+  oid: string;
+  short: string;
+  label: string;
+}
+
 export interface FileDiff {
   path: string;
   oldPath: string | null;

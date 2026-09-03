@@ -53,6 +53,25 @@ export async function diffPatch(
   ]);
 }
 
+const TREE_FLAGS = ['-r', '-M', '-C', '--no-color', '--no-ext-diff'];
+
+export async function treeDiffPatch(
+  repoRoot: string,
+  a: string,
+  b: string,
+  paths: string[] = []
+): Promise<string> {
+  const scope = paths.length ? ['--', ...paths] : [];
+  return git(repoRoot, [
+    'diff-tree',
+    ...TREE_FLAGS,
+    '-p',
+    refArg(a),
+    refArg(b),
+    ...scope,
+  ]);
+}
+
 async function mapLimit<T, R>(
   items: T[],
   limit: number,
@@ -161,20 +180,7 @@ export interface NameStatus {
   code: string;
 }
 
-export async function nameStatus(
-  repoRoot: string,
-  from: string,
-  to: string
-): Promise<NameStatus[]> {
-  const out = await git(repoRoot, [
-    'diff',
-    '--name-status',
-    '--find-renames',
-    '--find-copies',
-    '-z',
-    refArg(from),
-    refArg(to),
-  ]);
+function parseNameStatus(out: string): NameStatus[] {
   const parts = out.split('\0');
   const res: NameStatus[] = [];
   for (let i = 0; i < parts.length; i++) {
@@ -194,6 +200,39 @@ export async function nameStatus(
     }
   }
   return res.filter((r) => r.path);
+}
+
+export async function nameStatus(
+  repoRoot: string,
+  from: string,
+  to: string
+): Promise<NameStatus[]> {
+  const out = await git(repoRoot, [
+    'diff',
+    '--name-status',
+    '--find-renames',
+    '--find-copies',
+    '-z',
+    refArg(from),
+    refArg(to),
+  ]);
+  return parseNameStatus(out);
+}
+
+export async function treeNameStatus(
+  repoRoot: string,
+  a: string,
+  b: string
+): Promise<NameStatus[]> {
+  const out = await git(repoRoot, [
+    'diff-tree',
+    ...TREE_FLAGS,
+    '--name-status',
+    '-z',
+    refArg(a),
+    refArg(b),
+  ]);
+  return parseNameStatus(out);
 }
 
 export const digestOf = (text: string): string =>
