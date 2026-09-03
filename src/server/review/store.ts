@@ -52,14 +52,11 @@ export function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
-function fileFor(repoRoot: string): string {
-  const hash = crypto
-    .createHash('sha1')
-    .update(repoRoot)
-    .digest('hex')
-    .slice(0, 16);
-  return path.join(lookseeHome(), `${hash}.json`);
-}
+export const repoKey = (repoRoot: string): string =>
+  crypto.createHash('sha1').update(repoRoot).digest('hex').slice(0, 16);
+
+const fileFor = (repoRoot: string): string =>
+  path.join(lookseeHome(), `${repoKey(repoRoot)}.json`);
 
 type StoredComment = Partial<Comment> & { id: string };
 type StoredReview = Partial<Review> & { id: string };

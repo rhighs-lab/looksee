@@ -1,4 +1,8 @@
 import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
+import { runReview } from '@/cli/cmd/review.js';
+import { runServe } from '@/cli/cmd/serve.js';
+import { runStatus } from '@/cli/cmd/status.js';
+import { runStop } from '@/cli/cmd/stop.js';
 
 export interface Io {
   out: (s: string) => void;
@@ -16,6 +20,7 @@ export interface CommandSpec {
   args: string;
   flags: FlagSpec[];
   output: string;
+  notes?: string;
   run: (ctx: RunCtx) => Promise<number | undefined>;
 }
 
@@ -52,17 +57,26 @@ const todo = (name: string) => async (): Promise<number> => {
 
 const placeholder = (
   spec: Omit<CommandSpec, 'run'>,
-  run = todo(spec.name)
+  run: CommandSpec['run'] = todo(spec.name)
 ): CommandSpec => ({ ...spec, run });
 
-const PLACEHOLDERS: CommandSpec[] = [
-  placeholder({
-    name: 'review',
-    summary: 'Start the server for a repo and open the browser',
-    args: '[path]',
-    flags: [],
-    output: 'The server URL',
-  }),
+const COMMANDS: CommandSpec[] = [
+  placeholder(
+    {
+      name: 'review',
+      summary: 'Start the server for a repo and open the browser',
+      args: '[path]',
+      flags: [
+        { name: 'base', takesValue: true, help: 'Base ref to diff against' },
+        { name: 'no-open', takesValue: false, help: 'Do not open a browser' },
+        PRETTY,
+      ],
+      output: '{ url }',
+      notes:
+        'Subcommand names win over paths: use ./start for a dir named start',
+    },
+    runReview
+  ),
   placeholder({
     name: 'review start',
     summary: 'Open a pending review for the actor',
@@ -166,20 +180,26 @@ const PLACEHOLDERS: CommandSpec[] = [
     flags: [AS],
     output: '{ actor, body, at }',
   }),
-  placeholder({
-    name: 'status',
-    summary: 'Report the server for this repo',
-    args: '',
-    flags: [PRETTY],
-    output: '{ running, url, pid, pendingReviews, openThreads }',
-  }),
-  placeholder({
-    name: 'stop',
-    summary: 'Shut down the server for this repo',
-    args: '',
-    flags: [],
-    output: '{ stopped: boolean }',
-  }),
+  placeholder(
+    {
+      name: 'status',
+      summary: 'Report the server for this repo',
+      args: '',
+      flags: [PRETTY],
+      output: '{ running, url, pid, pendingReviews, openThreads }',
+    },
+    runStatus
+  ),
+  placeholder(
+    {
+      name: 'stop',
+      summary: 'Shut down the server for this repo',
+      args: '',
+      flags: [],
+      output: '{ stopped: boolean }',
+    },
+    runStop
+  ),
   placeholder({
     name: 'agent',
     summary: 'Print the agent guide',
@@ -187,24 +207,27 @@ const PLACEHOLDERS: CommandSpec[] = [
     flags: [],
     output: 'Markdown text',
   }),
-  placeholder({
-    name: 'serve',
-    summary: 'Run the server in the foreground',
-    args: '',
-    flags: [
-      { name: 'repo', takesValue: true, help: 'Repo path (default: cwd)' },
-      {
-        name: 'port',
-        takesValue: true,
-        help: 'Port (default: free from 4711)',
-      },
-      { name: 'base', takesValue: true, help: 'Base ref to diff against' },
-    ],
-    output: 'Log lines',
-  }),
+  placeholder(
+    {
+      name: 'serve',
+      summary: 'Run the server in the foreground',
+      args: '',
+      flags: [
+        { name: 'repo', takesValue: true, help: 'Repo path (default: cwd)' },
+        {
+          name: 'port',
+          takesValue: true,
+          help: 'Port (default: free from 4711)',
+        },
+        { name: 'base', takesValue: true, help: 'Base ref to diff against' },
+      ],
+      output: 'Log lines',
+    },
+    runServe
+  ),
 ];
 
-for (const p of PLACEHOLDERS) register(p);
+for (const c of COMMANDS) register(c);
 
 const flagLine = (f: FlagSpec): string => {
   const alias = f.alias ? `-${f.alias}, ` : '';
@@ -231,6 +254,7 @@ export const helpFor = (spec: CommandSpec): string => {
     '',
     'Output:',
     `  ${spec.output}`,
+    ...(spec.notes ? ['', 'Notes:', `  ${spec.notes}`] : []),
     '',
   ].join('\n');
 };
