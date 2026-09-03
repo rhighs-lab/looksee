@@ -1,0 +1,67 @@
+{
+  "name": "@rhighs-lab/looksee",
+  "version": "0.1.0",
+  "description": "A live, GitHub-style review of your uncommitted work, built for agentic development",
+  "type": "module",
+  "author": "Roberto Montalti",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhighs-lab/looksee.git"
+  },
+  "homepage": "https://github.com/rhighs-lab/looksee#readme",
+  "bugs": {
+    "url": "https://github.com/rhighs-lab/looksee/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "git",
+    "diff",
+    "code-review",
+    "pull-request",
+    "cli"
+  ],
+  "scripts": {
+    "start": "node dist/server/server/main.js",
+    "dev": "pnpm run --parallel \"/^dev:/\"",
+    "dev:server": "tsx watch src/server/main.ts --no-open",
+    "dev:client": "vite",
+    "build": "pnpm run build:server && pnpm run build:client",
+    "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
+    "build:client": "vite build",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "lint:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@primer/primitives": "^10.5.0",
+    "hono": "^4.13.5",
+    "marked": "^12.0.2",
+    "open": "^10.1.0",
+    "shiki": "^1.29.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tsc-alias": "^1.9.4",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0",
+    "zustand": "^5.0.15"
+  },
+  "license": "MIT"
+}

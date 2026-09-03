@@ -1,0 +1,166 @@
+.pr-title-row .tree-pane-toggle {
+  position: static;
+  margin-right: 4px;
+}
+
+.ref-counts {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  font-size: 11px;
+}
+
+.ref-arrow {
+  color: var(--fgColor-muted, #59636e);
+}
+
+.ref-upstream {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ref-fetch {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pr-conn {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.pr-layer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+
+.pr-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  font-size: 12px;
+}
+
+.pr-filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 8px;
+  border-radius: 2em;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  background-color: var(--bgColor-default, #fff);
+  color: var(--fgColor-muted, #59636e);
+  cursor: pointer;
+}
+.pr-filter-item:hover {
+  background-color: var(--bgColor-muted, #f6f8fa);
+}
+.pr-filter-item.is-active {
+  color: var(--fgColor-default, #1f2328);
+  border-color: var(--fgColor-accent, #0969da);
+  background-color: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.updated-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--fgColor-attention, #9a6700);
+  flex: none;
+}
+
+.file.is-updated {
+  border-color: var(--borderColor-attention-muted, #d4a72c66);
+}
+
+.file.is-refreshing .file-body {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.file-loading {
+  color: var(--fgColor-muted, #59636e);
+}
+
+.tree-file-row .ui-status-group {
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+.file-header .ui-label {
+  margin-left: 4px;
+}
+
+.file-header .ui-btn {
+  flex: none;
+}
+
+.file-notice-body {
+  padding: 16px;
+  text-align: center;
+  color: var(--fgColor-muted, #59636e);
+  font-size: 12px;
+}
+.file-notice-body .ui-notice {
+  margin: 0;
+  text-align: left;
+}
+
+.tree-file-row .updated-dot {
+  margin-left: 6px;
+}
+
+.tree-file-row {
+  gap: 4px;
+}
+
+.expander:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.tree-dir.is-collapsed .tree-children {
+  display: none;
+}
+
+.tree-dir.is-collapsed .tree-chevron {
+  transform: rotate(-90deg);
+}
+
+.pr-refs {
+  flex-wrap: wrap;
+}
+
+/* File page: whole-file blob rendered through the diff table; added lines are
+   tinted in the gutter only so the code stays readable. */
+.blob-view .blob-code-addition {
+  background-color: var(--bgColor-default, #fff);
+}
+.blob-view .blob-code-addition .marker {
+  visibility: hidden;
+}
+.blob-view .hunk-header-row {
+  display: none;
+}
+.crumbs .crumb-sep {
+  margin: 0 2px;
+}
+
+.blob-view col.col-num:first-child {
+  width: 0;
+}
+.blob-view .diff-table td:first-child {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="120" viewBox="0 0 760 120" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b949e"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="#8b949e" stroke-width="1.5">
+    <rect x="20" y="30" width="150" height="40" rx="6"/>
+    <rect x="210" y="30" width="150" height="40" rx="6"/>
+    <rect x="400" y="30" width="150" height="40" rx="6"/>
+    <rect x="590" y="30" width="150" height="40" rx="6"/>
+    <path d="M170 50H208" marker-end="url(#a)"/>
+    <path d="M360 50H398" marker-end="url(#a)"/>
+    <path d="M550 50H588" marker-end="url(#a)"/>
+    <path d="M665 70V95H95V72" marker-end="url(#a)"/>
+  </g>
+  <g fill="#8b949e" text-anchor="middle" dominant-baseline="middle">
+    <text x="95" y="51">Live review</text>
+    <text x="285" y="51">Human feedback</text>
+    <text x="475" y="51">Agent edits</text>
+    <text x="665" y="51">Git state changes</text>
+  </g>
+</svg>

@@ -1,0 +1,368 @@
+import { create } from 'zustand';
+import { api } from '@/client/api/client.js';
+import {
+  type Connection,
+  connectEvents,
+  type EventSubscription,
+} from '@/client/api/events.js';
+import { prefs, type View } from '@/client/store/prefs.js';
+import type {
+  BranchesResponse,
+  ChangedFile,
+  DiffLine,
+  FileDiff,
+  Layer,
+  RefSelection,
+  RepoState,
+  Scope,
+  ServerEvent,
+} from '@/shared/protocol.js';
+
+export type LoadStatus = 'loading' | 'ready' | 'error';
+
+export interface LoadedSegment {
+  from: number;
+  lines: DiffLine[];
+}
+
+export type Expansions = Record<string, LoadedSegment[]>;
+
+export interface ReviewStore {
+  status: LoadStatus;
+  error: string | null;
+  connection: Connection;
+  state: RepoState | null;
+  scope: Scope;
+  layerFilter: Layer[];
+  view: View;
+  diffs: Record<string, FileDiff>;
+  pendingPaths: string[];
+  expansions: Record<string, Expansions>;
+  collapsed: Record<string, boolean>;
+  viewed: Record<string, string>;
+  updated: Record<string, true>;
+  treeHidden: boolean;
+  treeWidth: number | null;
+  activePath: string | null;
+  toast: { message: string; action?: { label: string; fn: () => void } } | null;
+  eventListeners: Set<(ev: ServerEvent) => void>;
+  branches: BranchesResponse | null;
+  selection: RefSelection;
+
+  init(): () => void;
+  refresh(): Promise<void>;
+  setScope(scope: Scope): Promise<void>;
+  toggleLayerFilter(layer: Layer): void;
+  clearLayerFilter(): void;
+  setView(view: View): void;
+  loadFull(path: string): Promise<void>;
+  setExpansions(path: string, ex: Expansions): void;
+  toggleCollapsed(path: string, val?: boolean): void;
+  setViewed(path: string, val: boolean): void;
+  markSeen(path: string): void;
+  setTreeHidden(val: boolean): void;
+  setTreeWidth(px: number | null): void;
+  setActivePath(path: string | null): void;
+  loadBranches(): Promise<void>;
+  setRefs(sel: Partial<RefSelection>): Promise<void>;
+  showToast(message: string, action?: { label: string; fn: () => void }): void;
+  hideToast(): void;
+  onEvent(fn: (ev: ServerEvent) => void): () => void;
+}
+
+let sub: EventSubscription | null = null;
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshChain: Promise<void> = Promise.resolve();
+
+export const useReview = create<ReviewStore>((set, get) => {
+  const applyDiffs = (
+    files: FileDiff[],
+    replaceAll: boolean,
+    stateFiles: ChangedFile[]
+  ) => {
+    const prev = get().diffs;
+    const next: Record<string, FileDiff> = replaceAll ? {} : { ...prev };
+    const expansions = { ...get().expansions };
+    const updated = { ...get().updated };
+    for (const f of files) {
+      const old = prev[f.path];
+      if (old && old.digest !== f.digest) {
+        delete expansions[f.path];
+        if (old.digest !== 'unchanged') updated[f.path] = true;
+      }
+      next[f.path] =
+        old &&
+        old.digest === f.digest &&
+        old.rev === f.rev &&
+        old.truncated === f.truncated
+          ? old
+          : f;
+    }
+    if (replaceAll) {
+      for (const p of Object.keys(expansions))
+        if (!next[p]) delete expansions[p];
+    } else {
+      const known = new Set(stateFiles.map((f) => f.path));
+      for (const p of Object.keys(next)) if (!known.has(p)) delete next[p];
+    }
+    set({ diffs: next, expansions, updated });
+  };
+
+  const reconcileViewed = (repoRoot: string | null, files: ChangedFile[]) => {
+    const viewed = { ...get().viewed };
+    const collapsed = { ...get().collapsed };
+    let changed = false;
+    for (const f of files) {
+      const seen = viewed[f.path];
+      if (seen !== undefined && seen !== f.digest) {
+        delete viewed[f.path];
+        delete collapsed[f.path];
+        changed = true;
+      }
+    }
+    if (changed) {
+      prefs.setViewed(repoRoot, viewed);
+      prefs.setCollapsed(repoRoot, collapsed);
+      set({ viewed, collapsed });
+    }
+  };
+
+  const loadAll = async (scope: Scope, state: RepoState) => {
+    const res = await api.diff(scope);
+    applyDiffs(res.files, true, state.files);
+  };
+
+  const loadChanged = async (scope: Scope, state: RepoState) => {
+    const cur = get().diffs;
+    const stale = state.files
+      .filter((f) => f.kind !== 'unchanged' && cur[f.path]?.digest !== f.digest)
+      .map((f) => f.path);
+    if (!stale.length) {
+      applyDiffs([], false, state.files);
+      return;
+    }
+    set({ pendingPaths: stale });
+    try {
+      const res = await api.diff(scope, stale);
+      applyDiffs(res.files, false, state.files);
+    } finally {
+      set({ pendingPaths: [] });
+    }
+  };
+
+  const doRefresh = async (force: boolean) => {
+    const wasReady = get().status === 'ready' && get().state !== null;
+    try {
+      const state = await api.state();
+      const prevRepo = get().state?.repoRoot;
+      if (!wasReady || prevRepo !== state.repoRoot) {
+        set({
+          viewed: prefs.viewed(state.repoRoot),
+          collapsed: prefs.collapsed(state.repoRoot),
+        });
+      }
+      set({ state });
+      reconcileViewed(state.repoRoot, state.files);
+      if (state.error) {
+        set({ status: 'error', error: state.error });
+        return;
+      }
+      const scope = get().scope;
+      if (!wasReady || force || scope !== 'cumulative')
+        await loadAll(scope, state);
+      else await loadChanged(scope, state);
+      set({ status: 'ready', error: null });
+    } catch (err) {
+      set({
+        status: get().state ? 'ready' : 'error',
+        error: (err as Error).message,
+      });
+    }
+  };
+
+  return {
+    status: 'loading',
+    error: null,
+    connection: 'off',
+    state: null,
+    scope: 'cumulative',
+    layerFilter: [],
+    view: prefs.view(),
+    diffs: {},
+    pendingPaths: [],
+    expansions: {},
+    collapsed: {},
+    viewed: {},
+    updated: {},
+    treeHidden: prefs.treeHidden(),
+    treeWidth: prefs.treeWidth(),
+    activePath: null,
+    toast: null,
+    eventListeners: new Set(),
+    branches: null,
+    selection: { base: null, head: null },
+
+    init() {
+      void get().refresh();
+      void get().loadBranches();
+      sub?.close();
+      sub = connectEvents(
+        (ev) => {
+          if (ev.type === 'state.changed' || ev.type === 'hello') {
+            const cur = get().state;
+            if (ev.type === 'state.changed' && cur && ev.version <= cur.version)
+              return;
+            void get().refresh();
+          }
+          for (const fn of get().eventListeners) fn(ev);
+        },
+        (connection) => set({ connection })
+      );
+      return () => {
+        sub?.close();
+        sub = null;
+      };
+    },
+
+    refresh() {
+      refreshChain = refreshChain.then(() => doRefresh(false));
+      return refreshChain;
+    },
+
+    async setScope(scope) {
+      if (scope === get().scope) return;
+      set({ scope, expansions: {}, diffs: {}, status: 'loading' });
+      refreshChain = refreshChain.then(() => doRefresh(true));
+      await refreshChain;
+    },
+
+    toggleLayerFilter(layer) {
+      const cur = get().layerFilter;
+      set({
+        layerFilter: cur.includes(layer)
+          ? cur.filter((l) => l !== layer)
+          : [...cur, layer],
+      });
+    },
+
+    clearLayerFilter() {
+      set({ layerFilter: [] });
+    },
+
+    setView(view) {
+      prefs.setView(view);
+      set({ view });
+    },
+
+    async loadFull(path) {
+      const res = await api.diff(get().scope, [path], true);
+      const f = res.files[0];
+      if (!f) return;
+      set({ diffs: { ...get().diffs, [path]: f } });
+    },
+
+    setExpansions(path, ex) {
+      set({ expansions: { ...get().expansions, [path]: ex } });
+    },
+
+    toggleCollapsed(path, val) {
+      const collapsed = { ...get().collapsed };
+      const next = val ?? !collapsed[path];
+      if (next) collapsed[path] = true;
+      else delete collapsed[path];
+      prefs.setCollapsed(get().state?.repoRoot ?? null, collapsed);
+      set({ collapsed });
+    },
+
+    setViewed(path, val) {
+      const repoRoot = get().state?.repoRoot ?? null;
+      const viewed = { ...get().viewed };
+      const digest =
+        get().state?.files.find((f) => f.path === path)?.digest ?? '';
+      if (val) viewed[path] = digest;
+      else delete viewed[path];
+      prefs.setViewed(repoRoot, viewed);
+      set({ viewed });
+      get().toggleCollapsed(path, val);
+      if (val) get().markSeen(path);
+    },
+
+    markSeen(path) {
+      if (!get().updated[path]) return;
+      const updated = { ...get().updated };
+      delete updated[path];
+      set({ updated });
+    },
+
+    setTreeHidden(val) {
+      prefs.setTreeHidden(val);
+      set({ treeHidden: val });
+    },
+
+    setTreeWidth(px) {
+      prefs.setTreeWidth(px);
+      set({ treeWidth: px });
+    },
+
+    setActivePath(path) {
+      set({ activePath: path });
+    },
+
+    async loadBranches() {
+      try {
+        const [branches, selection] = await Promise.all([
+          api.branches(),
+          api.refs(),
+        ]);
+        set({ branches, selection });
+      } catch {
+        /* outside a repo */
+      }
+    },
+
+    async setRefs(sel) {
+      try {
+        await api.setRefs(sel);
+        set({
+          selection: { ...get().selection, ...sel },
+          expansions: {},
+          diffs: {},
+        });
+        refreshChain = refreshChain.then(() => doRefresh(true));
+        await refreshChain;
+        void get().loadBranches();
+      } catch (err) {
+        get().showToast(`Could not switch branch: ${(err as Error).message}`);
+      }
+    },
+
+    showToast(message, action) {
+      if (toastTimer) clearTimeout(toastTimer);
+      set({ toast: action ? { message, action } : { message } });
+      toastTimer = setTimeout(() => set({ toast: null }), 6000);
+    },
+
+    hideToast() {
+      if (toastTimer) clearTimeout(toastTimer);
+      set({ toast: null });
+    },
+
+    onEvent(fn) {
+      get().eventListeners.add(fn);
+      return () => {
+        get().eventListeners.delete(fn);
+      };
+    },
+  };
+});
+
+export const selectVisibleFiles = (s: ReviewStore): ChangedFile[] => {
+  const files = s.state?.files ?? [];
+  if (s.scope !== 'cumulative') {
+    const inScope = new Set(Object.keys(s.diffs));
+    return files.filter((f) => inScope.has(f.path));
+  }
+  if (!s.layerFilter.length) return files;
+  const want = new Set(s.layerFilter);
+  return files.filter((f) => f.layers.some((l) => want.has(l.layer)));
+};
