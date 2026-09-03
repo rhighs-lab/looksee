@@ -77,10 +77,15 @@ const q = (
 
 export const api = {
   state: () => request<RepoState>('GET', '/api/state'),
-  diff: (scope: Scope, paths?: string[], full?: boolean) =>
+  diff: (scope: Scope, paths?: string[], full?: boolean, attribute?: boolean) =>
     request<DiffResponse>(
       'GET',
-      `/api/diff${q({ scope, path: paths, full: full ? '1' : undefined })}`
+      `/api/diff${q({
+        scope,
+        path: paths,
+        full: full ? '1' : undefined,
+        attribute: attribute ? '1' : undefined,
+      })}`
     ),
   context: (path: string, rev: Rev, start: number, end: number) =>
     request<ContextResponse>(

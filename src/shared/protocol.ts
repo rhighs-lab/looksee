@@ -125,6 +125,7 @@ export interface DiffLine {
   newNumber: number | null;
   content: string;
   html?: string;
+  layer?: Layer;
 }
 
 export interface Hunk {

@@ -38,9 +38,12 @@ const CODE_CLS: Record<LineType, string> = {
   del: 'blob-code-deletion',
 };
 
-function Code({ line }: { line: DiffLine }) {
+const layerCls = (line: DiffLine, tint: boolean): string =>
+  tint && line.layer && line.type !== 'context' ? ` layer-${line.layer}` : '';
+
+function Code({ line, tint }: { line: DiffLine; tint: boolean }) {
   return (
-    <td className={`blob-code ${CODE_CLS[line.type]}`}>
+    <td className={`blob-code ${CODE_CLS[line.type]}${layerCls(line, tint)}`}>
       <span className="blob-code-inner">
         <span className="marker">{MARKER[line.type]}</span>
         {line.html != null ? (
@@ -55,20 +58,22 @@ function Code({ line }: { line: DiffLine }) {
 
 function Num({
   n,
-  type,
+  line,
   side,
   slots,
+  tint,
 }: {
   n: number | null;
-  type: LineType;
+  line: DiffLine;
   side: Side | null;
   slots: LineSlots;
+  tint: boolean;
 }) {
   const commentable = Boolean(slots.commentable && side && n != null);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the inner add-comment button is the keyboard path
     <td
-      className={`blob-num ${NUM_CLS[type]}${commentable ? ' commentable' : ''}`}
+      className={`blob-num ${NUM_CLS[line.type]}${layerCls(line, tint)}${commentable ? ' commentable' : ''}`}
       data-line-number={n ?? undefined}
       data-side={commentable ? side : undefined}
       data-comment-line={commentable ? n : undefined}
@@ -156,14 +161,34 @@ function GapRow({
   );
 }
 
-function UnifiedLine({ line, slots }: { line: DiffLine; slots: LineSlots }) {
+function UnifiedLine({
+  line,
+  slots,
+  tint,
+}: {
+  line: DiffLine;
+  slots: LineSlots;
+  tint: boolean;
+}) {
   const oldSide: Side | null = line.type === 'del' ? 'old' : null;
   const newSide: Side | null = line.type === 'del' ? null : 'new';
   return (
     <tr>
-      <Num n={line.oldNumber} type={line.type} side={oldSide} slots={slots} />
-      <Num n={line.newNumber} type={line.type} side={newSide} slots={slots} />
-      <Code line={line} />
+      <Num
+        n={line.oldNumber}
+        line={line}
+        side={oldSide}
+        slots={slots}
+        tint={tint}
+      />
+      <Num
+        n={line.newNumber}
+        line={line}
+        side={newSide}
+        slots={slots}
+        tint={tint}
+      />
+      <Code line={line} tint={tint} />
     </tr>
   );
 }
@@ -172,10 +197,12 @@ function SplitPair({
   left,
   right,
   slots,
+  tint,
 }: {
   left: DiffLine | null;
   right: DiffLine | null;
   slots: LineSlots;
+  tint: boolean;
 }) {
   return (
     <tr>
@@ -183,19 +210,26 @@ function SplitPair({
         <>
           <Num
             n={left.oldNumber}
-            type={left.type}
+            line={left}
             side={left.type === 'del' ? 'old' : null}
             slots={slots}
+            tint={tint}
           />
-          <Code line={left} />
+          <Code line={left} tint={tint} />
         </>
       ) : (
         <Empty />
       )}
       {right ? (
         <>
-          <Num n={right.newNumber} type={right.type} side="new" slots={slots} />
-          <Code line={right} />
+          <Num
+            n={right.newNumber}
+            line={right}
+            side="new"
+            slots={slots}
+            tint={tint}
+          />
+          <Code line={right} tint={tint} />
         </>
       ) : (
         <Empty />
@@ -270,6 +304,7 @@ export const DiffTable = memo(function DiffTable({
     () => buildRows(diff, expansions, split),
     [diff, expansions, split]
   );
+  const tint = useReview((s) => s.colorByLayer);
   const after = slots.after;
   const renderAfter = (row: Row): ReactNode => {
     if (!after) return null;
@@ -351,13 +386,19 @@ export const DiffTable = memo(function DiffTable({
           }
           const line =
             row.kind === 'line' ? (
-              <UnifiedLine key={row.key} line={row.line} slots={slots} />
+              <UnifiedLine
+                key={row.key}
+                line={row.line}
+                slots={slots}
+                tint={tint}
+              />
             ) : (
               <SplitPair
                 key={row.key}
                 left={row.left}
                 right={row.right}
                 slots={slots}
+                tint={tint}
               />
             );
           const extra = renderAfter(row);

@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { AppContext } from '@/server/context.js';
 import { buildFileDiffs, scopeRevs } from '@/server/diff-service.js';
+import { attributeLayers } from '@/server/git/attribute.js';
 import {
   blobExists,
   getBlobLines,
@@ -16,6 +17,7 @@ import { inferLanguage } from '@/server/git/diff-parser.js';
 import { isSafeRef } from '@/server/git/exec.js';
 import { safeRelPath } from '@/server/git/paths.js';
 import { listBranches } from '@/server/git/refs.js';
+import { readStatus } from '@/server/git/state.js';
 import { packageRoot } from '@/server/pkg-root.js';
 import { highlightLines } from '@/server/render/highlighter.js';
 import { sampleDiffs } from '@/server/sample.js';
@@ -132,6 +134,7 @@ export function repoRoutes(ctx: AppContext): Hono {
         ?.map(safeRelPath)
         .filter((p): p is string => Boolean(p)) ?? [];
     const full = c.req.query('full') === '1';
+    const attribute = c.req.query('attribute') === '1';
     const state = ctx.state();
     if (!ctx.repoRoot) {
       const files = sampleDiffs().filter(
@@ -153,6 +156,13 @@ export function repoRoutes(ctx: AppContext): Hono {
         paths,
         full,
       });
+      if (attribute)
+        await attributeLayers(
+          ctx.repoRoot,
+          state.refs,
+          files,
+          state.refs.head.checkedOut ? await readStatus(ctx.repoRoot) : []
+        );
       return c.json<DiffResponse>({ scope, version: state.version, files });
     } catch (err) {
       return c.json({ error: (err as Error).message }, 500);

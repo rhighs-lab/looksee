@@ -102,6 +102,12 @@ body {
   min-width: 0;
 }
 
+.layer-colors-toggle[aria-pressed="true"] {
+  color: var(--fgColor-accent, #0969da);
+  background-color: var(--bgColor-accent-muted, #ddf4ff);
+  border-color: var(--borderColor-accent-emphasis, #0969da);
+}
+
 .repo-path {
   font-family: var(--ui-mono);
   overflow: hidden;
@@ -601,6 +607,107 @@ body {
 .blob-code-deletion .wd {
   background-color: var(--diffBlob-deletionWord-bgColor, #ffb1af);
   border-radius: 2px;
+}
+
+/* ---- Color by layer ---------------------------------------------------- */
+/* Only applied when the store flag is on and the server attributed lines. Adds
+   swap the green for the layer's muted tint; dels keep the removed red and get
+   a 3px bar in the layer color so add vs del stays readable. */
+
+.blob-code-addition.layer-pushed {
+  background-color: var(--bgColor-done-muted, #fbefff);
+}
+
+.blob-num-addition.layer-pushed {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-done-muted, #fbefff),
+    var(--bgColor-done-emphasis, #8250df) 18%
+  );
+}
+
+.blob-num-deletion.layer-pushed:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-done-emphasis, #8250df);
+}
+
+.blob-code-addition.layer-local {
+  background-color: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.blob-num-addition.layer-local {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-accent-muted, #ddf4ff),
+    var(--bgColor-accent-emphasis, #0969da) 18%
+  );
+}
+
+.blob-num-deletion.layer-local:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-accent-emphasis, #0969da);
+}
+
+.blob-code-addition.layer-staged {
+  background-color: var(--bgColor-success-muted, #dafbe1);
+}
+
+.blob-num-addition.layer-staged {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-success-muted, #dafbe1),
+    var(--bgColor-success-emphasis, #1f883d) 18%
+  );
+}
+
+.blob-num-deletion.layer-staged:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-success-emphasis, #1f883d);
+}
+
+.blob-code-addition.layer-unstaged {
+  background-color: var(--bgColor-attention-muted, #fff8c5);
+}
+
+.blob-num-addition.layer-unstaged {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-attention-muted, #fff8c5),
+    var(--bgColor-attention-emphasis, #9a6700) 18%
+  );
+}
+
+.blob-num-deletion.layer-unstaged:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-attention-emphasis, #9a6700);
+}
+
+.blob-code-addition.layer-untracked {
+  background-color: var(--bgColor-neutral-muted, #818b981f);
+}
+
+.blob-num-addition.layer-untracked {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-neutral-muted, #818b981f),
+    var(--bgColor-neutral-emphasis, #59636e) 18%
+  );
+}
+
+.blob-num-deletion.layer-untracked:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-neutral-emphasis, #59636e);
+}
+
+.blob-code-addition.layer-conflicted {
+  background-color: var(--bgColor-danger-muted, #ffebe9);
+}
+
+.blob-num-addition.layer-conflicted {
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-danger-muted, #ffebe9),
+    var(--bgColor-danger-emphasis, #cf222e) 18%
+  );
+}
+
+.blob-num-deletion.layer-conflicted:first-child {
+  box-shadow: inset 3px 0 0 var(--borderColor-danger-emphasis, #cf222e);
 }
 
 /* hunk header rows */

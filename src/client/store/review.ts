@@ -35,6 +35,7 @@ export interface ReviewStore {
   scope: Scope;
   layerFilter: Layer[];
   view: View;
+  colorByLayer: boolean;
   diffs: Record<string, FileDiff>;
   pendingPaths: string[];
   expansions: Record<string, Expansions>;
@@ -55,6 +56,7 @@ export interface ReviewStore {
   toggleLayerFilter(layer: Layer): void;
   clearLayerFilter(): void;
   setView(view: View): void;
+  setColorByLayer(val: boolean): Promise<void>;
   loadFull(path: string): Promise<void>;
   setExpansions(path: string, ex: Expansions): void;
   toggleCollapsed(path: string, val?: boolean): void;
@@ -128,7 +130,7 @@ export const useReview = create<ReviewStore>((set, get) => {
   };
 
   const loadAll = async (scope: Scope, state: RepoState) => {
-    const res = await api.diff(scope);
+    const res = await api.diff(scope, undefined, false, get().colorByLayer);
     applyDiffs(res.files, true, state.files);
   };
 
@@ -143,7 +145,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     }
     set({ pendingPaths: stale });
     try {
-      const res = await api.diff(scope, stale);
+      const res = await api.diff(scope, stale, false, get().colorByLayer);
       applyDiffs(res.files, false, state.files);
     } finally {
       set({ pendingPaths: [] });
@@ -188,6 +190,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     scope: 'cumulative',
     layerFilter: [],
     view: prefs.view(),
+    colorByLayer: prefs.colorByLayer(),
     diffs: {},
     pendingPaths: [],
     expansions: {},
@@ -254,8 +257,16 @@ export const useReview = create<ReviewStore>((set, get) => {
       set({ view });
     },
 
+    async setColorByLayer(val) {
+      if (val === get().colorByLayer) return;
+      prefs.setColorByLayer(val);
+      set({ colorByLayer: val, diffs: {} });
+      refreshChain = refreshChain.then(() => doRefresh(true));
+      await refreshChain;
+    },
+
     async loadFull(path) {
-      const res = await api.diff(get().scope, [path], true);
+      const res = await api.diff(get().scope, [path], true, get().colorByLayer);
       const f = res.files[0];
       if (!f) return;
       set({ diffs: { ...get().diffs, [path]: f } });

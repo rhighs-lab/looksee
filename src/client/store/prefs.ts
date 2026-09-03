@@ -23,6 +23,8 @@ const repoKey = (repoRoot: string | null, name: string) =>
 export const prefs = {
   view: (): View => read<View>('looksee:view', 'split'),
   setView: (v: View) => write('looksee:view', v),
+  colorByLayer: (): boolean => read('looksee:colorByLayer', false),
+  setColorByLayer: (v: boolean) => write('looksee:colorByLayer', v),
   treeHidden: (): boolean => read('looksee:tree-hidden', false),
   setTreeHidden: (v: boolean) => write('looksee:tree-hidden', v),
   treeWidth: (): number | null => read<number | null>('looksee:tree-w', null),
