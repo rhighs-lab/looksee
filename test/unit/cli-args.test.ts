@@ -13,6 +13,7 @@ const io = (env: NodeJS.ProcessEnv = {}) => {
     out: (s: string) => void out.push(s),
     err: (s: string) => void err.push(s),
     env,
+    stdin: async () => '',
   };
   return { io: o, out, err };
 };

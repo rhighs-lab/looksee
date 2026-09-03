@@ -23,6 +23,12 @@ const defaultIo: Io = {
   out: (s) => void process.stdout.write(s),
   err: (s) => void process.stderr.write(s),
   env: process.env,
+  stdin: async () => {
+    process.stdin.setEncoding('utf8');
+    let s = '';
+    for await (const chunk of process.stdin) s += String(chunk);
+    return s;
+  },
 };
 
 export const run = async (argv: string[], io = defaultIo): Promise<number> => {

@@ -1,5 +1,17 @@
 import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
+import { runComment } from '@/cli/cmd/comment.js';
+import { runComments } from '@/cli/cmd/comments.js';
+import { runDone } from '@/cli/cmd/done.js';
+import { runReply } from '@/cli/cmd/reply.js';
+import { runResolve } from '@/cli/cmd/resolve.js';
 import { runReview } from '@/cli/cmd/review.js';
+import {
+  runReviewComment,
+  runReviewDiscard,
+  runReviewShow,
+  runReviewStart,
+  runReviewSubmit,
+} from '@/cli/cmd/review-sub.js';
 import { runServe } from '@/cli/cmd/serve.js';
 import { runStatus } from '@/cli/cmd/status.js';
 import { runStop } from '@/cli/cmd/stop.js';
@@ -8,6 +20,7 @@ export interface Io {
   out: (s: string) => void;
   err: (s: string) => void;
   env: NodeJS.ProcessEnv;
+  stdin: () => Promise<string>;
 }
 
 export interface RunCtx extends Parsed {
@@ -77,48 +90,65 @@ const COMMANDS: CommandSpec[] = [
     },
     runReview
   ),
-  placeholder({
-    name: 'review start',
-    summary: 'Open a pending review for the actor',
-    args: '',
-    flags: [AS],
-    output: 'The review object',
-  }),
-  placeholder({
-    name: 'review comment',
-    summary: 'Add a draft comment to the pending review',
-    args: ANCHOR,
-    flags: [AS],
-    output: 'The created comment',
-  }),
-  placeholder({
-    name: 'review submit',
-    summary: 'Submit the pending review with a verdict',
-    args: '[body]',
-    flags: [
-      {
-        name: 'verdict',
-        takesValue: true,
-        help: 'comment | approve | request_changes',
-      },
-      AS,
-    ],
-    output: 'The submitted review with its comments',
-  }),
-  placeholder({
-    name: 'review discard',
-    summary: 'Delete the pending review and its drafts',
-    args: '',
-    flags: [AS],
-    output: '{ ok: true }',
-  }),
-  placeholder({
-    name: 'review show',
-    summary: 'Print the pending review and its drafts',
-    args: '',
-    flags: [AS, PRETTY],
-    output: 'The review with a comments array',
-  }),
+  placeholder(
+    {
+      name: 'review start',
+      summary: 'Open a pending review for the actor',
+      args: '',
+      flags: [AS],
+      output:
+        'The review: { id, author, branch, state, verdict, body, createdAt, submittedAt }',
+    },
+    runReviewStart
+  ),
+  placeholder(
+    {
+      name: 'review comment',
+      summary: 'Add a draft comment to the pending review',
+      args: ANCHOR,
+      flags: [AS],
+      output: 'The draft comment with reviewId set',
+    },
+    runReviewComment
+  ),
+  placeholder(
+    {
+      name: 'review submit',
+      summary: 'Submit the pending review with a verdict',
+      args: '[body]',
+      flags: [
+        {
+          name: 'verdict',
+          takesValue: true,
+          help: 'comment | approve | request_changes',
+        },
+        AS,
+      ],
+      output:
+        '{ review, comments }: the submitted review and its decorated comments',
+    },
+    runReviewSubmit
+  ),
+  placeholder(
+    {
+      name: 'review discard',
+      summary: 'Delete the pending review and its drafts',
+      args: '',
+      flags: [AS],
+      output: '{ ok: true }',
+    },
+    runReviewDiscard
+  ),
+  placeholder(
+    {
+      name: 'review show',
+      summary: 'Print the pending review and its drafts',
+      args: '',
+      flags: [AS, PRETTY],
+      output: '{ review, comments }: the pending review and its drafts',
+    },
+    runReviewShow
+  ),
   placeholder({
     name: 'listen',
     summary: 'Stream review events as JSON lines until killed',
@@ -135,51 +165,69 @@ const COMMANDS: CommandSpec[] = [
     ],
     output: 'One JSON event per line',
   }),
-  placeholder({
-    name: 'comments',
-    summary: 'List threads with their replies and an expects hint',
-    args: '',
-    flags: [
-      { name: 'file', takesValue: true, help: 'Only this file path' },
-      { name: 'author', takesValue: true, help: 'Only this author' },
-      {
-        name: 'status',
-        takesValue: true,
-        help: 'open | resolved (default: open)',
-      },
-      AS,
-      PRETTY,
-    ],
-    output: 'An array of threads',
-  }),
-  placeholder({
-    name: 'reply',
-    summary: 'Reply to a thread; body from the argument or stdin',
-    args: '<id> [body]',
-    flags: [AS],
-    output: 'The reply comment',
-  }),
-  placeholder({
-    name: 'resolve',
-    summary: 'Mark a thread resolved',
-    args: '<id>',
-    flags: [AS],
-    output: 'The updated root comment',
-  }),
-  placeholder({
-    name: 'comment',
-    summary: 'Post a single comment outside a review',
-    args: ANCHOR,
-    flags: [AS],
-    output: 'The created comment',
-  }),
-  placeholder({
-    name: 'done',
-    summary: 'Record that the actor addressed the current round',
-    args: '[body]',
-    flags: [AS],
-    output: '{ actor, body, at }',
-  }),
+  placeholder(
+    {
+      name: 'comments',
+      summary: 'List threads with their replies and an expects hint',
+      args: '',
+      flags: [
+        { name: 'file', takesValue: true, help: 'Only this file path' },
+        { name: 'author', takesValue: true, help: 'Only this author' },
+        {
+          name: 'status',
+          takesValue: true,
+          help: 'open | resolved (default: open)',
+        },
+        AS,
+        PRETTY,
+      ],
+      output:
+        'An array of threads: each root comment plus expects and a replies array',
+    },
+    runComments
+  ),
+  placeholder(
+    {
+      name: 'reply',
+      summary: 'Reply to a thread; body from the argument or stdin',
+      args: '<id> [body]',
+      flags: [AS],
+      output:
+        'The reply comment: { id, parentId, author, body, bodyHtml, ... }',
+    },
+    runReply
+  ),
+  placeholder(
+    {
+      name: 'resolve',
+      summary: 'Mark a thread resolved',
+      args: '<id>',
+      flags: [AS],
+      output: 'The root comment with status resolved',
+    },
+    runResolve
+  ),
+  placeholder(
+    {
+      name: 'comment',
+      summary: 'Post a single comment outside a review',
+      args: ANCHOR,
+      flags: [AS],
+      output:
+        'The created comment: { id, filePath, side, startLine, endLine, lineSnapshot, body, bodyHtml, kind, suggestion, ... }',
+    },
+    runComment
+  ),
+  placeholder(
+    {
+      name: 'done',
+      summary: 'Record that the actor addressed the current round',
+      args: '[body]',
+      flags: [AS],
+      output: '{ actor, body, at }',
+    },
+    runDone
+  ),
   placeholder(
     {
       name: 'status',
