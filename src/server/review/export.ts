@@ -13,8 +13,6 @@ const localizeAttachments = (body: string) =>
   body.replace(ATTACHMENT_URL, '$1.looksee/attachments/$2');
 
 function suggestionNote(c: DecoratedComment): string {
-  if (c.handoff === 'agent')
-    return 'Queued for agent: apply this change on their behalf.';
   if (c.applied) return 'Already applied.';
   if (c.applicable === false)
     return 'Outdated: the lines changed since this was written; adapt the intent.';
@@ -62,7 +60,7 @@ export function buildMarkdown(
     const lang = inferLanguage(file) ?? '';
     for (const c of list) {
       if (c.side === 'file') {
-        out.push('### File comment', idMarker(c));
+        out.push('### File comment', idMarker(c), `Author: ${c.author}`);
         if (c.kind === 'question')
           out.push(
             'Question for the agent: reply and resolve, do not edit code.'
@@ -72,7 +70,8 @@ export function buildMarkdown(
       }
       out.push(
         `### ${lineLabel(c)}${c.side === 'old' ? ' (old side)' : ''}`,
-        idMarker(c)
+        idMarker(c),
+        `Author: ${c.author}`
       );
       const code = c.lineSnapshot.join('\n');
       if (code) out.push(`\`\`\`${lang}`, code, '```');
@@ -101,6 +100,7 @@ export function buildJson(comments: DecoratedComment[]): string {
     bySortedFile(comments).flatMap(([file, list]) =>
       list.map((c) => ({
         id: c.id,
+        author: c.author,
         file,
         side: c.side,
         lines: c.side === 'file' ? null : [c.startLine, c.endLine],
@@ -109,7 +109,6 @@ export function buildJson(comments: DecoratedComment[]): string {
         kind: c.kind,
         suggestion: c.suggestion,
         applicable: c.applicable,
-        handoff: c.handoff,
         applied: Boolean(c.applied),
       }))
     ),

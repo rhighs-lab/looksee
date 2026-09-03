@@ -9,7 +9,11 @@ import {
 } from '@test/helpers/repo.js';
 import { startTestServer, type TestServer } from '@test/helpers/server.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { DecoratedComment, DiffResponse } from '@/shared/protocol.js';
+import type {
+  DecoratedComment,
+  DiffResponse,
+  Review,
+} from '@/shared/protocol.js';
 
 type CommentRes = { comment: DecoratedComment };
 const FILE = 'src/cart.js';
@@ -79,17 +83,18 @@ describe('review API', () => {
       status: 'open',
       suggestion: null,
       applicable: null,
-      handoff: null,
+      reviewId: null,
       applied: null,
     });
-    const reply = await post({
-      parentId: body.comment.id,
-      body: 'ack',
-      author: 'claude',
-    });
+    const reply = await srv.json<CommentRes>(
+      'POST',
+      '/api/comments',
+      { parentId: body.comment.id, body: 'ack' },
+      { 'x-looksee-actor': 'agent' }
+    );
     expect(reply.body.comment).toMatchObject({
       parentId: body.comment.id,
-      author: 'claude',
+      author: 'agent',
       filePath: 'README.md',
       startLine: 3,
     });
@@ -126,16 +131,20 @@ describe('review API', () => {
     expect(body.comment.bodyHtml).toMatch(/<img src="\/attachments\/x\.png"/);
   });
 
-  it('renders @agent mentions as questions and edits bodies in place', async () => {
+  it('renders @agent mentions as questions and edits drafts in place', async () => {
+    const rv = await srv.json<{ review: Review }>('POST', '/api/reviews', {});
     const { body } = await post({
       filePath: 'README.md',
       side: 'file',
       body: 'first draft\n\n@agent ok?',
+      reviewId: rv.body.review.id,
     });
     expect(body.comment.kind).toBe('question');
     expect(body.comment.bodyHtml).toMatch(/mention-agent/);
     await patch(body.comment.id, { body: 'second draft' });
     expect((await get(body.comment.id)).body).toBe('second draft');
+    await srv.json('DELETE', `/api/reviews/${rv.body.review.id}`);
+    expect(await get(body.comment.id)).toBeUndefined();
   });
 
   it('applies a suggestion, resolves it, and reports outdated ones', async () => {
@@ -171,7 +180,7 @@ describe('review API', () => {
     expect(r.body.outdated).toBe(true);
   });
 
-  it('rejects apply for old-side, handed-off and missing-file comments', async () => {
+  it('rejects apply for old-side, foreign-draft and missing-file comments', async () => {
     const old = (
       await post({
         filePath: FILE,
@@ -186,11 +195,31 @@ describe('review API', () => {
     expect(
       (await srv.json('POST', `/api/comments/${old.id}/apply`)).status
     ).toBe(400);
-    const handed = await suggest(30, 30, ['// handed']);
-    await patch(handed.id, { handoff: 'agent' });
+    const rv = await srv.json<{ review: Review }>(
+      'POST',
+      '/api/reviews',
+      {},
+      { 'x-looksee-actor': 'reviewer' }
+    );
+    const all = await fileLines();
+    const foreign = await srv.json<CommentRes>(
+      'POST',
+      '/api/comments',
+      {
+        filePath: FILE,
+        side: 'new',
+        startLine: 30,
+        endLine: 30,
+        lineSnapshot: all.slice(29, 30),
+        body: fence(['// draft']),
+        reviewId: rv.body.review.id,
+      },
+      { 'x-looksee-actor': 'reviewer' }
+    );
     expect(
-      (await srv.json('POST', `/api/comments/${handed.id}/apply`)).status
-    ).toBe(409);
+      (await srv.json('POST', `/api/comments/${foreign.body.comment.id}/apply`))
+        .status
+    ).toBe(404);
     await repo.write('src/gone.js', 'a\nb\n');
     const gone = (
       await post({

@@ -8,6 +8,7 @@ import {
 } from '@/server/review/markdown.js';
 import {
   getComment,
+  getReview,
   updateComment,
   withLock,
   writeFileAtomic,
@@ -55,7 +56,6 @@ export function decorator(repoRoot: string | null): Decorator {
       bodyHtml: renderCommentHtml(c, {
         snapshot,
         applicable,
-        handoff: c.handoff,
         applied: Boolean(c.applied),
       }),
       kind,
@@ -65,13 +65,28 @@ export function decorator(repoRoot: string | null): Decorator {
   };
 }
 
+export async function canSee(
+  repoRoot: string,
+  c: Comment,
+  actor: string
+): Promise<boolean> {
+  if (!c.reviewId) return true;
+  const rv = await getReview(repoRoot, c.reviewId);
+  return rv?.state !== 'pending' || rv.author === actor;
+}
+
 export type ApplyResult =
   | { status: 200; comment: Comment; path: string }
   | { status: 400 | 404 | 409; error: string; outdated?: boolean };
 
-async function applyLocked(repoRoot: string, id: string): Promise<ApplyResult> {
+async function applyLocked(
+  repoRoot: string,
+  id: string,
+  actor: string
+): Promise<ApplyResult> {
   const c = await getComment(repoRoot, id);
-  if (!c) return { status: 404, error: 'not found' };
+  if (!c || !(await canSee(repoRoot, c, actor)))
+    return { status: 404, error: 'not found' };
   if (!isSuggestionRoot(c))
     return { status: 400, error: 'not a new-side line comment' };
   const sug = parseSuggestions(c.body)[0];
@@ -81,8 +96,6 @@ async function applyLocked(repoRoot: string, id: string): Promise<ApplyResult> {
   if (!rel || !abs) return { status: 400, error: 'invalid path' };
   if (c.applied)
     return { status: 409, error: 'already applied', outdated: true };
-  if (c.handoff === 'agent')
-    return { status: 409, error: 'handed off to agent', outdated: true };
   let text: string;
   try {
     text = await fs.readFile(abs, 'utf8');
@@ -112,6 +125,7 @@ async function applyLocked(repoRoot: string, id: string): Promise<ApplyResult> {
 
 export const applySuggestion = (
   repoRoot: string,
-  id: string
+  id: string,
+  actor: string
 ): Promise<ApplyResult> =>
-  withLock(`apply:${repoRoot}`, () => applyLocked(repoRoot, id));
+  withLock(`apply:${repoRoot}`, () => applyLocked(repoRoot, id, actor));

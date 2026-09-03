@@ -12,7 +12,11 @@ import {
   MAX_ATTACHMENT_BYTES,
   saveAttachment,
 } from '@/server/review/attachments.js';
-import { applySuggestion, decorator } from '@/server/review/decorate.js';
+import {
+  applySuggestion,
+  canSee,
+  decorator,
+} from '@/server/review/decorate.js';
 import { buildJson, buildMarkdown } from '@/server/review/export.js';
 import {
   isSuggestionRoot,
@@ -26,22 +30,39 @@ import {
 } from '@/server/review/saved-replies.js';
 import {
   addComment,
+  addDone,
+  type CommentPatch,
   clearComments,
   deleteComment,
+  discardReview,
   getComment,
+  getReview,
   listComments,
+  listDone,
+  listReviews,
+  PendingReviewError,
   restoreCleared,
+  startReview,
+  submitReview,
   updateComment,
 } from '@/server/review/store.js';
 import { parseSuggestions } from '@/server/review/suggestion.js';
 import type {
-  Comment,
   CommentSide,
   DecoratedComment,
+  Review,
   ServerEvent,
+  Verdict,
 } from '@/shared/protocol.js';
+import { USER_ACTOR } from '@/shared/protocol.js';
 
 type Json = Record<string, unknown>;
+type Req = { req: { header(n: string): string | undefined } };
+
+const VERDICTS: readonly Verdict[] = ['comment', 'approve', 'request_changes'];
+const isVerdict = (v: unknown): v is Verdict => VERDICTS.includes(v as Verdict);
+const str = (v: unknown): string | null =>
+  typeof v === 'string' && v ? v : null;
 
 const MIME: Record<string, string> = {
   png: 'image/png',
@@ -58,8 +79,30 @@ export function reviewRoutes(ctx: AppContext): Hono {
   const emit = (
     ev: Exclude<ServerEvent, { type: 'hello' | 'state.changed' }>
   ) => ctx.hub.emit(ev);
-  const originOf = (c: { req: { header(n: string): string | undefined } }) =>
-    c.req.header('x-looksee-client') ?? null;
+  const originOf = (c: Req) => c.req.header('x-looksee-client') ?? null;
+  const actorOf = (c: Req) => c.req.header('x-looksee-actor') || USER_ACTOR;
+  const visibleComment = async (id: string, actor: string) => {
+    const x = await getComment(repoRoot!, id);
+    return x && (await canSee(repoRoot!, x, actor)) ? x : null;
+  };
+  const reviewComments = async (rv: Review) => {
+    const decorate = decorator(repoRoot);
+    const all = await listComments(repoRoot!, null, rv.author);
+    return Promise.all(all.filter((x) => x.reviewId === rv.id).map(decorate));
+  };
+  const ownedPending = async (
+    id: string,
+    actor: string
+  ): Promise<
+    { review: Review } | { status: 403 | 404 | 409; error: string }
+  > => {
+    const review = await getReview(repoRoot!, id);
+    if (!review) return { status: 404, error: 'not found' };
+    if (review.author !== actor) return { status: 403, error: 'not yours' };
+    if (review.state !== 'pending')
+      return { status: 409, error: 'already submitted' };
+    return { review };
+  };
   const body = async (c: {
     req: { json(): Promise<unknown> };
   }): Promise<Json> => {
@@ -70,6 +113,89 @@ export function reviewRoutes(ctx: AppContext): Hono {
       return {};
     }
   };
+
+  app.use('/api/*', async (c, next) => {
+    if (c.req.header('x-looksee-actor') === USER_ACTOR)
+      return c.json({ error: 'actor "user" is reserved for the browser' }, 400);
+    await next();
+  });
+
+  app.get('/api/reviews', async (c) => {
+    if (!repoRoot) return c.json({ reviews: [] });
+    const state = c.req.query('state');
+    const author = str(c.req.query('author'));
+    const reviews = await listReviews(repoRoot, {
+      ...(state === 'pending' || state === 'submitted' ? { state } : {}),
+      ...(author ? { author } : {}),
+    });
+    return c.json({ reviews });
+  });
+
+  app.post('/api/reviews', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const b = await body(c);
+    try {
+      const review = await startReview(repoRoot, {
+        author: actorOf(c),
+        branch: str(b['branch']),
+      });
+      return c.json({ review });
+    } catch (err) {
+      if (err instanceof PendingReviewError)
+        return c.json(
+          { error: err.message, code: err.code, review: err.review },
+          409
+        );
+      throw err;
+    }
+  });
+
+  app.get('/api/reviews/:id', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const review = await getReview(repoRoot, c.req.param('id'));
+    if (!review) return c.json({ error: 'not found' }, 404);
+    if (review.state === 'pending' && review.author !== actorOf(c))
+      return c.json({ error: 'not yours' }, 403);
+    return c.json({ review, comments: await reviewComments(review) });
+  });
+
+  app.post('/api/reviews/:id/submit', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const b = await body(c);
+    if (!isVerdict(b['verdict'])) return c.json({ error: 'bad verdict' }, 400);
+    const r = await ownedPending(c.req.param('id'), actorOf(c));
+    if ('status' in r) return c.json({ error: r.error }, r.status);
+    const review = await submitReview(repoRoot, r.review.id, {
+      verdict: b['verdict'],
+      body: typeof b['body'] === 'string' ? b['body'] : '',
+    });
+    if (!review) return c.json({ error: 'not found' }, 404);
+    const comments = await reviewComments(review);
+    emit({ type: 'review.submitted', review, comments, origin: originOf(c) });
+    return c.json({ review, comments });
+  });
+
+  app.delete('/api/reviews/:id', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const r = await ownedPending(c.req.param('id'), actorOf(c));
+    if ('status' in r) return c.json({ error: r.error }, r.status);
+    return c.json({ ok: await discardReview(repoRoot, r.review.id) });
+  });
+
+  app.get('/api/done', async (c) =>
+    c.json({ done: repoRoot ? await listDone(repoRoot) : [] })
+  );
+
+  app.post('/api/done', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const b = await body(c);
+    const done = await addDone(repoRoot, {
+      actor: actorOf(c),
+      body: typeof b['body'] === 'string' ? b['body'] : '',
+    });
+    emit({ type: 'done.requested', ...done, origin: originOf(c) });
+    return c.json({ done });
+  });
 
   app.post('/api/preview', async (c) => {
     const b = await body(c);
@@ -105,11 +231,10 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const status = c.req.query('status');
     const author = c.req.query('author');
     const rootsOnly = c.req.query('roots') === '1';
-    let comments = await listComments(repoRoot, branch);
+    let comments = await listComments(repoRoot, branch, actorOf(c));
     if (status === 'open' || status === 'resolved')
       comments = comments.filter((x) => x.status === status);
-    if (author === 'user' || author === 'claude')
-      comments = comments.filter((x) => x.author === author);
+    if (author) comments = comments.filter((x) => x.author === author);
     if (rootsOnly) comments = comments.filter((x) => !x.parentId);
     const decorate = decorator(repoRoot);
     return c.json({ comments: await Promise.all(comments.map(decorate)) });
@@ -118,9 +243,9 @@ export function reviewRoutes(ctx: AppContext): Hono {
   app.post('/api/comments', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const b = await body(c);
-    const author = b['author'] === 'claude' ? 'claude' : 'user';
+    const author = actorOf(c);
     if (b['parentId']) {
-      const parent = await getComment(repoRoot, String(b['parentId']));
+      const parent = await visibleComment(String(b['parentId']), author);
       if (!parent) return c.json({ error: 'parent not found' }, 404);
       if (parent.parentId)
         return c.json({ error: 'cannot reply to a reply' }, 400);
@@ -136,10 +261,16 @@ export function reviewRoutes(ctx: AppContext): Hono {
         body: b['body'],
         branch: parent.branch,
         lineSnapshot: [],
+        reviewId: null,
       });
       const out = await decorator(repoRoot)(reply);
-      emit({ type: 'comment.created', comment: out, origin: originOf(c) });
+      emit({ type: 'comment.replied', comment: out, origin: originOf(c) });
       return c.json({ comment: out });
+    }
+    const reviewId = str(b['reviewId']);
+    if (reviewId) {
+      const r = await ownedPending(reviewId, author);
+      if ('status' in r) return c.json({ error: r.error }, r.status);
     }
     const side: CommentSide =
       b['side'] === 'old' ? 'old' : b['side'] === 'file' ? 'file' : 'new';
@@ -169,47 +300,57 @@ export function reviewRoutes(ctx: AppContext): Hono {
             ? Number(b['endLine'])
             : startLine,
       body: b['body'],
-      branch:
-        typeof b['branch'] === 'string' && b['branch'] ? b['branch'] : null,
+      branch: str(b['branch']),
       lineSnapshot: snapshot,
+      reviewId,
     });
     const out = await decorator(repoRoot)(comment);
-    emit({ type: 'comment.created', comment: out, origin: originOf(c) });
+    if (!reviewId)
+      emit({ type: 'comment.created', comment: out, origin: originOf(c) });
     return c.json({ comment: out });
   });
 
   app.patch('/api/comments/:id', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const b = await body(c);
-    const id = c.req.param('id');
-    const patch: Partial<Pick<Comment, 'body' | 'status' | 'handoff'>> = {};
-    if (typeof b['body'] === 'string') patch.body = b['body'];
+    const actor = actorOf(c);
+    const cur = await visibleComment(c.req.param('id'), actor);
+    if (!cur) return c.json({ error: 'not found' }, 404);
+    const patch: CommentPatch = {};
+    if (typeof b['body'] === 'string') {
+      const rv = cur.reviewId ? await getReview(repoRoot, cur.reviewId) : null;
+      if (rv?.state !== 'pending')
+        return c.json({ error: 'body is immutable once published' }, 409);
+      patch.body = b['body'];
+    }
     if (b['status'] === 'open' || b['status'] === 'resolved')
       patch.status = b['status'];
-    if (b['handoff'] === 'agent' || b['handoff'] === null)
-      patch.handoff = b['handoff'];
-    const comment = await updateComment(repoRoot, id, patch);
+    const comment = await updateComment(repoRoot, cur.id, patch);
     if (!comment) return c.json({ error: 'not found' }, 404);
-    const out = await decorator(repoRoot)(comment);
-    emit({ type: 'comment.updated', comment: out, origin: originOf(c) });
-    return c.json({ comment: out });
+    if (patch.status && patch.status !== cur.status)
+      emit({
+        type:
+          patch.status === 'resolved' ? 'thread.resolved' : 'thread.reopened',
+        id: comment.id,
+        actor,
+        origin: originOf(c),
+      });
+    return c.json({ comment: await decorator(repoRoot)(comment) });
   });
 
   app.delete('/api/comments/:id', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
-    const removed = await deleteComment(repoRoot, c.req.param('id'));
-    if (removed)
-      emit({
-        type: 'comment.deleted',
-        id: c.req.param('id'),
-        origin: originOf(c),
-      });
+    const cur = await visibleComment(c.req.param('id'), actorOf(c));
+    if (!cur) return c.json({ ok: false, removed: 0 });
+    const removed = await deleteComment(repoRoot, cur.id);
+    if (removed && !cur.reviewId)
+      emit({ type: 'comment.deleted', id: cur.id, origin: originOf(c) });
     return c.json({ ok: Boolean(removed), removed });
   });
 
   app.post('/api/comments/:id/apply', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
-    const r = await applySuggestion(repoRoot, c.req.param('id'));
+    const r = await applySuggestion(repoRoot, c.req.param('id'), actorOf(c));
     if (r.status !== 200)
       return c.json(
         { error: r.error, ...(r.outdated ? { outdated: true } : {}) },
@@ -225,13 +366,17 @@ export function reviewRoutes(ctx: AppContext): Hono {
   app.post('/api/suggestions/apply-all', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const branch = c.req.query('branch') || null;
-    const all = await listComments(repoRoot, branch);
+    const actor = actorOf(c);
+    const all = await listComments(repoRoot, branch, actor);
+    const pending = new Set(
+      (await listReviews(repoRoot, { state: 'pending' })).map((r) => r.id)
+    );
     const candidates = all
       .filter(
         (x) =>
           isSuggestionRoot(x) &&
           x.status === 'open' &&
-          x.handoff !== 'agent' &&
+          !(x.reviewId && pending.has(x.reviewId)) &&
           parseSuggestions(x.body).length > 0
       )
       .sort((a, b) =>
@@ -245,7 +390,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const skipped: { id: string; reason: string }[] = [];
     const changed = new Set<string>();
     for (const x of candidates) {
-      const r = await applySuggestion(repoRoot, x.id);
+      const r = await applySuggestion(repoRoot, x.id, actor);
       if (r.status !== 200) {
         skipped.push({ id: x.id, reason: r.outdated ? 'outdated' : r.error });
         continue;
@@ -264,10 +409,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
   app.post('/api/comments/clear', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const b = await body(c);
-    const cleared = await clearComments(
-      repoRoot,
-      typeof b['branch'] === 'string' && b['branch'] ? b['branch'] : null
-    );
+    const cleared = await clearComments(repoRoot, str(b['branch']));
     emit({ type: 'comments.reset', origin: originOf(c) });
     return c.json({ cleared });
   });
@@ -282,13 +424,12 @@ export function reviewRoutes(ctx: AppContext): Hono {
   app.post('/api/export', async (c) => {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const b = await body(c);
-    const branch =
-      typeof b['branch'] === 'string' && b['branch'] ? b['branch'] : null;
+    const branch = str(b['branch']);
     const format = b['format'] === 'json' ? 'json' : 'md';
-    const all = await listComments(repoRoot, branch);
+    const all = await listComments(repoRoot, branch, actorOf(c));
     const decorate = decorator(repoRoot);
     const comments = await Promise.all(
-      all.filter((x) => !x.parentId && x.author === 'user').map(decorate)
+      all.filter((x) => !x.parentId).map(decorate)
     );
     if (!comments.length) return c.json({ count: 0, content: '', path: null });
     const content =

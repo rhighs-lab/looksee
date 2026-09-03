@@ -17,7 +17,7 @@ export function parseSuggestions(body: string): { lines: string[] }[] {
 const row = (cls: string, marker: string, line: string) =>
   `<tr><td class="blob-code ${cls}"><span class="blob-code-inner"><span class="marker">${marker}</span>${escapeHtml(line)}</span></td></tr>`;
 
-type Status = 'applied' | 'queued' | 'outdated' | 'ready';
+type Status = 'applied' | 'outdated' | 'ready';
 
 const STATUS: Record<
   Status,
@@ -26,12 +26,6 @@ const STATUS: Record<
   applied: {
     label: 'Applied',
     cls: 'is-applied',
-    actions: false,
-    canApply: false,
-  },
-  queued: {
-    label: 'Queued for agent',
-    cls: 'is-queued',
     actions: false,
     canApply: false,
   },
@@ -48,18 +42,12 @@ export interface SuggestionBlock {
   removed: string[];
   added: string[];
   applicable: boolean | null;
-  handoff: 'agent' | null;
   applied: boolean;
   id: string | null;
 }
 
-const statusOf = ({
-  applied,
-  handoff,
-  applicable,
-}: SuggestionBlock): Status => {
+const statusOf = ({ applied, applicable }: SuggestionBlock): Status => {
   if (applied) return 'applied';
-  if (handoff === 'agent') return 'queued';
   if (applicable === false) return 'outdated';
   return 'ready';
 };
@@ -73,7 +61,7 @@ export function renderSuggestionBlock(b: SuggestionBlock): string {
     ? '<button class="suggestion-apply">Apply now</button>'
     : '<button class="suggestion-apply" disabled title="The file changed since this comment">Apply now</button>';
   const actions = st.actions
-    ? `<div class="suggestion-actions">${apply}<button class="suggestion-handoff">Let agent do it</button><span class="suggestion-error" hidden></span></div>`
+    ? `<div class="suggestion-actions">${apply}<span class="suggestion-error" hidden></span></div>`
     : '';
   return (
     `<div class="suggestion${st.cls ? ` ${st.cls}` : ''}"${b.id ? ` data-comment-id="${escapeHtml(b.id)}"` : ''}>` +

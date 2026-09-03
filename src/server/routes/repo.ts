@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { AppContext } from '@/server/context.js';
@@ -14,6 +16,7 @@ import { inferLanguage } from '@/server/git/diff-parser.js';
 import { isSafeRef } from '@/server/git/exec.js';
 import { safeRelPath } from '@/server/git/paths.js';
 import { listBranches } from '@/server/git/refs.js';
+import { packageRoot } from '@/server/pkg-root.js';
 import { highlightLines } from '@/server/render/highlighter.js';
 import { sampleDiffs } from '@/server/sample.js';
 import type {
@@ -29,6 +32,15 @@ import type {
   TreeEntry,
 } from '@/shared/protocol.js';
 import { MAX_HIGHLIGHT_LINES, SCOPES } from '@/shared/protocol.js';
+
+const PKG_VERSION = (
+  JSON.parse(
+    fs.readFileSync(
+      path.join(packageRoot(import.meta.url), 'package.json'),
+      'utf8'
+    )
+  ) as { version: string }
+).version;
 
 const parseScope = (raw: string | undefined): Scope =>
   SCOPES.includes(raw as Scope) ? (raw as Scope) : 'cumulative';
@@ -47,6 +59,7 @@ export function repoRoutes(ctx: AppContext): Hono {
       app: 'looksee',
       repoRoot: ctx.repoRoot,
       version: ctx.state().version,
+      pkgVersion: PKG_VERSION,
     };
     return c.json(body);
   });
