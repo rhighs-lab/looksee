@@ -214,7 +214,8 @@ export function summarize(files: ChangedFile[]): RepoSummary {
     deletions += f.deletions;
     for (const l of new Set(f.layers.map((x) => x.layer))) byLayer[l]++;
   }
-  return { files: files.length, additions, deletions, byLayer };
+  const changed = files.filter((f) => f.kind !== 'unchanged').length;
+  return { files: changed, additions, deletions, byLayer };
 }
 
 export async function readStatus(repoRoot: string): Promise<StatusEntry[]> {

@@ -362,7 +362,8 @@ export const selectVisibleFiles = (s: ReviewStore): ChangedFile[] => {
     const inScope = new Set(Object.keys(s.diffs));
     return files.filter((f) => inScope.has(f.path));
   }
-  if (!s.layerFilter.length) return files;
+  const net = files.filter((f) => f.kind !== 'unchanged');
+  if (!s.layerFilter.length) return net;
   const want = new Set(s.layerFilter);
-  return files.filter((f) => f.layers.some((l) => want.has(l.layer)));
+  return net.filter((f) => f.layers.some((l) => want.has(l.layer)));
 };
