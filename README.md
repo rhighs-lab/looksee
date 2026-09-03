@@ -11,12 +11,12 @@ agent edits.
 
 ```bash
 git clone https://github.com/rhighs-lab/looksee
-cd looksee && pnpm install && pnpm build
-pnpm start ../your-repo      # opens http://127.0.0.1:4711
+cd looksee && pnpm install && pnpm build && pnpm link --global
+cd ../your-repo && looksee review .   # opens http://127.0.0.1:4711
 ```
 
 ```
-pnpm start [repoPath] [--base <ref>] [--port <n>] [--no-open]
+looksee --help
 ```
 
 ## Credits
