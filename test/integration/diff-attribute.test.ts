@@ -1,3 +1,6 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { makeRepo, type Repo } from '@test/helpers/repo.js';
 import { startTestServer, type TestServer } from '@test/helpers/server.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -16,7 +19,10 @@ const changed = (
 describe('GET /api/diff?attribute=1', () => {
   let repo: Repo;
   let srv: TestServer;
+  let home: string;
   beforeAll(async () => {
+    home = await fs.mkdtemp(path.join(os.tmpdir(), 'looksee-home-'));
+    process.env['LOOKSEE_HOME'] = home;
     repo = await makeRepo({ remote: true });
     await repo.write('a.txt', 'one\ntwo\nthree\nfour\n');
     await repo.commitAll('base');
@@ -37,6 +43,7 @@ describe('GET /api/diff?attribute=1', () => {
   afterAll(async () => {
     await srv.close();
     await repo.cleanup();
+    await fs.rm(home, { recursive: true, force: true });
   });
 
   it('tags every add and del line with the layer that introduced it', async () => {

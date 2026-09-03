@@ -4,8 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   type Comment,
+  type Comparison,
   type DoneMark,
+  type Pin,
   type Review,
+  type ScopePreset,
+  type Session,
   VERDICTS,
   type Verdict,
 } from '@/shared/protocol.js';
@@ -71,9 +75,11 @@ interface StoreData {
   reviews: Review[];
   comments: Comment[];
   done: DoneMark[];
+  session: Session | null;
 }
 
-const STORE_VERSION = 2;
+const STORE_VERSION = 3;
+const PRESETS: ScopePreset[] = ['session', 'working', 'branch', 'custom'];
 
 const normAuthor = (a: unknown): string => {
   if (a === 'claude') return 'agent';
@@ -112,6 +118,27 @@ function normalizeReview(r: StoredReview): Review {
     body: r.body ?? '',
     createdAt: r.createdAt ?? new Date(0).toISOString(),
     submittedAt: r.submittedAt ?? null,
+    comparison: r.comparison ?? null,
+  };
+}
+
+const normPin = (p: unknown): Pin | null => {
+  if (!p || typeof p !== 'object') return null;
+  const { tree, head, at } = p as Partial<Pin>;
+  return typeof tree === 'string' && tree
+    ? { tree, head: head ?? '', at: at ?? new Date(0).toISOString() }
+    : null;
+};
+
+function normalizeSession(s: unknown): Session | null {
+  if (!s || typeof s !== 'object') return null;
+  const x = s as Partial<Session>;
+  return {
+    openedAt: normPin(x.openedAt),
+    approvedAt: normPin(x.approvedAt),
+    scope: x.scope && PRESETS.includes(x.scope) ? x.scope : 'session',
+    custom: x.custom ?? null,
+    endedAt: x.endedAt ?? null,
   };
 }
 
@@ -129,7 +156,7 @@ async function readStore(repoRoot: string): Promise<StoreData> {
     raw = await fs.readFile(fileFor(repoRoot), 'utf8');
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT')
-      return { reviews: [], comments: [], done: [] };
+      return { reviews: [], comments: [], done: [], session: null };
     throw err;
   }
   const data = JSON.parse(raw) as Record<string, unknown>;
@@ -137,6 +164,7 @@ async function readStore(repoRoot: string): Promise<StoreData> {
     reviews: list<StoredReview>(data['reviews']).map(normalizeReview),
     comments: list<StoredComment>(data['comments']).map(normalize),
     done: list<Partial<DoneMark>>(data['done']).map(normalizeDone),
+    session: normalizeSession(data['session']),
   };
 }
 
@@ -320,6 +348,7 @@ export function startReview(
       body: '',
       createdAt: new Date().toISOString(),
       submittedAt: null,
+      comparison: null,
     };
     store.reviews.push(review);
     await writeStore(repoRoot, store);
@@ -330,7 +359,7 @@ export function startReview(
 export function submitReview(
   repoRoot: string,
   id: string,
-  data: { verdict: Verdict; body: string }
+  data: { verdict: Verdict; body: string; comparison?: Comparison | null }
 ): Promise<Review | null> {
   return locked(repoRoot, async () => {
     const store = await readStore(repoRoot);
@@ -341,6 +370,7 @@ export function submitReview(
       verdict: data.verdict,
       body: data.body,
       submittedAt: new Date().toISOString(),
+      comparison: data.comparison ?? null,
     });
     await writeStore(repoRoot, store);
     return review;
@@ -378,4 +408,21 @@ export function addDone(
 
 export async function listDone(repoRoot: string): Promise<DoneMark[]> {
   return (await readStore(repoRoot)).done;
+}
+
+export async function getSession(repoRoot: string): Promise<Session | null> {
+  return (await readStore(repoRoot)).session;
+}
+
+export function setSession<S extends Session | null>(
+  repoRoot: string,
+  fn: (cur: Session | null) => Promise<S>
+): Promise<S> {
+  return locked(repoRoot, async () => {
+    const store = await readStore(repoRoot);
+    const next = await fn(store.session);
+    store.session = next;
+    await writeStore(repoRoot, store);
+    return next;
+  });
 }

@@ -4,6 +4,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import type { AppContext, AppOpts } from '@/server/context.js';
 import { gitDir } from '@/server/git/exec.js';
+import { ensureSession } from '@/server/review/session.js';
 import { repoRoutes } from '@/server/routes/repo.js';
 import { reviewRoutes } from '@/server/routes/review.js';
 import { sampleState } from '@/server/sample.js';
@@ -108,6 +109,7 @@ export function createApp(opts: AppOpts): LookseeApp {
         opts: { ...(watcher as unknown as { opts: object }).opts, gitDir: gd },
       });
       await watcher.start();
+      if (watcher.state.refs?.head.checkedOut) await ensureSession(repoRoot);
     },
     stop() {
       watcher?.stop();

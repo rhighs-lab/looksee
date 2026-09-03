@@ -1,3 +1,6 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import {
   featureBranchWithLayers,
   makeRepo,
@@ -13,6 +16,13 @@ import type {
   HealthResponse,
   RepoState,
 } from '@/shared/protocol.js';
+
+let home: string;
+beforeAll(async () => {
+  home = await fs.mkdtemp(path.join(os.tmpdir(), 'looksee-home-'));
+  process.env['LOOKSEE_HOME'] = home;
+});
+afterAll(() => fs.rm(home, { recursive: true, force: true }));
 
 describe('repo API', () => {
   let repo: Repo;

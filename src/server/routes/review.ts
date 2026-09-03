@@ -28,6 +28,7 @@ import {
   deleteSavedReply,
   listSavedReplies,
 } from '@/server/review/saved-replies.js';
+import { pinApproved } from '@/server/review/session.js';
 import {
   addComment,
   addDone,
@@ -178,8 +179,13 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const review = await submitReview(repoRoot, r.review.id, {
       verdict: b['verdict'],
       body: typeof b['body'] === 'string' ? b['body'] : '',
+      comparison: null,
     });
     if (!review) return c.json({ error: 'not found' }, 404);
+    if (review.verdict === 'approve' && actorOf(c) === USER_ACTOR)
+      await pinApproved(repoRoot).catch((err: unknown) => {
+        console.error(`looksee: approve pin failed: ${String(err)}`);
+      });
     const comments = await reviewComments(review);
     emit({ type: 'review.submitted', review, comments, origin: originOf(c) });
     return c.json({ review, comments });

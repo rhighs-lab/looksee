@@ -169,6 +169,14 @@ export interface Resolved {
   label: string;
 }
 
+export interface Session {
+  openedAt: Pin | null;
+  approvedAt: Pin | null;
+  scope: ScopePreset;
+  custom: Comparison | null;
+  endedAt: string | null;
+}
+
 export interface FileDiff {
   path: string;
   oldPath: string | null;
@@ -265,6 +273,7 @@ export interface Review {
   body: string;
   createdAt: string;
   submittedAt: string | null;
+  comparison: Comparison | null;
 }
 
 export interface DoneMark {

@@ -8,14 +8,17 @@ import {
   addDone,
   discardReview,
   getReview,
+  getSession,
   listComments,
   listDone,
   listReviews,
   type NewComment,
   PendingReviewError,
+  setSession,
   startReview,
   submitReview,
 } from '@/server/review/store.js';
+import type { Comparison, Session } from '@/shared/protocol.js';
 
 const storeFile = (home: string, repoRoot: string): string =>
   path.join(
@@ -108,11 +111,60 @@ describe('store v2', () => {
       comments: { author: string; handoff?: unknown }[];
       done: unknown[];
     };
-    expect(data.version).toBe(2);
+    expect(data.version).toBe(3);
     expect(data.reviews).toEqual([]);
     expect(data.done).toEqual([]);
     expect(data.comments[0]?.author).toBe('agent');
     expect('handoff' in (data.comments[0] ?? {})).toBe(false);
+  });
+
+  it('reads a v2 file with session null and writes v3 on the next write', async () => {
+    const file = storeFile(home, repoRoot);
+    await fs.mkdir(home, { recursive: true });
+    const raw = JSON.stringify({
+      version: 2,
+      repoRoot,
+      reviews: [],
+      comments: [],
+      done: [],
+    });
+    await fs.writeFile(file, raw);
+    expect(await getSession(repoRoot)).toBeNull();
+    expect(await fs.readFile(file, 'utf8')).toBe(raw);
+    const session: Session = {
+      openedAt: { tree: 'a'.repeat(40), head: 'b'.repeat(40), at: 't0' },
+      approvedAt: null,
+      scope: 'session',
+      custom: null,
+      endedAt: null,
+    };
+    expect(await setSession(repoRoot, async () => session)).toEqual(session);
+    const data = JSON.parse(await fs.readFile(file, 'utf8')) as {
+      version: number;
+      session: Session;
+    };
+    expect(data.version).toBe(3);
+    expect(data.session).toEqual(session);
+    expect(await getSession(repoRoot)).toEqual(session);
+  });
+
+  it('keeps the session across other writes and passes it to updaters', async () => {
+    const session: Session = {
+      openedAt: { tree: 'a'.repeat(40), head: 'b'.repeat(40), at: 't0' },
+      approvedAt: null,
+      scope: 'working',
+      custom: null,
+      endedAt: null,
+    };
+    await setSession(repoRoot, async () => session);
+    await addComment(repoRoot, draft());
+    expect(await getSession(repoRoot)).toEqual(session);
+    const ended = await setSession(repoRoot, async (cur) => ({
+      ...cur!,
+      endedAt: 't1',
+    }));
+    expect(ended.endedAt).toBe('t1');
+    expect(await getSession(repoRoot)).toEqual(ended);
   });
 
   it('throws on a corrupt file and leaves it untouched', async () => {
@@ -191,6 +243,7 @@ describe('store v2', () => {
     expect(done?.verdict).toBe('request_changes');
     expect(done?.body).toBe('please fix');
     expect(done?.submittedAt).not.toBeNull();
+    expect(done?.comparison).toBeNull();
     expect(
       (await listComments(repoRoot, 'main', 'user')).map((x) => x.id)
     ).toEqual([c.id]);
@@ -198,6 +251,22 @@ describe('store v2', () => {
     expect(
       await submitReview(repoRoot, 'nope', { verdict: 'approve', body: '' })
     ).toBeNull();
+  });
+
+  it('submitReview records the comparison it was given', async () => {
+    const rv = await startReview(repoRoot, { author: 'user', branch: 'main' });
+    expect(rv.comparison).toBeNull();
+    const comparison: Comparison = {
+      baseline: { kind: 'pin', name: 'opened' },
+      endpoint: { kind: 'worktree' },
+    };
+    const done = await submitReview(repoRoot, rv.id, {
+      verdict: 'approve',
+      body: '',
+      comparison,
+    });
+    expect(done?.comparison).toEqual(comparison);
+    expect((await getReview(repoRoot, rv.id))?.comparison).toEqual(comparison);
   });
 
   it('discardReview removes the review, its comments and replies', async () => {
