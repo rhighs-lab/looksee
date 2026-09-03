@@ -169,6 +169,7 @@ export interface ComposerProps {
   onSubmit: (body: string) => Promise<void>;
   onCancel: () => void;
   autoFocus?: boolean;
+  submitLabel?: string;
 }
 
 export function Composer({
@@ -176,6 +177,7 @@ export function Composer({
   onSubmit,
   onCancel,
   autoFocus = true,
+  submitLabel,
 }: ComposerProps) {
   const ta = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState('');
@@ -574,7 +576,7 @@ export function Composer({
           variant="primary"
           disabled={busy || !value.trim()}
         >
-          {anchor.kind === 'reply' ? 'Reply' : 'Comment'}
+          {submitLabel ?? (anchor.kind === 'reply' ? 'Reply' : 'Comment')}
         </Button>
       </div>
     </form>

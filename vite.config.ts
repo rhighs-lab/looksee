@@ -18,7 +18,11 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     proxy: {
-      '/api': { target: `http://127.0.0.1:${apiPort}`, changeOrigin: false },
+      '/api': {
+        target: `http://127.0.0.1:${apiPort}`,
+        changeOrigin: false,
+        bypass: (req) => (req.url?.endsWith('.ts') ? req.url : undefined),
+      },
       '/attachments': `http://127.0.0.1:${apiPort}`,
       '/healthz': `http://127.0.0.1:${apiPort}`,
     },

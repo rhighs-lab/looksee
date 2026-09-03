@@ -1,11 +1,16 @@
 import { create } from 'zustand';
-import { api, CLIENT_ID } from '@/client/api/client.js';
+import { ApiError, api, CLIENT_ID } from '@/client/api/client.js';
 import { useReview } from '@/client/store/review.js';
 import type {
   CommentSide,
+  CommentStatus,
   DecoratedComment,
+  DoneMark,
+  Review,
   ServerEvent,
+  Verdict,
 } from '@/shared/protocol.js';
+import { USER_ACTOR } from '@/shared/protocol.js';
 
 export interface Thread {
   root: DecoratedComment;
@@ -26,6 +31,10 @@ export interface CommentsStore {
   threads: Record<string, Thread>;
   compose: ComposeAnchor | null;
   loaded: boolean;
+  pendingReview: Review | null;
+  reviews: Review[];
+  done: DoneMark[];
+  bannerDismissedAt: string | null;
 
   load(): Promise<void>;
   bind(): () => void;
@@ -33,14 +42,18 @@ export interface CommentsStore {
   closeCompose(): void;
   submitCompose(body: string): Promise<void>;
   reply(rootId: string, body: string): Promise<void>;
-  setStatus(id: string, status: 'open' | 'resolved'): Promise<void>;
+  setStatus(id: string, status: CommentStatus): Promise<void>;
   remove(id: string): Promise<void>;
   apply(id: string): Promise<{ ok: true } | { ok: false; message: string }>;
-  handoff(id: string): Promise<void>;
   applyAll(): Promise<void>;
   exportAll(): Promise<void>;
   clearAll(): Promise<void>;
   restore(): Promise<void>;
+  startReview(): Promise<void>;
+  submitReview(verdict: Verdict, body: string): Promise<void>;
+  discardReview(): Promise<void>;
+  editDraft(id: string, body: string): Promise<void>;
+  dismissBanner(): void;
 }
 
 const byRoot = (comments: DecoratedComment[]): Record<string, Thread> => {
@@ -53,6 +66,9 @@ const byRoot = (comments: DecoratedComment[]): Record<string, Thread> => {
     t.replies.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   return threads;
 };
+
+const ownPending = (reviews: Review[]): Review | null =>
+  reviews.find((r) => r.state === 'pending' && r.author === USER_ACTOR) ?? null;
 
 export const useComments = create<CommentsStore>((set, get) => {
   const upsert = (c: DecoratedComment) => {
@@ -82,12 +98,33 @@ export const useComments = create<CommentsStore>((set, get) => {
     set({ threads });
   };
 
+  const setRootStatus = (id: string, status: CommentStatus) => {
+    const t = get().threads[id];
+    if (!t) return;
+    set({
+      threads: {
+        ...get().threads,
+        [id]: { ...t, root: { ...t.root, status } },
+      },
+    });
+  };
+
+  const putReview = (review: Review) => {
+    const reviews = get().reviews.filter((r) => r.id !== review.id);
+    reviews.push(review);
+    set({ reviews, pendingReview: ownPending(reviews) });
+  };
+
   return {
     enabled: false,
     branch: null,
     threads: {},
     compose: null,
     loaded: false,
+    pendingReview: null,
+    reviews: [],
+    done: [],
+    bannerDismissedAt: null,
 
     async load() {
       const state = useReview.getState().state;
@@ -99,8 +136,18 @@ export const useComments = create<CommentsStore>((set, get) => {
         return;
       }
       try {
-        const { comments } = await api.comments(branch);
-        set({ threads: byRoot(comments), loaded: true });
+        const [{ comments }, { reviews }, { done }] = await Promise.all([
+          api.comments(branch),
+          api.listReviews(),
+          api.listDone(),
+        ]);
+        set({
+          threads: byRoot(comments),
+          reviews,
+          pendingReview: ownPending(reviews),
+          done,
+          loaded: true,
+        });
       } catch {
         set({ loaded: true });
       }
@@ -124,7 +171,8 @@ export const useComments = create<CommentsStore>((set, get) => {
         if (ev.origin === CLIENT_ID) return;
         switch (ev.type) {
           case 'comment.created':
-          case 'comment.updated': {
+          case 'comment.updated':
+          case 'comment.replied': {
             const c = ev.comment;
             if (c.branch && get().branch && c.branch !== get().branch) return;
             upsert(c);
@@ -133,8 +181,23 @@ export const useComments = create<CommentsStore>((set, get) => {
           case 'comment.deleted':
             drop(ev.id);
             return;
+          case 'thread.resolved':
+            setRootStatus(ev.id, 'resolved');
+            return;
+          case 'thread.reopened':
+            setRootStatus(ev.id, 'open');
+            return;
+          case 'review.submitted':
           case 'comments.reset':
             void get().load();
+            return;
+          case 'done.requested':
+            set({
+              done: [
+                ...get().done,
+                { actor: ev.actor, body: ev.body, at: ev.at },
+              ],
+            });
             return;
           case 'diff.changed':
             void useReview.getState().refresh();
@@ -159,6 +222,7 @@ export const useComments = create<CommentsStore>((set, get) => {
     async submitCompose(body) {
       const a = get().compose;
       if (!a || !body.trim()) return;
+      const reviewId = get().pendingReview?.id ?? null;
       const { comment } = await api.createComment({
         filePath: a.filePath,
         side: a.side,
@@ -167,9 +231,11 @@ export const useComments = create<CommentsStore>((set, get) => {
         body,
         branch: get().branch,
         lineSnapshot: a.snapshot,
+        reviewId,
       });
       upsert(comment);
       set({ compose: null });
+      if (!reviewId) set({ bannerDismissedAt: new Date().toISOString() });
     },
 
     async reply(rootId, body) {
@@ -212,11 +278,6 @@ export const useComments = create<CommentsStore>((set, get) => {
           message: e.body?.error ?? e.message ?? 'Apply failed',
         };
       }
-    },
-
-    async handoff(id) {
-      const { comment } = await api.patchComment(id, { handoff: 'agent' });
-      upsert(comment);
     },
 
     async applyAll() {
@@ -272,6 +333,56 @@ export const useComments = create<CommentsStore>((set, get) => {
         .getState()
         .showToast(`Restored ${restored} comment${restored === 1 ? '' : 's'}`);
     },
+
+    async startReview() {
+      try {
+        const { review } = await api.startReview(get().branch);
+        putReview(review);
+      } catch (err) {
+        const b = (err as ApiError).body as { review?: Review } | null;
+        if (err instanceof ApiError && err.status === 409 && b?.review) {
+          putReview(b.review);
+          return;
+        }
+        useReview.getState().showToast('Could not start the review');
+      }
+    },
+
+    async submitReview(verdict, body) {
+      const pending = get().pendingReview;
+      if (!pending) return;
+      const { review, comments } = await api.submitReview(
+        pending.id,
+        verdict,
+        body
+      );
+      for (const c of comments) upsert(c);
+      putReview(review);
+    },
+
+    async discardReview() {
+      const pending = get().pendingReview;
+      if (!pending) return;
+      await api.discardReview(pending.id);
+      const threads: Record<string, Thread> = {};
+      for (const [k, t] of Object.entries(get().threads))
+        if (t.root.reviewId !== pending.id) threads[k] = t;
+      set({
+        threads,
+        reviews: get().reviews.filter((r) => r.id !== pending.id),
+        pendingReview: null,
+      });
+    },
+
+    async editDraft(id, body) {
+      if (!body.trim()) return;
+      const { comment } = await api.patchComment(id, { body });
+      upsert(comment);
+    },
+
+    dismissBanner() {
+      set({ bannerDismissedAt: new Date().toISOString() });
+    },
   };
 });
 
@@ -279,5 +390,32 @@ export const canApply = (c: DecoratedComment): boolean =>
   !c.parentId &&
   c.side === 'new' &&
   c.status === 'open' &&
-  c.applicable === true &&
-  c.handoff !== 'agent';
+  c.applicable === true;
+
+export const reviewOf = (
+  s: CommentsStore,
+  c: DecoratedComment
+): Review | null =>
+  c.reviewId ? (s.reviews.find((r) => r.id === c.reviewId) ?? null) : null;
+
+export const isDraft = (s: CommentsStore, c: DecoratedComment): boolean =>
+  c.reviewId !== null && c.reviewId === s.pendingReview?.id;
+
+export const selectDraftCount = (s: CommentsStore): number => {
+  const id = s.pendingReview?.id;
+  if (!id) return 0;
+  return Object.values(s.threads).filter((t) => t.root.reviewId === id).length;
+};
+
+export const selectBanner = (s: CommentsStore): DoneMark | null => {
+  const d = s.done[s.done.length - 1];
+  if (!d) return null;
+  const last = s.reviews
+    .filter((r) => r.author === USER_ACTOR && r.submittedAt)
+    .map((r) => r.submittedAt as string)
+    .sort()
+    .pop();
+  if (last && last >= d.at) return null;
+  if (s.bannerDismissedAt && s.bannerDismissedAt >= d.at) return null;
+  return d;
+};

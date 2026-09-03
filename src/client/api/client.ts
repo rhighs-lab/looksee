@@ -3,12 +3,16 @@ import type {
   ContextResponse,
   DecoratedComment,
   DiffResponse,
+  DoneMark,
   FileViewResponse,
   RefSelection,
   RepoState,
   Rev,
+  Review,
+  ReviewsResponse,
   SavedReply,
   Scope,
+  Verdict,
 } from '@/shared/protocol.js';
 
 export const CLIENT_ID = (globalThis.crypto?.randomUUID?.() ??
@@ -131,6 +135,26 @@ export const api = {
       '/api/export',
       { branch, format }
     ),
+  listReviews: () => request<ReviewsResponse>('GET', '/api/reviews'),
+  startReview: (branch: string | null) =>
+    request<{ review: Review }>('POST', '/api/reviews', { branch }),
+  getReview: (id: string) =>
+    request<{ review: Review; comments: DecoratedComment[] }>(
+      'GET',
+      `/api/reviews/${encodeURIComponent(id)}`
+    ),
+  submitReview: (id: string, verdict: Verdict, body: string) =>
+    request<{ review: Review; comments: DecoratedComment[] }>(
+      'POST',
+      `/api/reviews/${encodeURIComponent(id)}/submit`,
+      { verdict, body }
+    ),
+  discardReview: (id: string) =>
+    request<{ ok: boolean }>(
+      'DELETE',
+      `/api/reviews/${encodeURIComponent(id)}`
+    ),
+  listDone: () => request<{ done: DoneMark[] }>('GET', '/api/done'),
   preview: (body: Record<string, unknown>) =>
     request<{ html: string }>('POST', '/api/preview', body),
   savedReplies: () =>

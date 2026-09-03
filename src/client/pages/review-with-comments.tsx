@@ -2,6 +2,10 @@ import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { CommentRow } from '@/client/components/comments/comment-rows.js';
 import { Composer } from '@/client/components/comments/composer.js';
+import {
+  DoneBanner,
+  ReviewBar,
+} from '@/client/components/comments/review-bar.js';
 import { Thread } from '@/client/components/comments/thread.js';
 import {
   clearRangeHighlight,
@@ -29,6 +33,7 @@ export function ReviewWithComments() {
   const closeCompose = useComments((s) => s.closeCompose);
   const submitCompose = useComments((s) => s.submitCompose);
   const bind = useComments((s) => s.bind);
+  const pending = useComments((s) => s.pendingReview !== null);
   const split = useReview((s) => s.view === 'split');
 
   useEffect(() => bind(), [bind]);
@@ -89,6 +94,8 @@ export function ReviewWithComments() {
     clearRangeHighlight();
   }, [closeCompose]);
 
+  const submitLabel = pending ? 'Add to review' : 'Add single comment';
+
   const submit = useCallback(
     async (body: string) => {
       await submitCompose(body);
@@ -148,6 +155,7 @@ export function ReviewWithComments() {
                   }}
                   onSubmit={submit}
                   onCancel={cancel}
+                  submitLabel={submitLabel}
                 />
               </CommentRow>
             );
@@ -156,7 +164,16 @@ export function ReviewWithComments() {
         },
       };
     },
-    [threadsByFile, compose, enabled, split, onGutterClick, submit, cancel]
+    [
+      threadsByFile,
+      compose,
+      enabled,
+      split,
+      onGutterClick,
+      submit,
+      cancel,
+      submitLabel,
+    ]
   );
 
   const fileCommentsFor = useCallback(
@@ -184,13 +201,14 @@ export function ReviewWithComments() {
                 anchor={{ kind: 'file', filePath: file.path }}
                 onSubmit={submit}
                 onCancel={cancel}
+                submitLabel={submitLabel}
               />
             </div>
           )}
         </>
       );
     },
-    [threadsByFile, compose, submit, cancel]
+    [threadsByFile, compose, submit, cancel, submitLabel]
   );
 
   const onFileComment = useCallback(
@@ -210,7 +228,15 @@ export function ReviewWithComments() {
       slotsFor={enabled ? slotsFor : undefined}
       fileCommentsFor={enabled ? fileCommentsFor : undefined}
       onFileComment={enabled ? onFileComment : undefined}
-      headerRight={enabled ? <ReviewActions /> : null}
+      headerRight={
+        enabled ? (
+          <>
+            <ReviewActions />
+            <ReviewBar />
+          </>
+        ) : null
+      }
+      headerBelow={enabled ? <DoneBanner /> : null}
     />
   );
 }
