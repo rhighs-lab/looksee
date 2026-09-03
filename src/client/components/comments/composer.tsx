@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { api } from '@/client/api/client.js';
 import { COMPOSER_ICONS } from '@/client/components/comments/icons.js';
+import { Close } from '@/client/components/icons.js';
 import { Button } from '@/client/ui/index.js';
 import type { CommentSide, SavedReply } from '@/shared/protocol.js';
 
@@ -186,6 +187,7 @@ export function Composer({
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [saved, setSaved] = useState<SavedReply[] | null>(null);
   const [dragover, setDragover] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -295,7 +297,11 @@ export function Composer({
   };
 
   const deleteSaved = async (r: SavedReply) => {
-    if (!confirm('Delete this saved reply?')) return;
+    if (confirmDel !== r.id) {
+      setConfirmDel(r.id);
+      return;
+    }
+    setConfirmDel(null);
     try {
       await api.deleteSavedReply(r.id);
       await loadSaved(true);
@@ -517,12 +523,16 @@ export function Composer({
                   </button>
                   <button
                     type="button"
-                    className="composer-saved-del"
-                    title="Delete saved reply"
+                    className={`composer-saved-del${confirmDel === r.id ? ' is-confirm' : ''}`}
+                    title={
+                      confirmDel === r.id
+                        ? 'Click again to delete'
+                        : 'Delete saved reply'
+                    }
                     aria-label={`Delete ${r.name}`}
                     onClick={() => void deleteSaved(r)}
                   >
-                    ×
+                    {confirmDel === r.id ? 'Delete?' : <Close />}
                   </button>
                 </div>
               ))

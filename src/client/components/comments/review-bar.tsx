@@ -13,19 +13,27 @@ export function ReviewBar() {
   const startReview = useComments((s) => s.startReview);
   const discardReview = useComments((s) => s.discardReview);
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
-    if (!pending) setOpen(false);
+    if (!pending) {
+      setOpen(false);
+      setConfirming(false);
+    }
   }, [pending]);
 
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 6000);
+    return () => clearTimeout(t);
+  }, [confirming]);
+
   const discard = () => {
-    if (
-      drafts > 0 &&
-      !confirm(
-        `Discard this review and its ${drafts} draft comment${drafts === 1 ? '' : 's'}?`
-      )
-    )
+    if (drafts > 0 && !confirming) {
+      setConfirming(true);
       return;
+    }
+    setConfirming(false);
     void discardReview();
   };
 
@@ -48,9 +56,23 @@ export function ReviewBar() {
       >
         Submit review
       </Button>
-      <Button small onClick={discard}>
-        Discard
-      </Button>
+      {confirming ? (
+        <span className="ui-confirm">
+          <span>
+            Discard {drafts} draft{drafts === 1 ? '' : 's'}?
+          </span>
+          <Button small variant="danger" onClick={discard}>
+            Discard
+          </Button>
+          <Button small onClick={() => setConfirming(false)}>
+            Keep
+          </Button>
+        </span>
+      ) : (
+        <Button small onClick={discard}>
+          Discard
+        </Button>
+      )}
       {open && <SubmitReview count={drafts} onClose={() => setOpen(false)} />}
     </span>
   );
