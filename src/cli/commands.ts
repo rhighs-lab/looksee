@@ -1,4 +1,5 @@
 import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
+import { runAgent } from '@/cli/cmd/agent.js';
 import { runComment } from '@/cli/cmd/comment.js';
 import { runComments } from '@/cli/cmd/comments.js';
 import { runDone } from '@/cli/cmd/done.js';
@@ -35,6 +36,7 @@ export interface CommandSpec {
   args: string;
   flags: FlagSpec[];
   output: string;
+  example: string;
   notes?: string;
   run: (ctx: RunCtx) => Promise<number | undefined>;
 }
@@ -79,6 +81,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review',
+      example: 'looksee review .',
       summary: 'Start the server for a repo and open the browser',
       args: '[path]',
       flags: [
@@ -95,6 +98,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review start',
+      example: 'looksee review start --as reviewer',
       summary: 'Open a pending review for the actor',
       args: '',
       flags: [AS],
@@ -106,6 +110,8 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review comment',
+      example:
+        'looksee review comment src/a.ts:3-5 "Guard the null case" --as reviewer',
       summary: 'Add a draft comment to the pending review',
       args: ANCHOR,
       flags: [AS],
@@ -116,6 +122,8 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review submit',
+      example:
+        'looksee review submit --verdict request_changes "Two fixes" --as reviewer',
       summary: 'Submit the pending review with a verdict',
       args: '[body]',
       flags: [
@@ -134,6 +142,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review discard',
+      example: 'looksee review discard --as reviewer',
       summary: 'Delete the pending review and its drafts',
       args: '',
       flags: [AS],
@@ -144,6 +153,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'review show',
+      example: 'looksee review show --as reviewer',
       summary: 'Print the pending review and its drafts',
       args: '',
       flags: [AS, PRETTY],
@@ -154,6 +164,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'listen',
+      example: 'looksee listen --not-me --pending',
       summary: 'Stream review events as JSON lines until killed',
       args: '',
       flags: [
@@ -176,6 +187,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'comments',
+      example: 'looksee comments --status open --pretty',
       summary: 'List threads with their replies and an expects hint',
       args: '',
       flags: [
@@ -197,6 +209,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'reply',
+      example: 'looksee reply c1 "Applied in 3f2a1c"',
       summary: 'Reply to a thread; body from the argument or stdin',
       args: '<id> [body]',
       flags: [AS],
@@ -208,6 +221,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'resolve',
+      example: 'looksee resolve c1',
       summary: 'Mark a thread resolved',
       args: '<id>',
       flags: [AS],
@@ -218,6 +232,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'comment',
+      example: 'looksee comment src/a.ts:12 "Renamed to cfg"',
       summary: 'Post a single comment outside a review',
       args: ANCHOR,
       flags: [AS],
@@ -229,6 +244,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'done',
+      example: 'looksee done "Addressed all three threads"',
       summary: 'Record that the actor addressed the current round',
       args: '[body]',
       flags: [AS],
@@ -239,6 +255,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'status',
+      example: 'looksee status',
       summary: 'Report the server for this repo',
       args: '',
       flags: [PRETTY],
@@ -249,6 +266,7 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'stop',
+      example: 'looksee stop',
       summary: 'Shut down the server for this repo',
       args: '',
       flags: [],
@@ -256,16 +274,21 @@ const COMMANDS: CommandSpec[] = [
     },
     runStop
   ),
-  placeholder({
-    name: 'agent',
-    summary: 'Print the agent guide',
-    args: '',
-    flags: [],
-    output: 'Markdown text',
-  }),
+  placeholder(
+    {
+      name: 'agent',
+      example: 'looksee agent',
+      summary: 'Print the agent guide',
+      args: '',
+      flags: [PRETTY],
+      output: 'Plain text',
+    },
+    runAgent(all)
+  ),
   placeholder(
     {
       name: 'serve',
+      example: 'looksee serve --repo .',
       summary: 'Run the server in the foreground',
       args: '',
       flags: [

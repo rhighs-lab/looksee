@@ -82,6 +82,7 @@ describe('run', () => {
     );
     register({
       name: 'boom',
+      example: 'looksee boom',
       summary: 'test',
       args: '',
       flags: [],

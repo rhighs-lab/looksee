@@ -19,6 +19,16 @@ cd ../your-repo && looksee review .   # opens http://127.0.0.1:4711
 looksee --help
 ```
 
+## Agents
+
+Run `looksee listen --not-me --pending` in the background and act on each
+JSON line; `looksee agent` prints the full guide. An event looks like:
+
+```json
+{"type":"comment.created","comment":{"id":"c1","filePath":"src/a.ts",
+  "startLine":3,"body":"Guard the null case","expects":"fix and reply"}}
+```
+
 ## Credits
 
 Inspired by [prequel](https://github.com/mdesjardins/prequel).
