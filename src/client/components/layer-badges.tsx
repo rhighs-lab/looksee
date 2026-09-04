@@ -1,4 +1,12 @@
 import {
+  DiffAdded,
+  DiffModified,
+  DiffRemoved,
+  DiffRenamed,
+  File,
+} from '@/client/components/icons.js';
+import { type KindIconName, kindIcon } from '@/client/lib/kind-icon.js';
+import {
   KIND_GLYPH,
   KIND_TONE,
   kindLabel,
@@ -63,5 +71,28 @@ export function KindLetter({ kind }: { kind: ChangeKind }) {
       tone={KIND_TONE[kind]}
       label={kindLabel(kind)}
     />
+  );
+}
+
+const KIND_ICONS: Record<KindIconName, typeof File> = {
+  added: DiffAdded,
+  modified: DiffModified,
+  removed: DiffRemoved,
+  renamed: DiffRenamed,
+  file: File,
+};
+
+export function KindIcon({ kind }: { kind: ChangeKind }) {
+  const { icon, tone } = kindIcon(kind);
+  const Glyph = KIND_ICONS[icon];
+  return (
+    <span
+      className={`kind-icon ui-status-${tone}`}
+      title={kindLabel(kind)}
+      aria-label={kindLabel(kind)}
+      role="img"
+    >
+      <Glyph />
+    </span>
   );
 }

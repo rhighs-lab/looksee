@@ -3,8 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { LineSlots } from '@/client/components/diff/diff-table.js';
 import { FileCard } from '@/client/components/file-card.js';
 import { Header } from '@/client/components/header.js';
-import { File } from '@/client/components/icons.js';
-import { KindLetter, LayerLetters } from '@/client/components/layer-badges.js';
+import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
 import {
   TreeCheck,
   TreeDirNode,
@@ -57,9 +56,8 @@ export function ReviewPage({
       title={file.path}
       onClick={() => setActivePath(file.path)}
     >
-      <File className="tree-file-icon" />
+      <KindIcon kind={file.kind} />
       <span className="tree-name">{name}</span>
-      {file.kind !== 'unchanged' && <KindLetter kind={file.kind} />}
       {updated[file.path] && (
         <span className="updated-dot" title="Changed since you last looked" />
       )}

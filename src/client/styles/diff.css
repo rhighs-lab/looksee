@@ -227,6 +227,20 @@ body {
   flex: none;
 }
 
+.kind-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.kind-icon svg {
+  fill: currentColor;
+}
+
+.file-info .kind-icon {
+  margin-right: 6px;
+}
+
 .tree-name {
   flex: 1 1 auto;
   min-width: 0;

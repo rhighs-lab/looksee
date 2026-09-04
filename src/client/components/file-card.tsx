@@ -13,7 +13,7 @@ import {
 } from '@/client/components/diff/diff-table.js';
 import { boundaries, remainingGaps } from '@/client/components/diff/rows.js';
 import { ChevronDown, CommentIcon, Copy } from '@/client/components/icons.js';
-import { LayerLetters } from '@/client/components/layer-badges.js';
+import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
 import { fileAnchor } from '@/client/lib/anchors.js';
 import { KIND_TONE } from '@/client/lib/layers.js';
 import { useReview } from '@/client/store/review.js';
@@ -138,6 +138,7 @@ export const FileCard = memo(function FileCard({
         <span className="file-additions">+{file.additions}</span>
         <span className="file-deletions">−{file.deletions}</span>
         <span className="file-info">
+          <KindIcon kind={file.kind} />
           {file.oldPath && file.oldPath !== file.path && (
             <span className="file-rename ui-mono ui-muted">
               {file.oldPath} →{' '}
