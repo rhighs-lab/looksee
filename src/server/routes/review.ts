@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { AppContext } from '@/server/context.js';
 import { getBlobLines } from '@/server/git/blobs.js';
+import { resolveComparison } from '@/server/git/comparison.js';
 import { safeRelPath } from '@/server/git/paths.js';
 import {
   ATTACHMENT_NAME,
@@ -28,7 +29,7 @@ import {
   deleteSavedReply,
   listSavedReplies,
 } from '@/server/review/saved-replies.js';
-import { pinApproved } from '@/server/review/session.js';
+import { getSession, pinApproved } from '@/server/review/session.js';
 import {
   addComment,
   addDone,
@@ -51,6 +52,7 @@ import { parseSuggestions } from '@/server/review/suggestion.js';
 import {
   type Comment,
   type CommentSide,
+  type Comparison,
   type DecoratedComment,
   type Review,
   type ServerEvent,
@@ -82,6 +84,12 @@ export function reviewRoutes(ctx: AppContext): Hono {
   const emit = (
     ev: Exclude<ServerEvent, { type: 'hello' | 'state.changed' }>
   ) => ctx.hub.emit(ev);
+  const comparisonOf = async (): Promise<Comparison | null> => {
+    const refs = ctx.state().refs;
+    if (!refs || !ctx.watcher || !repoRoot) return null;
+    const { preset, custom } = ctx.watcher.scope();
+    return resolveComparison(preset, custom, await getSession(repoRoot), refs);
+  };
   const originOf = (c: Req) => c.req.header('x-looksee-client') ?? null;
   const actorOf = (c: Req) => c.req.header('x-looksee-actor') || USER_ACTOR;
   const visibleComment = async (id: string, actor: string) => {
@@ -179,13 +187,15 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const review = await submitReview(repoRoot, r.review.id, {
       verdict: b['verdict'],
       body: typeof b['body'] === 'string' ? b['body'] : '',
-      comparison: null,
+      comparison: await comparisonOf(),
     });
     if (!review) return c.json({ error: 'not found' }, 404);
-    if (review.verdict === 'approve' && actorOf(c) === USER_ACTOR)
+    if (review.verdict === 'approve' && actorOf(c) === USER_ACTOR) {
       await pinApproved(repoRoot).catch((err: unknown) => {
         console.error(`looksee: approve pin failed: ${String(err)}`);
       });
+      await ctx.watcher?.refresh();
+    }
     const comments = await reviewComments(review);
     emit({ type: 'review.submitted', review, comments, origin: originOf(c) });
     return c.json({ review, comments });

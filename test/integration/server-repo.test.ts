@@ -32,6 +32,7 @@ describe('repo API', () => {
     await seedRepo(repo);
     await featureBranchWithLayers(repo);
     srv = await startTestServer({ repoRoot: repo.dir });
+    await srv.json('POST', '/api/scope', { preset: 'branch' });
   });
   afterAll(async () => {
     await srv.close();
@@ -51,6 +52,7 @@ describe('repo API', () => {
     const { body } = await srv.json<RepoState>('GET', '/api/state');
     expect(body.version).toBeGreaterThan(0);
     expect(body.refs?.head.branch).toBe('feature/x');
+    expect(body.comparison?.preset).toBe('branch');
     expect(body.files.map((f) => f.path)).toContain('src/index.js');
     expect(body.summary.byLayer.untracked).toBe(1);
   });
@@ -254,7 +256,12 @@ describe('base and compare selection', () => {
       'src/old.js',
     ]);
     expect(r.body.summary.byLayer.unstaged).toBe(0);
-    await tap.next('state.changed');
+    expect(r.body.comparison?.preset).toBe('custom');
+    for (let i = 0; i < 50; i++) {
+      if (tap.all().some((e) => e.type === 'state.changed')) break;
+      await new Promise((res) => setTimeout(res, 50));
+    }
+    expect(tap.all().some((e) => e.type === 'state.changed')).toBe(true);
     const diff = await srv.json<DiffResponse>('GET', '/api/diff');
     expect(diff.body.files.every((f) => f.rev !== 'WORKTREE')).toBe(true);
     expect(

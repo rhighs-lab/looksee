@@ -8,7 +8,7 @@ import {
   type DoneMark,
   type Pin,
   type Review,
-  type ScopePreset,
+  SCOPE_PRESETS,
   type Session,
   VERDICTS,
   type Verdict,
@@ -79,7 +79,6 @@ interface StoreData {
 }
 
 const STORE_VERSION = 3;
-const PRESETS: ScopePreset[] = ['session', 'working', 'branch', 'custom'];
 
 const normAuthor = (a: unknown): string => {
   if (a === 'claude') return 'agent';
@@ -136,7 +135,7 @@ function normalizeSession(s: unknown): Session | null {
   return {
     openedAt: normPin(x.openedAt),
     approvedAt: normPin(x.approvedAt),
-    scope: x.scope && PRESETS.includes(x.scope) ? x.scope : 'session',
+    scope: x.scope && SCOPE_PRESETS.includes(x.scope) ? x.scope : 'session',
     custom: x.custom ?? null,
     endedAt: x.endedAt ?? null,
   };

@@ -14,7 +14,11 @@ import {
 } from '@/server/git/state.js';
 
 const state = (repo: Repo, base: string | null = null) =>
-  computeRepoState(repo.dir, { baseFlag: base }, 1);
+  computeRepoState(
+    repo.dir,
+    { preset: 'branch', custom: null, session: null, baseFlag: base },
+    1
+  );
 
 describe('repo state with a remote', () => {
   let repo: Repo;
@@ -28,6 +32,14 @@ describe('repo state with a remote', () => {
   it('resolves refs, upstream and ahead/behind without fetching', async () => {
     const s = await state(repo);
     expect(s.refs?.head.branch).toBe('feature/x');
+    expect(s.comparison).toMatchObject({
+      preset: 'branch',
+      baseline: { kind: 'merge-base' },
+      endpoint: { kind: 'worktree' },
+      note: null,
+    });
+    expect(s.comparison?.baseline.oid).toMatch(/^[0-9a-f]{40}$/);
+    expect(s.drift).toBe(false);
     expect(s.refs?.base).toMatchObject({
       ref: 'main',
       source: 'upstream-base',
@@ -71,7 +83,9 @@ describe('repo state with a remote', () => {
     const s = await state(repo);
     const status = await readStatus(repo.dir);
     const paths = async (scope: Parameters<typeof scopePatch>[1]) =>
-      parsePatch(await scopePatch(repo.dir, scope, s.refs!, status))
+      parsePatch(
+        await scopePatch(repo.dir, scope, s.refs!, status, [], s.comparison)
+      )
         .map((f) => f.path)
         .sort();
     expect(await paths('pushed')).toEqual(['src/cart.js', 'src/old.js']);
@@ -218,8 +232,20 @@ describe('renames and conflicts', () => {
     expect(patch).toMatch(/\+<<<<<<< HEAD/);
     expect(parsePatch(patch)[0]?.path).toBe('src/cart.js');
     const cumulative = parsePatch(
-      await scopePatch(repo.dir, 'cumulative', s.refs!, status)
+      await scopePatch(
+        repo.dir,
+        'cumulative',
+        s.refs!,
+        status,
+        [],
+        s.comparison
+      )
     );
+    expect(
+      cumulative[0]?.hunks.some((h) =>
+        h.lines.some((l) => l.content === '<<<<<<< HEAD')
+      )
+    ).toBe(true);
     expect(cumulative.filter((x) => x.path === 'src/cart.js')).toHaveLength(1);
     await repo.git(['merge', '--abort']);
   });

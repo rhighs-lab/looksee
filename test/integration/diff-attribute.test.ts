@@ -39,6 +39,7 @@ describe('GET /api/diff?attribute=1', () => {
     await repo.write('a.txt', 'one\ntwo staged\nthree\nfour unstaged\nfive\n');
     await repo.write('new.txt', 'brand new\n');
     srv = await startTestServer({ repoRoot: repo.dir });
+    await srv.json('POST', '/api/scope', { preset: 'branch' });
   });
   afterAll(async () => {
     await srv.close();

@@ -105,11 +105,17 @@ export function createApp(opts: AppOpts): LookseeApp {
     async start() {
       if (!watcher || !repoRoot) return;
       const gd = await gitDir(repoRoot).catch(() => null);
-      Object.assign(watcher, {
-        opts: { ...(watcher as unknown as { opts: object }).opts, gitDir: gd },
+      const session = gd
+        ? await ensureSession(repoRoot).catch((err: unknown) => {
+            console.error(`looksee: session pin failed: ${String(err)}`);
+            return null;
+          })
+        : null;
+      await watcher.start({
+        gitDir: gd,
+        preset: session?.scope ?? 'session',
+        custom: session?.custom ?? null,
       });
-      await watcher.start();
-      if (watcher.state.refs?.head.checkedOut) await ensureSession(repoRoot);
     },
     stop() {
       watcher?.stop();

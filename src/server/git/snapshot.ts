@@ -9,7 +9,10 @@ const NO_GC = ['-c', 'gc.auto=0'];
 const pinName = (key: string, name: string): string =>
   `refs/looksee/${key}/${name}`;
 
-export async function snapshotWorktree(repoRoot: string): Promise<string> {
+export async function snapshotWorktree(
+  repoRoot: string,
+  paths: string[] = []
+): Promise<string> {
   const idx = path.join(
     os.tmpdir(),
     `looksee-index-${process.pid}-${crypto.randomBytes(6).toString('hex')}`
@@ -21,7 +24,8 @@ export async function snapshotWorktree(repoRoot: string): Promise<string> {
     });
     if (head.trim())
       await git(repoRoot, [...NO_GC, 'read-tree', 'HEAD'], { env });
-    await git(repoRoot, [...NO_GC, 'add', '-A'], { env });
+    const scope = paths.length ? ['--', ...paths] : [];
+    await git(repoRoot, [...NO_GC, 'add', '-A', ...scope], { env });
     return (await git(repoRoot, [...NO_GC, 'write-tree'], { env })).trim();
   } finally {
     await fs.rm(idx, { force: true });

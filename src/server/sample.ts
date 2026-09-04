@@ -95,6 +95,24 @@ export function sampleState(): RepoState {
       remotes: [],
       lastFetchAt: null,
     },
+    comparison: {
+      preset: 'branch',
+      baseline: {
+        kind: 'merge-base',
+        oid: 'sample',
+        short: 'sample',
+        label: 'main sample (merge base)',
+      },
+      endpoint: {
+        kind: 'worktree',
+        oid: 'sample',
+        short: 'sample',
+        label: 'workspace',
+      },
+      label: 'main sample (merge base) to workspace',
+      note: null,
+    },
+    drift: false,
     files,
     summary: {
       files: files.length,

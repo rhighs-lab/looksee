@@ -1,8 +1,15 @@
 import {
+  driftOf,
+  labelOf,
+  resolveComparison,
+  resolveEndpoint,
+} from '@/server/git/comparison.js';
+import {
   conflictPatch,
   diffPatch,
   listUntracked,
   nameStatus,
+  treeDiffPatch,
   untrackedPatch,
 } from '@/server/git/diff.js';
 import { type ParsedFile, parsePatch } from '@/server/git/diff-parser.js';
@@ -19,16 +26,26 @@ import {
 import type {
   ChangedFile,
   ChangeKind,
+  Comparison,
+  ComparisonNote,
+  Endpoint,
   Layer,
   LayerChange,
+  Pin,
   RepoRefs,
   RepoState,
   RepoSummary,
+  ResolvedComparison,
   Scope,
+  ScopePreset,
+  Session,
 } from '@/shared/protocol.js';
 import { LARGE_DIFF_LINES, LAYERS } from '@/shared/protocol.js';
 
 export interface StateOpts {
+  preset: ScopePreset;
+  custom: Comparison | null;
+  session: Session | null;
   baseFlag: string | null;
   headRef?: string | null;
 }
@@ -40,15 +57,11 @@ export interface ScopePlan {
   conflicted: boolean;
 }
 
-export function planScope(scope: Scope, refs: RepoRefs): ScopePlan | null {
+export function planScope(scope: Layer, refs: RepoRefs): ScopePlan | null {
   const mb = refs.mergeBase ?? refs.base.sha ?? 'HEAD';
   const live = refs.head.checkedOut;
   const tip = live ? 'HEAD' : refs.head.sha;
   switch (scope) {
-    case 'cumulative':
-      return live
-        ? { from: mb, to: 'WORKTREE', untracked: true, conflicted: false }
-        : { from: mb, to: tip, untracked: false, conflicted: false };
     case 'unstaged':
       return live
         ? { from: 'INDEX', to: 'WORKTREE', untracked: false, conflicted: true }
@@ -86,8 +99,13 @@ export async function scopePatch(
   scope: Scope,
   refs: RepoRefs,
   status: StatusEntry[],
-  paths: string[] = []
+  paths: string[] = [],
+  cmp: ResolvedComparison | null = null
 ): Promise<string> {
+  if (scope === 'cumulative') {
+    if (!cmp) throw new Error('no comparison');
+    return treeDiffPatch(repoRoot, cmp.baseline.oid, cmp.endpoint.oid, paths);
+  }
   const plan = planScope(scope, refs);
   if (!plan) return '';
   const want = paths.length ? new Set(paths) : null;
@@ -229,6 +247,46 @@ export async function readStatus(repoRoot: string): Promise<StatusEntry[]> {
   return parseStatus(out);
 }
 
+const pinsOf = (cmp: Comparison, session: Session | null): Pin[] =>
+  [cmp.baseline, cmp.endpoint].flatMap((ep: Endpoint) => {
+    const pin = ep.kind === 'pin' ? session?.[`${ep.name}At`] : null;
+    return pin ? [pin] : [];
+  });
+
+async function resolveTrees(
+  repoRoot: string,
+  opts: StateOpts,
+  refs: RepoRefs,
+  status: StatusEntry[]
+): Promise<{ comparison: ResolvedComparison; drift: boolean }> {
+  const { preset, session } = opts;
+  const cmp = resolveComparison(preset, opts.custom, session, refs);
+  const ctx = { session, head: refs.head };
+  const baseline = await resolveEndpoint(repoRoot, cmp.baseline, ctx);
+  const endpoint = await resolveEndpoint(repoRoot, cmp.endpoint, ctx);
+  const unmerged = status.some((e) => e.unmerged);
+  const hasIndex = [cmp.baseline, cmp.endpoint].some((e) => e.kind === 'index');
+  const note: ComparisonNote =
+    preset === 'branch' && refs.mergeBase === refs.head.sha
+      ? 'same-as-working'
+      : hasIndex && unmerged
+        ? 'index-unmerged'
+        : null;
+  const drifts = await Promise.all(
+    pinsOf(cmp, session).map((pin) => driftOf(repoRoot, pin, refs.head.sha))
+  );
+  return {
+    comparison: {
+      preset,
+      baseline,
+      endpoint,
+      label: labelOf(cmp, { baseline, endpoint }),
+      note,
+    },
+    drift: drifts.some(Boolean),
+  };
+}
+
 export async function computeRepoState(
   repoRoot: string,
   opts: StateOpts,
@@ -236,10 +294,16 @@ export async function computeRepoState(
 ): Promise<RepoState> {
   const refs = await getRefs(repoRoot, opts.baseFlag, opts.headRef ?? null);
   const status = refs.head.checkedOut ? await readStatus(repoRoot) : [];
+  const { comparison, drift } = await resolveTrees(
+    repoRoot,
+    opts,
+    refs,
+    status
+  );
   const localPlan = planScope('local', refs);
   const pushedPlan = planScope('pushed', refs);
   const [cumulativeText, local, pushed] = await Promise.all([
-    scopePatch(repoRoot, 'cumulative', refs, status),
+    scopePatch(repoRoot, 'cumulative', refs, status, [], comparison),
     localPlan && refs.head.sha && localPlan.from !== 'INDEX'
       ? nameStatus(repoRoot, localPlan.from, localPlan.to).catch(() => [])
       : Promise.resolve([]),
@@ -252,6 +316,8 @@ export async function computeRepoState(
     version,
     repoRoot,
     refs,
+    comparison,
+    drift,
     files,
     summary: summarize(files),
     computedAt: new Date().toISOString(),
@@ -275,11 +341,15 @@ export function stateFingerprint(s: RepoState): string {
         r.lastFetchAt,
       ].join('|')
     : 'norepo';
+  const c = s.comparison;
+  const cmpPart = c
+    ? [c.preset, c.baseline.oid, c.endpoint.oid, c.note, s.drift].join('|')
+    : '';
   const filePart = s.files
     .map(
       (f) =>
         `${f.path}:${f.kind}:${f.digest}:${f.layers.map((l) => l.layer + l.kind).join(',')}`
     )
     .join(';');
-  return `${refPart}#${filePart}`;
+  return `${refPart}#${cmpPart}#${filePart}`;
 }

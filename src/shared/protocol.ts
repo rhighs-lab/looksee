@@ -107,10 +107,22 @@ export interface RepoSummary {
   byLayer: Record<Layer, number>;
 }
 
+export type ComparisonNote = 'same-as-working' | 'index-unmerged' | null;
+
+export interface ResolvedComparison {
+  preset: ScopePreset;
+  baseline: Resolved;
+  endpoint: Resolved;
+  label: string;
+  note: ComparisonNote;
+}
+
 export interface RepoState {
   version: number;
   repoRoot: string | null;
   refs: RepoRefs | null;
+  comparison: ResolvedComparison | null;
+  drift: boolean;
   files: ChangedFile[];
   summary: RepoSummary;
   computedAt: string;
@@ -154,7 +166,22 @@ export interface Comparison {
   endpoint: Endpoint;
 }
 
-export type ScopePreset = 'session' | 'working' | 'branch' | 'custom';
+export const SCOPE_PRESETS = [
+  'session',
+  'working',
+  'branch',
+  'custom',
+] as const;
+export type ScopePreset = (typeof SCOPE_PRESETS)[number];
+export const ENDPOINT_KINDS: Endpoint['kind'][] = [
+  'head',
+  'index',
+  'worktree',
+  'commit',
+  'ref',
+  'merge-base',
+  'pin',
+];
 
 export interface Pin {
   tree: string;

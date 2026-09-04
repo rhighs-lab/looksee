@@ -1,17 +1,37 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { computeRepoState, stateFingerprint } from '@/server/git/state.js';
+import { getSession } from '@/server/review/store.js';
 import type { EventHub } from '@/server/watch/events.js';
-import type { RepoState } from '@/shared/protocol.js';
+import type {
+  Comparison,
+  RepoState,
+  ScopePreset,
+  Session,
+} from '@/shared/protocol.js';
 import { LAYERS } from '@/shared/protocol.js';
 
 export interface WatcherOpts {
   baseFlag: string | null;
   headRef?: string | null;
+  preset?: ScopePreset;
+  custom?: Comparison | null;
   debounceMs?: number;
   maxWaitMs?: number;
   gitDir?: string | null;
 }
+
+export interface Selection {
+  base?: string | null;
+  head?: string | null;
+  preset?: ScopePreset;
+  custom?: Comparison | null;
+}
+
+const pinsPart = (s: Session | null): string =>
+  [s?.openedAt, s?.approvedAt]
+    .map((p) => (p ? `${p.tree}@${p.at}` : ''))
+    .join('|');
 
 const IGNORED = [
   /(^|\/)\.git\/objects(\/|$)/,
@@ -28,6 +48,8 @@ export const emptyState = (
   version: 0,
   repoRoot,
   refs: null,
+  comparison: null,
+  drift: false,
   files: [],
   summary: {
     files: 0,
@@ -63,7 +85,8 @@ export class RepoWatcher {
     this.maxWaitMs = opts.maxWaitMs ?? 1000;
   }
 
-  async start(): Promise<void> {
+  async start(extra: Partial<WatcherOpts> = {}): Promise<void> {
+    Object.assign(this.opts, extra);
     await this.refresh();
     this.watchDir(this.repoRoot);
     const gd = this.opts.gitDir;
@@ -100,12 +123,18 @@ export class RepoWatcher {
     return { base: this.opts.baseFlag, head: this.opts.headRef ?? null };
   }
 
-  async select(sel: {
-    base?: string | null;
-    head?: string | null;
-  }): Promise<void> {
+  scope(): { preset: ScopePreset; custom: Comparison | null } {
+    return {
+      preset: this.opts.preset ?? 'session',
+      custom: this.opts.custom ?? null,
+    };
+  }
+
+  async select(sel: Selection): Promise<void> {
     if (sel.base !== undefined) this.opts.baseFlag = sel.base;
     if (sel.head !== undefined) this.opts.headRef = sel.head;
+    if (sel.preset !== undefined) this.opts.preset = sel.preset;
+    if (sel.custom !== undefined) this.opts.custom = sel.custom;
     await this.refresh();
   }
 
@@ -137,10 +166,17 @@ export class RepoWatcher {
 
   private async run(): Promise<void> {
     let next: RepoState;
+    let session: Session | null = null;
     try {
+      session = await getSession(this.repoRoot);
       next = await computeRepoState(
         this.repoRoot,
-        { baseFlag: this.opts.baseFlag, headRef: this.opts.headRef ?? null },
+        {
+          ...this.scope(),
+          session,
+          baseFlag: this.opts.baseFlag,
+          headRef: this.opts.headRef ?? null,
+        },
         this.version + 1
       );
     } catch (err) {
@@ -149,7 +185,7 @@ export class RepoWatcher {
         version: this.version + 1,
       };
     }
-    const fp = stateFingerprint(next) + (next.error ?? '');
+    const fp = `${stateFingerprint(next)}#${pinsPart(session)}${next.error ?? ''}`;
     if (fp === this.fingerprint && this.version > 0) return;
     this.fingerprint = fp;
     this.version = next.version;
