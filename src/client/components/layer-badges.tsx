@@ -7,7 +7,6 @@ import {
 } from '@/client/components/icons.js';
 import { type KindIconName, kindIcon } from '@/client/lib/kind-icon.js';
 import {
-  KIND_GLYPH,
   KIND_TONE,
   kindLabel,
   LAYER_GLYPH,
@@ -61,16 +60,6 @@ export function LayerLabel({ layer }: { layer: Layer }) {
       <span className="ui-mono">{LAYER_GLYPH[layer]}</span>
       {LAYER_LABEL[layer]}
     </Label>
-  );
-}
-
-export function KindLetter({ kind }: { kind: ChangeKind }) {
-  return (
-    <StatusLetter
-      letter={KIND_GLYPH[kind]}
-      tone={KIND_TONE[kind]}
-      label={kindLabel(kind)}
-    />
   );
 }
 

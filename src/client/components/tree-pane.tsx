@@ -5,7 +5,12 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Check, ChevronDown, Folder } from '@/client/components/icons.js';
+import {
+  Check,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+} from '@/client/components/icons.js';
 import type { TreeDir } from '@/client/lib/tree.js';
 import { useReview } from '@/client/store/review.js';
 
@@ -138,7 +143,11 @@ function TreeDirRow<T>({
         aria-expanded={open}
       >
         <ChevronDown className="tree-chevron" width={12} height={12} />
-        <Folder className="tree-folder-icon" />
+        {open ? (
+          <FolderOpen className="tree-folder-icon" />
+        ) : (
+          <Folder className="tree-folder-icon" />
+        )}
         <span className="tree-name">{dir.name}</span>
       </button>
       <div className="tree-children">

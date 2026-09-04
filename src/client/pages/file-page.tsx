@@ -19,7 +19,7 @@ import {
   type LineSlots,
 } from '@/client/components/diff/diff-table.js';
 import { Header } from '@/client/components/header.js';
-import { KindLetter } from '@/client/components/layer-badges.js';
+import { File } from '@/client/components/icons.js';
 import {
   TreeCheck,
   TreeDirNode,
@@ -267,7 +267,7 @@ export function FilePage({ pathname }: { pathname: string }) {
       style={{ paddingLeft: 8 + depth * 14 + 14 }}
       title={entry.path}
     >
-      <KindLetter kind={entry.kind} />
+      <File className="tree-file-icon" />
       <span className="tree-name">{name}</span>
       <TreeCheck />
     </a>
