@@ -91,6 +91,11 @@ const COMMANDS: CommandSpec[] = [
           takesValue: true,
           help: 'Base ref for the Branch scope only (default: detected)',
         },
+        {
+          name: 'title',
+          takesValue: true,
+          help: 'Name this review in the browser tab (default: repo folder)',
+        },
         { name: 'no-open', takesValue: false, help: 'Do not open a browser' },
         PRETTY,
       ],
@@ -345,6 +350,11 @@ const COMMANDS: CommandSpec[] = [
           name: 'base',
           takesValue: true,
           help: 'Base ref for the Branch scope only (default: detected)',
+        },
+        {
+          name: 'title',
+          takesValue: true,
+          help: 'Name this review in the browser tab (default: repo folder)',
         },
       ],
       output: 'Log lines',

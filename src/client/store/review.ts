@@ -103,6 +103,11 @@ export const customFrom = (
   return { baseline: { kind: 'head' }, endpoint: WORKTREE };
 };
 
+const applyTitle = (state: RepoState): void => {
+  const name = state.title ?? state.repoRoot?.split('/').pop() ?? 'review';
+  document.title = `looksee · ${name}`;
+};
+
 export const useReview = create<ReviewStore>((set, get) => {
   const applyDiffs = (
     files: FileDiff[],
@@ -198,6 +203,7 @@ export const useReview = create<ReviewStore>((set, get) => {
           prefs.scope(state.repoRoot) ??
           get().preset,
       });
+      applyTitle(state);
       reconcileViewed(state.repoRoot, state.files);
       if (state.error) {
         set({ status: 'error', error: state.error });

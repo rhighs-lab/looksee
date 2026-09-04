@@ -343,6 +343,7 @@ export async function computeRepoState(
   return {
     version,
     repoRoot,
+    title: null,
     refs,
     comparison,
     drift,

@@ -171,6 +171,7 @@ describe('daemon lifecycle', () => {
       running: false,
       url: null,
       pid: null,
+      title: null,
       pendingReviews: 0,
       openThreads: 0,
       scope: null,

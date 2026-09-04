@@ -5,6 +5,7 @@ import type { RepoState } from '@/shared/protocol.js';
 export interface AppOpts {
   repoRoot: string | null;
   defaultBase?: string | null;
+  title?: string | null;
   clientDir?: string | null;
   debounceMs?: number;
 }

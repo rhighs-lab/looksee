@@ -10,7 +10,8 @@ export const runReview = async ({
 }: RunCtx): Promise<number> => {
   const root = await repoRootOf(positionals[0]);
   const base = typeof flags['base'] === 'string' ? flags['base'] : null;
-  const running = await ensureServer(root, { base });
+  const title = typeof flags['title'] === 'string' ? flags['title'] : null;
+  const running = await ensureServer(root, { base, title });
   if (!flags['no-open']) await open(running.url).catch(() => {});
   const pretty = flags['pretty'] === true;
   io.out(format(pretty ? running.url : { url: running.url }, pretty));

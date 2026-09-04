@@ -203,6 +203,16 @@ export function repoRoutes(ctx: AppContext): Hono {
     return c.json(ctx.state());
   });
 
+  app.post('/api/title', async (c) => {
+    if (!ctx.repoRoot || !ctx.watcher) return c.json({ error: 'no repo' }, 400);
+    const body = await jsonBody(c);
+    const raw = body['title'];
+    if (raw !== null && typeof raw !== 'string')
+      return c.json({ error: 'invalid title' }, 400);
+    await ctx.watcher.select({ title: raw ? raw : null });
+    return c.json(ctx.state());
+  });
+
   app.post('/api/scope', async (c) => {
     if (!ctx.repoRoot || !ctx.watcher) return c.json({ error: 'no repo' }, 400);
     const body = await jsonBody(c);

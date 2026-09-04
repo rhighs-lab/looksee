@@ -36,6 +36,7 @@ export function createApp(opts: AppOpts): LookseeApp {
         repoRoot,
         {
           baseFlag: opts.defaultBase ?? null,
+          title: opts.title ?? null,
           ...(opts.debounceMs !== undefined
             ? { debounceMs: opts.debounceMs }
             : {}),

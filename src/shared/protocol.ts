@@ -120,6 +120,7 @@ export interface ResolvedComparison {
 export interface RepoState {
   version: number;
   repoRoot: string | null;
+  title: string | null;
   refs: RepoRefs | null;
   comparison: ResolvedComparison | null;
   drift: boolean;

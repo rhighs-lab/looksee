@@ -18,6 +18,7 @@ import { LAYERS } from '@/shared/protocol.js';
 
 export interface WatcherOpts {
   baseFlag: string | null;
+  title?: string | null;
   headRef?: string | null;
   preset?: ScopePreset;
   custom?: Comparison | null;
@@ -28,6 +29,7 @@ export interface WatcherOpts {
 
 export interface Selection {
   base?: string | null;
+  title?: string | null;
   head?: string | null;
   preset?: ScopePreset;
   custom?: Comparison | null;
@@ -52,6 +54,7 @@ export const emptyState = (
 ): RepoState => ({
   version: 0,
   repoRoot,
+  title: null,
   refs: null,
   comparison: null,
   drift: false,
@@ -138,6 +141,7 @@ export class RepoWatcher {
 
   async select(sel: Selection): Promise<void> {
     if (sel.base !== undefined) this.opts.baseFlag = sel.base;
+    if (sel.title !== undefined) this.opts.title = sel.title;
     if (sel.head !== undefined) this.opts.headRef = sel.head;
     if (sel.preset !== undefined) this.opts.preset = sel.preset;
     if (sel.custom !== undefined) this.opts.custom = sel.custom;
@@ -196,8 +200,9 @@ export class RepoWatcher {
         version: this.version + 1,
       };
     }
+    next = { ...next, title: this.opts.title ?? null };
     this.statusDigest = digest;
-    const fp = `${stateFingerprint(next)}#${pinsPart(session)}${next.error ?? ''}`;
+    const fp = `${stateFingerprint(next)}#${pinsPart(session)}${next.error ?? ''}#${next.title ?? ''}`;
     if (fp === this.fingerprint && this.version > 0) return;
     this.fingerprint = fp;
     this.version = next.version;

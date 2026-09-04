@@ -18,6 +18,7 @@ export interface ServerRecord {
   port: number;
   repoRoot: string;
   startedAt: string;
+  title?: string | null;
 }
 
 export interface Running {
@@ -28,6 +29,7 @@ export interface Running {
 
 export interface SpawnOpts {
   base?: string | null;
+  title?: string | null;
 }
 
 const FIRST_PORT = 4711;
@@ -183,6 +185,7 @@ const launch = async (root: string, opts: SpawnOpts): Promise<Running> => {
   const log = await fs.open(logPath(root), 'a');
   const args = [entry, 'serve', '--repo', root, '--port', String(port)];
   if (opts.base) args.push('--base', opts.base);
+  if (opts.title) args.push('--title', opts.title);
   const child = spawn(process.execPath, args, {
     detached: true,
     stdio: ['ignore', log.fd, log.fd],
@@ -204,6 +207,7 @@ const launch = async (root: string, opts: SpawnOpts): Promise<Running> => {
         port,
         repoRoot: root,
         startedAt: new Date().toISOString(),
+        title: opts.title ?? null,
       };
       await writeJsonAtomic(recordPath(root), rec);
       return { port, pid, url: urlOf(port) };
@@ -227,10 +231,31 @@ export const spawnServer = async (
   }
 };
 
+export const setTitle = async (
+  url: string,
+  title: string | null
+): Promise<void> => {
+  await fetch(`${url}/api/title`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ title }),
+  }).catch(() => undefined);
+};
+
 export const ensureServer = async (
   root: string,
   opts: SpawnOpts = {}
-): Promise<Running> => (await discover(root)) ?? spawnServer(root, opts);
+): Promise<Running> => {
+  const found = await discover(root);
+  if (!found) return spawnServer(root, opts);
+  if (opts.title !== undefined && opts.title !== null) {
+    await setTitle(found.url, opts.title);
+    const rec = await readRecord(root);
+    if (rec)
+      await writeJsonAtomic(recordPath(root), { ...rec, title: opts.title });
+  }
+  return found;
+};
 
 const waitExit = async (pid: number): Promise<void> => {
   const deadline = Date.now() + WAIT_MS;

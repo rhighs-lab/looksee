@@ -804,9 +804,9 @@ body {
 .add-comment {
   position: absolute;
   top: 1px;
-  bottom: 1px;
   right: 2px;
   width: 18px;
+  height: 18px;
   display: none;
   align-items: center;
   justify-content: center;

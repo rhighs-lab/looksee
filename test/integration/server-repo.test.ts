@@ -122,6 +122,31 @@ describe('repo API', () => {
     ).toBe(404);
   });
 
+  it('names the review through /api/title and keeps it across rebuilds', async () => {
+    const before = await srv.json<RepoState>('GET', '/api/state');
+    expect(before.body.title).toBe(null);
+
+    const set = await srv.json<RepoState>('POST', '/api/title', {
+      title: 'Payments',
+    });
+    expect(set.status).toBe(200);
+    expect(set.body.title).toBe('Payments');
+    expect(set.body.version).toBeGreaterThan(before.body.version);
+
+    await srv.json('POST', '/api/scope', { preset: 'branch' });
+    const after = await srv.json<RepoState>('GET', '/api/state');
+    expect(after.body.title).toBe('Payments');
+
+    const cleared = await srv.json<RepoState>('POST', '/api/title', {
+      title: '',
+    });
+    expect(cleared.body.title).toBe(null);
+
+    expect((await srv.json('POST', '/api/title', { title: 7 })).status).toBe(
+      400
+    );
+  });
+
   it('rejects cross-origin writes', async () => {
     const r = await srv.json(
       'POST',

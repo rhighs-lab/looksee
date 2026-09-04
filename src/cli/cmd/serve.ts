@@ -22,7 +22,8 @@ export const runServe = async ({ flags, io }: RunCtx): Promise<number> => {
   );
   const defaultBase = typeof flags['base'] === 'string' ? flags['base'] : null;
   const clientDir = path.join(packageRoot(import.meta.url), 'dist', 'client');
-  const looksee = createApp({ repoRoot, defaultBase, clientDir });
+  const title = typeof flags['title'] === 'string' ? flags['title'] : null;
+  const looksee = createApp({ repoRoot, defaultBase, title, clientDir });
   await looksee.start();
   serve({ fetch: looksee.app.fetch, hostname: '127.0.0.1', port }, () => {
     io.out(`looksee serving ${repoRoot} at http://127.0.0.1:${port}\n`);
