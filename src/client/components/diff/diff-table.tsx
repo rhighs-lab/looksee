@@ -88,7 +88,7 @@ function Num({
           type="button"
           className="add-comment"
           tabIndex={-1}
-          title="Add a comment"
+          data-tooltip="Add a comment"
           aria-label="Add a comment"
         >
           +
@@ -145,7 +145,7 @@ function GapRow({
             type="button"
             className="expander"
             data-dir={d}
-            title={titles[d]}
+            data-tooltip={titles[d]}
             aria-label={`${titles[d]} (${gap.end - gap.start + 1} hidden lines)`}
             disabled={loading}
             onClick={() => onExpand(d)}

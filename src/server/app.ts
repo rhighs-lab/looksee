@@ -26,6 +26,10 @@ const MIME: Record<string, string> = {
   '.map': 'application/json',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json',
+  '.json': 'application/json',
 };
 
 export function createApp(opts: AppOpts): LookseeApp {

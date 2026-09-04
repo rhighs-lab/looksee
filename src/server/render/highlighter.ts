@@ -8,14 +8,24 @@ import { escapeHtml } from '@/server/render/escape.js';
 import type { Range, WordLine } from '@/server/render/word-diff.js';
 import type { Hunk } from '@/shared/protocol.js';
 
-const THEMES = { light: 'github-light', dark: 'github-dark' } as const;
+// Every theme the client can switch to is tokenized in one pass: shiki writes the
+// default theme's color inline and the rest as custom properties, so switching themes
+// is a CSS change rather than a re-render.
+const THEMES = {
+  light: 'github-light',
+  d: 'github-dark',
+  sl: 'solarized-light',
+  sd: 'solarized-dark',
+  al: 'one-light',
+  ad: 'one-dark-pro',
+} as const;
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 const loadedLangs = new Set<string>();
 
 function getHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({
-    themes: [THEMES.light, THEMES.dark],
+    themes: Object.values(THEMES),
     langs: [],
   });
   return highlighterPromise;
@@ -47,9 +57,12 @@ const CACHE_MAX = 800;
 function tokenStyle(tok: Tok): string {
   const st = tok.htmlStyle;
   if (!st || typeof st === 'string') return typeof st === 'string' ? st : '';
-  const color = st['color'] ?? '';
-  const dark = st['--shiki-dark'] ?? '';
-  return color ? `color:${color};--shiki-dark:${dark}` : '';
+  const color = st['color'];
+  if (!color) return '';
+  const parts = [`color:${color}`];
+  for (const [k, v] of Object.entries(st))
+    if (k.startsWith('--shiki-')) parts.push(`${k}:${v}`);
+  return parts.join(';');
 }
 
 function tokenToHtml(

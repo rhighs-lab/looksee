@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { DiffStat } from '@/client/components/file-card.js';
 import { Sidebar } from '@/client/components/icons.js';
 import { ScopeSwitcher } from '@/client/components/scope-switcher.js';
+import { SettingsMenu } from '@/client/components/settings-menu.js';
 import { isStaleFetch, relativeTime } from '@/client/lib/format.js';
 import { LAYER_GLYPH, LAYER_TONE, layerTitle } from '@/client/lib/layers.js';
 import { useReview } from '@/client/store/review.js';
@@ -10,7 +11,6 @@ import {
   Button,
   Counter,
   Label,
-  SegmentedControl,
   StatusLetter,
   UnderlineNav,
 } from '@/client/ui/index.js';
@@ -45,10 +45,6 @@ export function Header({
   const layerFilter = useReview((s) => s.layerFilter);
   const toggleLayerFilter = useReview((s) => s.toggleLayerFilter);
   const clearLayerFilter = useReview((s) => s.clearLayerFilter);
-  const view = useReview((s) => s.view);
-  const setView = useReview((s) => s.setView);
-  const colorByLayer = useReview((s) => s.colorByLayer);
-  const setColorByLayer = useReview((s) => s.setColorByLayer);
   const connection = useReview((s) => s.connection);
   const treeHidden = useReview((s) => s.treeHidden);
   const setTreeHidden = useReview((s) => s.setTreeHidden);
@@ -171,26 +167,7 @@ export function Header({
           )}
           <span className="pr-meta-right">
             {right}
-            <SegmentedControl
-              label="Diff view"
-              value={view}
-              onChange={setView}
-              items={[
-                { value: 'unified', label: 'Unified' },
-                { value: 'split', label: 'Split' },
-              ]}
-            />
-            {isRepo && (
-              <Button
-                small
-                className="layer-colors-toggle"
-                aria-pressed={colorByLayer}
-                title="Tint each added or removed line by the git layer that introduced it"
-                onClick={() => void setColorByLayer(!colorByLayer)}
-              >
-                Layer colors
-              </Button>
-            )}
+            <SettingsMenu />
             <span
               className="repo-path ui-muted ui-mono"
               title={state?.repoRoot ?? 'sample'}

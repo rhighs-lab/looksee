@@ -8,7 +8,7 @@ export default defineConfig({
   root: 'src/client',
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  publicDir: false,
+  publicDir: 'public',
   build: {
     outDir: '../../dist/client',
     emptyOutDir: true,

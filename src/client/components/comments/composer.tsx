@@ -485,8 +485,8 @@ export function Composer({
                   key={act}
                   type="button"
                   className="composer-tool"
+                  data-tooltip={`${label}${key ? ` (${key})` : ''}`}
                   data-act={act}
-                  title={`${label}${key ? ` (${key})` : ''}`}
                   aria-label={label}
                   onClick={() => run(act)}
                 >

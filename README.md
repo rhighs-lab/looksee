@@ -1,4 +1,6 @@
-![looksee](assets/banner.png)
+<p align="center"><img src="assets/icon.png" alt="looksee" width="180" height="180"></p>
+
+<h1 align="center">looksee</h1>
 
 <p align="center"><strong>Review your work before every push.</strong></p>
 

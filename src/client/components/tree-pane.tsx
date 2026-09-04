@@ -8,8 +8,10 @@ import {
 import {
   Check,
   ChevronDown,
+  Close,
   Folder,
   FolderOpen,
+  Search,
 } from '@/client/components/icons.js';
 import type { TreeDir } from '@/client/lib/tree.js';
 import { useReview } from '@/client/store/review.js';
@@ -17,11 +19,19 @@ import { useReview } from '@/client/store/review.js';
 const W_MIN = 180;
 const wMax = () => Math.min(800, Math.round(window.innerWidth * 0.6));
 
+export interface TreeSearch {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}
+
 export function TreePane({
   header,
+  search,
   children,
 }: {
   header: string;
+  search?: TreeSearch;
   children: ReactNode;
 }) {
   const hidden = useReview((s) => s.treeHidden);
@@ -71,6 +81,33 @@ export function TreePane({
         aria-label={header}
       >
         <div className="tree-header">{header}</div>
+        {search && (
+          <div className="tree-search">
+            <Search className="tree-search-icon" width={14} height={14} />
+            <input
+              type="text"
+              className="tree-search-input"
+              placeholder={search.placeholder}
+              spellCheck={false}
+              autoComplete="off"
+              aria-label={search.placeholder}
+              value={search.value}
+              onChange={(e) => search.onChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Escape' && search.onChange('')}
+            />
+            {search.value && (
+              <button
+                type="button"
+                className="tree-search-clear"
+                data-tooltip="Clear filter"
+                aria-label="Clear filter"
+                onClick={() => search.onChange('')}
+              >
+                <Close />
+              </button>
+            )}
+          </div>
+        )}
         <nav className="file-tree">{children}</nav>
       </aside>
       <div

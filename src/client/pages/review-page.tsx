@@ -1,9 +1,14 @@
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { LineSlots } from '@/client/components/diff/diff-table.js';
 import { FileCard } from '@/client/components/file-card.js';
+import {
+  FileFinder,
+  useFileFinderHotkey,
+} from '@/client/components/file-finder.js';
 import { Header } from '@/client/components/header.js';
 import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
+import { Loading } from '@/client/components/loading.js';
 import {
   TreeCheck,
   TreeDirNode,
@@ -44,7 +49,18 @@ export function ReviewPage({
   const updated = useReview((s) => s.updated);
   const activePath = useReview((s) => s.activePath);
   const setActivePath = useReview((s) => s.setActivePath);
-  const tree = useMemo(() => buildTree(files, (f) => f.path), [files]);
+  const [filter, setFilter] = useState('');
+  const [finder, setFinder] = useState(false);
+  useFileFinderHotkey(useCallback(() => setFinder(true), []));
+  const entries = useMemo(
+    () => files.map((f) => ({ path: f.path, kind: f.kind })),
+    [files]
+  );
+  const shown = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return q ? files.filter((f) => f.path.toLowerCase().includes(q)) : files;
+  }, [files, filter]);
+  const tree = useMemo(() => buildTree(shown, (f) => f.path), [shown]);
   const pending = useMemo(() => new Set(pendingPaths), [pendingPaths]);
 
   const renderFile = (file: ChangedFile, name: string, depth: number) => (
@@ -75,13 +91,26 @@ export function ReviewPage({
       <Header right={headerRight} below={headerBelow} />
       <div className="review-layout">
         {files.length > 0 && (
-          <TreePane header="Files changed">
-            <TreeDirNode node={tree} depth={0} renderFile={renderFile} />
+          <TreePane
+            header="Files changed"
+            search={{
+              value: filter,
+              onChange: setFilter,
+              placeholder: 'Filter changed files',
+            }}
+          >
+            {shown.length === 0 ? (
+              <div className="tree-empty">No files match “{filter}”</div>
+            ) : (
+              <TreeDirNode node={tree} depth={0} renderFile={renderFile} />
+            )}
           </TreePane>
         )}
         <main className="diff-container">
-          {status === 'loading' && !state && (
-            <Notice tone="muted">Loading repository state</Notice>
+          {status === 'loading' && (
+            <Loading
+              label={state ? 'Rebuilding the diff…' : 'Reading the repository…'}
+            />
           )}
           {error && (
             <Notice tone="danger">
@@ -94,8 +123,8 @@ export function ReviewPage({
               <code>looksee</code> from inside a repo to review real changes.
             </Notice>
           )}
-          {state?.repoRoot &&
-            status === 'ready' &&
+          {status === 'ready' &&
+            state?.repoRoot &&
             state.files.length === 0 && (
               <Notice tone="muted">
                 Nothing to review:{' '}
@@ -104,29 +133,40 @@ export function ReviewPage({
                 clean. Edits will appear here as they happen.
               </Notice>
             )}
-          {state && state.files.length > 0 && files.length === 0 && (
-            <Notice tone="muted">
-              {scope !== 'cumulative'
-                ? `Nothing in the ${scope} layer.`
-                : layerFilter.length
-                  ? `No files match the selected layer filter (${layerFilter.join(', ')}).`
-                  : 'No changes in this comparison.'}
-            </Notice>
-          )}
-          {files.map((file) => (
-            <FileCard
-              key={file.path}
-              file={file}
-              diff={diffs[file.path]}
-              pending={pending.has(file.path)}
-              slots={slotsFor?.(file)}
-              fileComments={fileCommentsFor?.(file)}
-              onFileComment={onFileComment}
-              viewHref={fileHref(file.path, scope)}
-            />
-          ))}
+          {status === 'ready' &&
+            state &&
+            state.files.length > 0 &&
+            files.length === 0 && (
+              <Notice tone="muted">
+                {scope !== 'cumulative'
+                  ? `Nothing in the ${scope} layer.`
+                  : layerFilter.length
+                    ? `No files match the selected layer filter (${layerFilter.join(', ')}).`
+                    : 'No changes in this comparison.'}
+              </Notice>
+            )}
+          {status !== 'loading' &&
+            files.map((file) => (
+              <FileCard
+                key={file.path}
+                file={file}
+                diff={diffs[file.path]}
+                pending={pending.has(file.path)}
+                slots={slotsFor?.(file)}
+                fileComments={fileCommentsFor?.(file)}
+                onFileComment={onFileComment}
+                viewHref={fileHref(file.path, scope)}
+              />
+            ))}
         </main>
       </div>
+      {finder && (
+        <FileFinder
+          entries={entries}
+          scope={scope}
+          onClose={() => setFinder(false)}
+        />
+      )}
       <Toast />
     </>
   );

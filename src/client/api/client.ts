@@ -5,6 +5,7 @@ import type {
   DecoratedComment,
   DiffResponse,
   DoneMark,
+  FileInfoResponse,
   FileViewResponse,
   RepoState,
   Rev,
@@ -96,6 +97,8 @@ export const api = {
     ),
   file: (path: string, scope: Scope) =>
     request<FileViewResponse>('GET', `/api/file${q({ path, scope })}`),
+  fileInfo: (path: string) =>
+    request<FileInfoResponse>('GET', `/api/file-info${q({ path })}`),
   branches: () => request<BranchesResponse>('GET', '/api/branches'),
   session: () => request<Session | null>('GET', '/api/session'),
   pin: () => request<RepoState>('POST', '/api/session/pin'),

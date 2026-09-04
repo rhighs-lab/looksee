@@ -7,7 +7,6 @@ import {
 } from '@/client/components/icons.js';
 import { type KindIconName, kindIcon } from '@/client/lib/kind-icon.js';
 import {
-  KIND_TONE,
   kindLabel,
   LAYER_GLYPH,
   LAYER_TONE,

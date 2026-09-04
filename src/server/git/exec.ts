@@ -40,6 +40,24 @@ export function git(
   });
 }
 
+export function gitBytes(repoRoot: string, args: string[]): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'git',
+      ['-c', 'core.quotePath=false', '-C', repoRoot, ...args],
+      { maxBuffer: MAX_BUFFER, encoding: 'buffer' },
+      (err, stdout, stderr) => {
+        if (err) {
+          const code = typeof err.code === 'number' ? err.code : null;
+          reject(new GitError(args, code, String(stderr)));
+          return;
+        }
+        resolve(stdout);
+      }
+    );
+  });
+}
+
 export function isSafeRef(ref: unknown): ref is string {
   return (
     typeof ref === 'string' &&

@@ -1,4 +1,9 @@
-import type { ButtonHTMLAttributes, KeyboardEvent, ReactNode } from 'react';
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  KeyboardEvent,
+  ReactNode,
+} from 'react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from '@/client/components/icons.js';
 import { useReview } from '@/client/store/review.js';
@@ -33,8 +38,13 @@ export function Button({
   icon = false,
   className,
   type = 'button',
+  title,
   ...rest
 }: ButtonProps) {
+  // a labelled control gets the app's own tooltip instead of the browser's, which
+  // is slow to appear and unstyled; the label still reaches assistive tech through
+  // aria-label or the button's text
+  const tip = title ? { 'data-tooltip': title } : {};
   return (
     <button
       type={type}
@@ -45,6 +55,7 @@ export function Button({
         icon && 'ui-btn-icon',
         className
       )}
+      {...tip}
       {...rest}
     />
   );
@@ -55,17 +66,19 @@ export function LinkButton({
   children,
   className,
   title,
+  ...rest
 }: {
   href: string;
   children: ReactNode;
   className?: string;
   title?: string;
-}) {
+} & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
     <a
       className={cx('ui-btn ui-btn-small', className)}
       href={href}
-      title={title}
+      {...(title ? { 'data-tooltip': title } : {})}
+      {...rest}
     >
       {children}
     </a>

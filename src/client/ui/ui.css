@@ -583,3 +583,56 @@ textarea.ui-input,
   gap: 8px;
   min-width: 0;
 }
+
+/* ---- Tooltips ----------------------------------------------------------- */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 90;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  max-width: 260px;
+  width: max-content;
+  font-family: var(--ui-font);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+  text-align: center;
+  white-space: normal;
+  color: var(--fgColor-onEmphasis, #fff);
+  background-color: var(--bgColor-neutral-emphasis, #24292f);
+  border-radius: 6px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.1s linear 0.4s,
+    visibility 0s linear 0.4s;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* near the right edge the tooltip would clip; anchor those to the right instead */
+.pr-meta-right [data-tooltip]::after,
+.blob-actions [data-tooltip]::after,
+.file-header > :last-child [data-tooltip]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tooltip]::after {
+    transition: none;
+  }
+}

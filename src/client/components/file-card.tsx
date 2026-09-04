@@ -12,13 +12,17 @@ import {
   useExpansion,
 } from '@/client/components/diff/diff-table.js';
 import { boundaries, remainingGaps } from '@/client/components/diff/rows.js';
+import { FileInfo } from '@/client/components/file-info.js';
+import { ForgeLink } from '@/client/components/forge-link.js';
 import { ChevronDown, CommentIcon, Copy } from '@/client/components/icons.js';
+import { ImageDiff, isImage } from '@/client/components/image-blob.js';
 import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
+import { SkeletonLines } from '@/client/components/loading.js';
 import { fileAnchor } from '@/client/lib/anchors.js';
 import { KIND_TONE } from '@/client/lib/layers.js';
 import { useReview } from '@/client/store/review.js';
 import { Button, Label, LinkButton, Notice } from '@/client/ui/index.js';
-import type { ChangedFile, FileDiff } from '@/shared/protocol.js';
+import type { ChangedFile, FileDiff, Scope } from '@/shared/protocol.js';
 import { KIND_LABEL, LARGE_DIFF_LINES } from '@/shared/protocol.js';
 
 export function DiffStat({
@@ -82,6 +86,7 @@ export const FileCard = memo(function FileCard({
   const viewed = useReview((s) => s.viewed[file.path] !== undefined);
   const updated = useReview((s) => Boolean(s.updated[file.path]));
   const split = useReview((s) => s.view === 'split');
+  const scope = useReview((s) => s.scope);
   const toggleCollapsed = useReview((s) => s.toggleCollapsed);
   const setViewed = useReview((s) => s.setViewed);
   const markSeen = useReview((s) => s.markSeen);
@@ -128,6 +133,7 @@ export const FileCard = memo(function FileCard({
           icon
           small
           className="collapse-btn"
+          title="Collapse or expand this diff"
           aria-label="Toggle diff"
           aria-expanded={!collapsed}
           onClick={() => toggleCollapsed(file.path)}
@@ -189,6 +195,8 @@ export const FileCard = memo(function FileCard({
             <CommentIcon />
           </Button>
         )}
+        <FileInfo path={file.path} />
+        <ForgeLink filePath={file.path} />
         {diff && !diff.binary && diff.hunks.length > 0 && (
           <ExpandAllButton diff={diff} />
         )}
@@ -210,6 +218,7 @@ export const FileCard = memo(function FileCard({
           diff={diff}
           split={split}
           slots={slots ?? {}}
+          scope={scope}
           loadFull={loadFull}
         />
       </div>
@@ -252,16 +261,22 @@ function FileBody({
   diff,
   split,
   slots,
+  scope,
   loadFull,
 }: {
   file: ChangedFile;
   diff: FileDiff | undefined;
   split: boolean;
   slots: LineSlots;
+  scope: Scope;
   loadFull: (p: string) => Promise<void>;
 }) {
   if (file.binary)
-    return <div className="file-notice-body">Binary file not shown.</div>;
+    return isImage(file.path) ? (
+      <ImageDiff file={file} scope={scope} />
+    ) : (
+      <div className="file-notice-body">Binary file not shown.</div>
+    );
   if (file.kind === 'unchanged')
     return (
       <div className="file-notice-body">
@@ -269,8 +284,7 @@ function FileBody({
         cancel out.
       </div>
     );
-  if (!diff)
-    return <div className="file-notice-body ui-muted">Loading diff</div>;
+  if (!diff) return <SkeletonLines rows={6} />;
   if (diff.truncated)
     return <TruncatedNotice diff={diff} loadFull={loadFull} />;
   if (!diff.hunks.length)

@@ -5,7 +5,13 @@ import {
   connectEvents,
   type EventSubscription,
 } from '@/client/api/events.js';
-import { prefs, type View } from '@/client/store/prefs.js';
+import { applyTheme } from '@/client/lib/theme.js';
+import {
+  type Appearance,
+  prefs,
+  type Theme,
+  type View,
+} from '@/client/store/prefs.js';
 import type {
   BranchesResponse,
   ChangedFile,
@@ -38,6 +44,8 @@ export interface ReviewStore {
   scope: Scope;
   layerFilter: Layer[];
   view: View;
+  theme: Theme;
+  appearance: Appearance;
   colorByLayer: boolean;
   diffs: Record<string, FileDiff>;
   pendingPaths: string[];
@@ -57,6 +65,8 @@ export interface ReviewStore {
   init(): () => void;
   refresh(): Promise<void>;
   setScope(scope: Scope): Promise<void>;
+  setTheme(theme: Theme): void;
+  setAppearance(appearance: Appearance): void;
   toggleLayerFilter(layer: Layer): void;
   clearLayerFilter(): void;
   setView(view: View): void;
@@ -230,6 +240,8 @@ export const useReview = create<ReviewStore>((set, get) => {
     scope: 'cumulative',
     layerFilter: [],
     view: prefs.view(),
+    theme: prefs.theme(),
+    appearance: prefs.appearance(),
     colorByLayer: prefs.colorByLayer(),
     diffs: {},
     pendingPaths: [],
@@ -296,6 +308,18 @@ export const useReview = create<ReviewStore>((set, get) => {
     setView(view) {
       prefs.setView(view);
       set({ view });
+    },
+
+    setTheme(theme) {
+      prefs.setTheme(theme);
+      set({ theme });
+      applyTheme(theme, get().appearance);
+    },
+
+    setAppearance(appearance) {
+      prefs.setAppearance(appearance);
+      set({ appearance });
+      applyTheme(get().theme, appearance);
     },
 
     async setColorByLayer(val) {

@@ -94,6 +94,7 @@ export function sampleState(): RepoState {
       remoteBase: null,
       pushedBase: null,
       remotes: [],
+      remoteUrl: null,
       lastFetchAt: null,
     },
     comparison: {

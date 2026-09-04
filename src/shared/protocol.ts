@@ -97,6 +97,7 @@ export interface RepoRefs {
   remoteBase: string | null;
   pushedBase: string | null;
   remotes: string[];
+  remoteUrl: string | null;
   lastFetchAt: string | null;
 }
 
@@ -239,6 +240,22 @@ export interface ContextResponse {
 export interface TreeEntry {
   path: string;
   kind: ChangeKind | 'unchanged';
+}
+
+export interface FileHistoryAuthor {
+  name: string;
+  commits: number;
+}
+
+export interface FileInfoResponse {
+  path: string;
+  size: number | null;
+  blob: string | null;
+  tracked: boolean;
+  commits: number;
+  authors: FileHistoryAuthor[];
+  first: { sha: string; author: string; date: string; subject: string } | null;
+  last: { sha: string; author: string; date: string; subject: string } | null;
 }
 
 export interface FileViewResponse {

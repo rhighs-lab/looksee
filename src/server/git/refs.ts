@@ -194,6 +194,19 @@ export async function lastFetchAt(repoRoot: string): Promise<string | null> {
   }
 }
 
+async function remoteUrl(
+  repoRoot: string,
+  remote: string | null
+): Promise<string | null> {
+  if (!remote) return null;
+  const out = await git(repoRoot, [
+    'config',
+    '--get',
+    `remote.${remote}.url`,
+  ]).catch(() => '');
+  return out.trim() || null;
+}
+
 export async function getRefs(
   repoRoot: string,
   baseFlag: string | null,
@@ -211,6 +224,10 @@ export async function getRefs(
     baseFlag,
     head,
     upstream?.remote ?? null
+  );
+  const url = await remoteUrl(
+    repoRoot,
+    upstream?.remote ?? remotes[0]?.split('/')[0] ?? null
   );
   const remoteBase = await remoteBaseRef(
     repoRoot,
@@ -240,6 +257,7 @@ export async function getRefs(
     remoteBase,
     pushedBase,
     remotes,
+    remoteUrl: url,
     lastFetchAt: fetchedAt,
   };
 }

@@ -18,8 +18,24 @@ import {
   DiffTable,
   type LineSlots,
 } from '@/client/components/diff/diff-table.js';
+import {
+  FileFinder,
+  useFileFinderHotkey,
+} from '@/client/components/file-finder.js';
+import { FileGlyph } from '@/client/components/file-glyph.js';
+import { FileInfo } from '@/client/components/file-info.js';
+import { ForgeLink } from '@/client/components/forge-link.js';
 import { Header } from '@/client/components/header.js';
-import { File } from '@/client/components/icons.js';
+import {
+  ArrowLeft,
+  Copy,
+  Download,
+  File,
+  Search,
+  WrapText,
+} from '@/client/components/icons.js';
+import { isImage, rawHref } from '@/client/components/image-blob.js';
+import { Loading } from '@/client/components/loading.js';
 import {
   TreeCheck,
   TreeDirNode,
@@ -27,10 +43,18 @@ import {
   useSubnavHeight,
 } from '@/client/components/tree-pane.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
+import { bytes, plural } from '@/client/lib/format.js';
+import {
+  type LineRange,
+  lineHash,
+  paintLineRange,
+  parseLineHash,
+} from '@/client/lib/line-anchor.js';
 import { buildTree } from '@/client/lib/tree.js';
 import { useComments } from '@/client/store/comments.js';
 import { useReview } from '@/client/store/review.js';
-import { Label, Notice, Toast } from '@/client/ui/index.js';
+import { Button, Label, LinkButton, Notice, Toast } from '@/client/ui/index.js';
+
 import type {
   CommentSide,
   DiffLine,
@@ -104,8 +128,14 @@ export function FilePage({ pathname }: { pathname: string }) {
     ? (scopeParam as Scope)
     : 'cumulative';
   const state = useReview((s) => s.state);
+  const showToast = useReview((s) => s.showToast);
   const [view, setView] = useState<FileViewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
+  const [finder, setFinder] = useState(false);
+  const [wrap, setWrap] = useState(false);
+  const openFinder = useCallback(() => setFinder(true), []);
+  useFileFinderHotkey(openFinder);
   const threads = useComments((s) => s.threads);
   const enabled = useComments((s) => s.enabled);
   const compose = useComments((s) => s.compose);
@@ -251,10 +281,45 @@ export function FilePage({ pathname }: { pathname: string }) {
     ]
   );
 
-  const tree = useMemo(
-    () => buildTree(view?.tree ?? [], (t) => t.path),
-    [view]
+  const entries = view?.tree ?? [];
+  const shown = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return q
+      ? entries.filter((e) => e.path.toLowerCase().includes(q))
+      : entries;
+  }, [entries, filter]);
+  const tree = useMemo(() => buildTree(shown, (t) => t.path), [shown]);
+  const [anchor, setAnchor] = useState<LineRange | null>(() =>
+    parseLineHash(location.hash)
   );
+  useEffect(() => {
+    const sync = () => setAnchor(parseLineHash(location.hash));
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+  useEffect(() => {
+    if (!view) return;
+    paintLineRange(anchor)?.scrollIntoView({ block: 'center' });
+  }, [anchor, view]);
+
+  const onBlobClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (commentable) return;
+      const cell = (e.target as Element).closest<HTMLElement>(
+        '.blob-num[data-line-number]'
+      );
+      if (!cell) return;
+      const n = Number(cell.dataset['lineNumber']);
+      const next: LineRange =
+        e.shiftKey && anchor
+          ? { lo: Math.min(anchor.lo, n), hi: Math.max(anchor.lo, n) }
+          : { lo: n, hi: n };
+      history.replaceState(null, '', lineHash(next));
+      setAnchor(next);
+    },
+    [anchor, commentable]
+  );
+
   const crumbs = filePath.split('/');
   const repoName = state?.repoRoot?.split('/').pop() ?? 'repo';
   const backHref = `/${scope !== 'cumulative' ? `?scope=${scope}` : ''}#${fileAnchor(filePath)}`;
@@ -267,7 +332,7 @@ export function FilePage({ pathname }: { pathname: string }) {
       style={{ paddingLeft: 8 + depth * 14 + 14 }}
       title={entry.path}
     >
-      <File className="tree-file-icon" />
+      <FileGlyph path={entry.path} className="tree-file-icon" />
       <span className="tree-name">{name}</span>
       <TreeCheck />
     </a>
@@ -293,57 +358,191 @@ export function FilePage({ pathname }: { pathname: string }) {
           </nav>
         }
         left={
-          <a className="back-link" href={backHref}>
-            ← Back to review
-          </a>
+          <LinkButton
+            className="back-btn"
+            href={backHref}
+            title="Back to review"
+          >
+            <ArrowLeft width={14} height={14} />
+            Review
+          </LinkButton>
         }
         right={
-          view && (
-            <span className="diff-summary">
-              {view.binary
-                ? 'Binary file'
-                : `${view.lines.length} ${view.lines.length === 1 ? 'line' : 'lines'}`}
-              {view.deleted && (
-                <Label tone="danger">
-                  Deleted in this diff, showing base version
-                </Label>
-              )}
-              {view.plain && (
-                <Label>
-                  Syntax highlighting off over{' '}
-                  {view.maxHighlight.toLocaleString('en-US')} lines
-                </Label>
-              )}
-              {!view.inDiff && !view.deleted && !view.binary && (
-                <Label>Not in this diff, read-only</Label>
-              )}
-            </span>
-          )
+          <Button
+            small
+            className="finder-btn"
+            onClick={openFinder}
+            title="Go to file (t)"
+          >
+            <Search width={14} height={14} />
+            Go to file
+            <kbd>t</kbd>
+          </Button>
         }
       />
       <div className="review-layout">
-        <TreePane header="Repository">
-          <TreeDirNode node={tree} depth={0} renderFile={renderFile} />
+        <TreePane
+          header="Repository"
+          search={{
+            value: filter,
+            onChange: setFilter,
+            placeholder: 'Filter files',
+          }}
+        >
+          {shown.length === 0 ? (
+            <div className="tree-empty">No files match “{filter}”</div>
+          ) : (
+            <TreeDirNode node={tree} depth={0} renderFile={renderFile} />
+          )}
         </TreePane>
         <main className="diff-container">
           {error && <Notice tone="danger">{error}</Notice>}
-          {!view && !error && <Notice tone="muted">Loading file</Notice>}
+          {!view && !error && <Loading label="Opening the file…" />}
           {view && diff && (
             <div className="file file-view" data-path={filePath}>
+              <BlobToolbar
+                view={view}
+                scope={scope}
+                wrap={wrap}
+                onWrap={() => setWrap(!wrap)}
+                onCopied={showToast}
+              />
               <div className="file-body">
                 <div className="file-comments" />
                 {view.binary ? (
-                  <div className="file-notice-body">Binary file not shown.</div>
+                  isImage(filePath) ? (
+                    <div className="blob-image">
+                      <img src={rawHref(filePath, scope)} alt={filePath} />
+                    </div>
+                  ) : (
+                    <div className="file-notice-body">
+                      Binary file not shown.
+                    </div>
+                  )
                 ) : (
-                  <BlobTable diff={diff} changed={changed} slots={slots} />
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: line numbers are permalinks, reachable through the URL hash
+                  // biome-ignore lint/a11y/noStaticElementInteractions: delegated gutter click over the blob table
+                  <div onClick={onBlobClick}>
+                    <BlobTable
+                      diff={diff}
+                      changed={changed}
+                      slots={slots}
+                      wrap={wrap}
+                    />
+                  </div>
                 )}
               </div>
             </div>
           )}
         </main>
       </div>
+      {finder && (
+        <FileFinder
+          entries={entries}
+          scope={scope}
+          onClose={() => setFinder(false)}
+        />
+      )}
       <Toast />
     </>
+  );
+}
+
+function BlobToolbar({
+  view,
+  scope,
+  wrap,
+  onWrap,
+  onCopied,
+}: {
+  view: FileViewResponse;
+  scope: Scope;
+  wrap: boolean;
+  onWrap: () => void;
+  onCopied: (msg: string) => void;
+}) {
+  const text = view.lines.join('\n');
+  const name = view.path.split('/').pop() ?? view.path;
+  const copy = async (value: string, msg: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      onCopied(msg);
+    } catch {
+      onCopied('Could not copy');
+    }
+  };
+
+  return (
+    <div className="blob-toolbar">
+      <span className="blob-meta">
+        {view.binary ? (
+          <span>Binary file</span>
+        ) : (
+          <>
+            <span>{plural(view.lines.length, 'line')}</span>
+            <span className="blob-meta-sep">·</span>
+            <span>{bytes(new Blob([text]).size)}</span>
+          </>
+        )}
+        {view.deleted && (
+          <Label tone="danger">Deleted here, showing the base version</Label>
+        )}
+        {view.plain && (
+          <Label>
+            Highlighting off over {view.maxHighlight.toLocaleString('en-US')}{' '}
+            lines
+          </Label>
+        )}
+        {!view.inDiff && !view.deleted && !view.binary && (
+          <Label>Not in this diff, read-only</Label>
+        )}
+      </span>
+      <span className="blob-actions">
+        <FileInfo path={view.path} />
+        <ForgeLink filePath={view.path} />
+        {!view.binary && (
+          <Button
+            small
+            icon
+            aria-pressed={wrap}
+            title={wrap ? 'Do not wrap lines' : 'Wrap lines'}
+            aria-label="Toggle line wrapping"
+            onClick={onWrap}
+          >
+            <WrapText width={14} height={14} />
+          </Button>
+        )}
+        <Button
+          small
+          icon
+          title="Copy path"
+          aria-label="Copy path"
+          onClick={() => void copy(view.path, 'Path copied')}
+        >
+          <File width={14} height={14} />
+        </Button>
+        {!view.binary && (
+          <Button
+            small
+            icon
+            title="Copy raw file"
+            aria-label="Copy raw file"
+            onClick={() => void copy(text, 'File copied')}
+          >
+            <Copy width={14} height={14} />
+          </Button>
+        )}
+        <a
+          className="ui-btn ui-btn-small ui-btn-icon"
+          href={rawHref(view.path, scope)}
+          download={name}
+          data-tooltip="Download raw file"
+          aria-label="Download raw file"
+        >
+          <Download width={14} height={14} />
+        </a>
+      </span>
+    </div>
   );
 }
 
@@ -351,10 +550,12 @@ function BlobTable({
   diff,
   changed,
   slots,
+  wrap,
 }: {
   diff: FileDiff;
   changed: Set<number>;
   slots: LineSlots;
+  wrap: boolean;
 }) {
   const tinted = useMemo<FileDiff>(
     () => ({
@@ -372,7 +573,7 @@ function BlobTable({
     [diff, changed]
   );
   return (
-    <div className="blob-view">
+    <div className={`blob-view${wrap ? ' is-wrapped' : ''}`}>
       <DiffTable
         diff={tinted}
         split={false}

@@ -7,6 +7,7 @@ import { buildFileDiffs, scopeRevs } from '@/server/diff-service.js';
 import { attributeLayers } from '@/server/git/attribute.js';
 import {
   blobExists,
+  getBlobBytes,
   getBlobLines,
   getBlobText,
   getRepoFiles,
@@ -15,7 +16,7 @@ import {
 } from '@/server/git/blobs.js';
 import { parseComparison } from '@/server/git/comparison.js';
 import { inferLanguage } from '@/server/git/diff-parser.js';
-import { isSafeRef } from '@/server/git/exec.js';
+import { git, isSafeRef } from '@/server/git/exec.js';
 import { safeRelPath } from '@/server/git/paths.js';
 import { listBranches } from '@/server/git/refs.js';
 import { readStatus } from '@/server/git/state.js';
@@ -29,11 +30,13 @@ import {
 } from '@/server/review/session.js';
 import { sampleDiffs } from '@/server/sample.js';
 import type { RepoWatcher, Selection } from '@/server/watch/watcher.js';
+import { imageTypeOf } from '@/shared/media.js';
 import type {
   BranchesResponse,
   Comparison,
   ContextResponse,
   DiffResponse,
+  FileInfoResponse,
   FileViewResponse,
   HealthResponse,
   RefSelection,
@@ -386,6 +389,85 @@ export function repoRoutes(ctx: AppContext): Hono {
       maxHighlight: MAX_HIGHLIGHT_LINES,
       tree,
     });
+  });
+
+  app.get('/api/file-info', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repo' }, 400);
+    const filePath = safeRelPath(c.req.query('path'));
+    if (!filePath) return c.json({ error: 'not found' }, 404);
+    const root = ctx.repoRoot;
+    const SEP = '\u001f';
+    const [log, blob, stat] = await Promise.all([
+      git(root, [
+        'log',
+        '--follow',
+        `--format=%H${SEP}%an${SEP}%aI${SEP}%s`,
+        '--',
+        filePath,
+      ]).catch(() => ''),
+      git(root, ['rev-parse', `HEAD:${filePath}`]).catch(() => ''),
+      fs.promises.stat(path.join(root, filePath)).catch(() => null),
+    ]);
+    const entries = log
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => l.split(SEP))
+      .filter((p) => p.length === 4)
+      .map(([sha, author, date, subject]) => ({
+        sha: sha!,
+        author: author!,
+        date: date!,
+        subject: subject!,
+      }));
+    const byAuthor = new Map<string, number>();
+    for (const e of entries)
+      byAuthor.set(e.author, (byAuthor.get(e.author) ?? 0) + 1);
+    return c.json<FileInfoResponse>({
+      path: filePath,
+      size: stat?.size ?? null,
+      blob: blob.trim() || null,
+      tracked: entries.length > 0 || Boolean(blob.trim()),
+      commits: entries.length,
+      authors: [...byAuthor]
+        .map(([name, commits]) => ({ name, commits }))
+        .sort((a, b) => b.commits - a.commits),
+      first: entries.at(-1) ?? null,
+      last: entries[0] ?? null,
+    });
+  });
+
+  app.get('/api/raw', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repo' }, 400);
+    const filePath = safeRelPath(c.req.query('path'));
+    if (!filePath) return c.json({ error: 'not found' }, 404);
+    const state = ctx.state();
+    if (!state.refs) return c.json({ error: 'unavailable' }, 503);
+    const entry =
+      state.files.find((f) => f.path === filePath || f.oldPath === filePath) ??
+      null;
+    const { rev, oldRev } = scopeRevs(parseScope(c.req.query('scope')), {
+      refs: state.refs,
+      comparison: state.comparison,
+      statusDigest: ctx.statusDigest(),
+    });
+    const side = c.req.query('side');
+    const useOld = side === 'old' || entry?.kind === 'deleted';
+    const bytes = await getBlobBytes(
+      ctx.repoRoot,
+      useOld ? oldRev : rev,
+      filePath
+    );
+    if (!bytes) return c.json({ error: 'not found' }, 404);
+    const type = imageTypeOf(filePath);
+    c.header('Content-Type', type ?? 'application/octet-stream');
+    c.header('Cache-Control', 'no-store');
+    c.header('X-Content-Type-Options', 'nosniff');
+    if (!type)
+      c.header(
+        'Content-Disposition',
+        `attachment; filename="${path.basename(filePath).replace(/["\\]/g, '')}"`
+      );
+    return c.body(new Uint8Array(bytes));
   });
 
   app.get('/api/events', (c) =>

@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { git, isSafeRef } from '@/server/git/exec.js';
+import { git, gitBytes, isSafeRef } from '@/server/git/exec.js';
 import { insideRepo, safeRelPath } from '@/server/git/paths.js';
 import type { Rev } from '@/shared/protocol.js';
 
@@ -24,6 +24,23 @@ export async function getBlobText(
   const s = spec(rev, rel);
   if (!s) return '';
   return git(repoRoot, ['cat-file', 'blob', s]).catch(() => '');
+}
+
+export async function getBlobBytes(
+  repoRoot: string,
+  rev: Rev,
+  filePath: string
+): Promise<Buffer | null> {
+  const rel = safeRelPath(filePath);
+  if (!rel) return null;
+  if (rev === 'WORKTREE') {
+    const abs = insideRepo(repoRoot, rel);
+    if (!abs) return null;
+    return fs.readFile(abs).catch(() => null);
+  }
+  const s = spec(rev, rel);
+  if (!s) return null;
+  return gitBytes(repoRoot, ['cat-file', 'blob', s]).catch(() => null);
 }
 
 export async function blobExists(

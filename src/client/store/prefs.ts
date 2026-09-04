@@ -1,6 +1,8 @@
 import type { ScopePreset } from '@/shared/protocol.js';
 
 export type View = 'split' | 'unified';
+export type Theme = 'github' | 'solarized' | 'atom';
+export type Appearance = 'auto' | 'light' | 'dark';
 
 const read = <T>(key: string, fallback: T): T => {
   try {
@@ -24,6 +26,10 @@ const repoKey = (repoRoot: string | null, name: string) =>
 
 export const prefs = {
   view: (): View => read<View>('looksee:view', 'split'),
+  theme: (): Theme => read<Theme>('looksee:theme', 'github'),
+  setTheme: (v: Theme) => write('looksee:theme', v),
+  appearance: (): Appearance => read<Appearance>('looksee:appearance', 'auto'),
+  setAppearance: (v: Appearance) => write('looksee:appearance', v),
   setView: (v: View) => write('looksee:view', v),
   colorByLayer: (): boolean => read('looksee:colorByLayer', false),
   setColorByLayer: (v: boolean) => write('looksee:colorByLayer', v),
