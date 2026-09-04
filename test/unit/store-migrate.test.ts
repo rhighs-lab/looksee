@@ -148,6 +148,35 @@ describe('store v2', () => {
     expect(await getSession(repoRoot)).toEqual(session);
   });
 
+  it('drops a malformed custom comparison on read', async () => {
+    const file = storeFile(home, repoRoot);
+    await fs.mkdir(home, { recursive: true });
+    await fs.writeFile(
+      file,
+      JSON.stringify({
+        version: 3,
+        repoRoot,
+        reviews: [],
+        comments: [],
+        done: [],
+        session: {
+          openedAt: null,
+          approvedAt: null,
+          scope: 'custom',
+          custom: { baseline: { kind: 'nope' } },
+          endedAt: null,
+        },
+      })
+    );
+    expect(await getSession(repoRoot)).toEqual({
+      openedAt: null,
+      approvedAt: null,
+      scope: 'custom',
+      custom: null,
+      endedAt: null,
+    });
+  });
+
   it('keeps the session across other writes and passes it to updaters', async () => {
     const session: Session = {
       openedAt: { tree: 'a'.repeat(40), head: 'b'.repeat(40), at: 't0' },

@@ -1,3 +1,6 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {
   driftOf,
   labelOf,
@@ -48,6 +51,7 @@ export interface StateOpts {
   session: Session | null;
   baseFlag: string | null;
   headRef?: string | null;
+  status?: StatusEntry[];
 }
 
 export interface ScopePlan {
@@ -238,6 +242,7 @@ export function summarize(files: ChangedFile[]): RepoSummary {
 
 export async function readStatus(repoRoot: string): Promise<StatusEntry[]> {
   const out = await git(repoRoot, [
+    '--no-optional-locks',
     'status',
     '--porcelain=v2',
     '-z',
@@ -245,6 +250,27 @@ export async function readStatus(repoRoot: string): Promise<StatusEntry[]> {
     '--renames',
   ]);
   return parseStatus(out);
+}
+
+const inTree = (e: StatusEntry): boolean =>
+  e.untracked || e.unmerged || e.worktree !== '.';
+
+export async function statusDigest(
+  repoRoot: string,
+  status: StatusEntry[]
+): Promise<string> {
+  const stats = await Promise.all(
+    status.filter(inTree).map((e) =>
+      fs.stat(path.join(repoRoot, e.path)).then(
+        (st) => `${st.mtimeMs}:${st.size}`,
+        () => 'gone'
+      )
+    )
+  );
+  return crypto
+    .createHash('sha1')
+    .update(JSON.stringify([status, stats]))
+    .digest('hex');
 }
 
 const pinsOf = (cmp: Comparison, session: Session | null): Pin[] =>
@@ -293,7 +319,9 @@ export async function computeRepoState(
   version: number
 ): Promise<RepoState> {
   const refs = await getRefs(repoRoot, opts.baseFlag, opts.headRef ?? null);
-  const status = refs.head.checkedOut ? await readStatus(repoRoot) : [];
+  const status = refs.head.checkedOut
+    ? (opts.status ?? (await readStatus(repoRoot)))
+    : [];
   const { comparison, drift } = await resolveTrees(
     repoRoot,
     opts,

@@ -1,4 +1,4 @@
-import { git } from '@/server/git/exec.js';
+import { git, isSafeRef } from '@/server/git/exec.js';
 import { mergeBase } from '@/server/git/refs.js';
 import { indexTree, snapshotWorktree, treeOf } from '@/server/git/snapshot.js';
 import type {
@@ -22,6 +22,39 @@ const short = (sha: string): string => sha.slice(0, 7);
 
 const PIN_LABEL = { opened: 'Session start', approved: 'Last approval' };
 const SINCE = { opened: 'Since session start', approved: 'Since approval' };
+
+export function parseEndpoint(v: unknown): Endpoint | null {
+  if (!v || typeof v !== 'object') return null;
+  const e = v as Record<string, unknown>;
+  switch (e['kind']) {
+    case 'head':
+    case 'index':
+    case 'worktree':
+      return { kind: e['kind'] };
+    case 'commit':
+      return isSafeRef(e['oid']) ? { kind: 'commit', oid: e['oid'] } : null;
+    case 'ref':
+      return isSafeRef(e['name']) ? { kind: 'ref', name: e['name'] } : null;
+    case 'merge-base':
+      return isSafeRef(e['left']) && isSafeRef(e['right'])
+        ? { kind: 'merge-base', left: e['left'], right: e['right'] }
+        : null;
+    case 'pin':
+      return e['name'] === 'opened' || e['name'] === 'approved'
+        ? { kind: 'pin', name: e['name'] }
+        : null;
+    default:
+      return null;
+  }
+}
+
+export function parseComparison(v: unknown): Comparison | null {
+  if (!v || typeof v !== 'object') return null;
+  const c = v as Record<string, unknown>;
+  const baseline = parseEndpoint(c['baseline']);
+  const endpoint = parseEndpoint(c['endpoint']);
+  return baseline && endpoint ? { baseline, endpoint } : null;
+}
 
 export function resolveComparison(
   preset: ScopePreset,
@@ -56,7 +89,7 @@ export function resolveComparison(
         endpoint: WORKTREE,
       };
     case 'custom':
-      return custom ?? { baseline: HEAD, endpoint: WORKTREE };
+      return custom ?? resolveComparison('session', null, session, refs);
   }
 }
 
@@ -121,11 +154,12 @@ export async function resolveEndpoint(
     case 'pin': {
       const pin = ctx.session?.[`${ep.name}At`] ?? null;
       if (!pin) throw new Error(`no ${ep.name} pin`);
+      const s = short(pin.head || pin.tree);
       return {
         kind: 'pin',
         oid: pin.tree,
-        short: short(pin.head),
-        label: `${PIN_LABEL[ep.name]} ${short(pin.head)}`,
+        short: s,
+        label: `${PIN_LABEL[ep.name]} ${s}`,
       };
     }
   }

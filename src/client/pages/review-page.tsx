@@ -108,9 +108,11 @@ export function ReviewPage({
             )}
           {state && state.files.length > 0 && files.length === 0 && (
             <Notice tone="muted">
-              {scope === 'cumulative'
-                ? `No files match the selected layer filter (${layerFilter.join(', ')}).`
-                : `Nothing in the ${scope} layer.`}
+              {scope !== 'cumulative'
+                ? `Nothing in the ${scope} layer.`
+                : layerFilter.length
+                  ? `No files match the selected layer filter (${layerFilter.join(', ')}).`
+                  : 'No changes in this comparison.'}
             </Notice>
           )}
           {files.map((file) => (

@@ -5,6 +5,7 @@ import { makeRepo, type Repo, seedRepo } from '@test/helpers/repo.js';
 import { startTestServer, type TestServer } from '@test/helpers/server.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readPin } from '@/server/git/snapshot.js';
+import { computeRepoState } from '@/server/git/state.js';
 import {
   endSession,
   ensureSession,
@@ -26,6 +27,11 @@ describe('review session', () => {
   let home: string;
   let key: string;
   const pin = (name: string) => readPin(repo.dir, key, name);
+  const refs = async (r: Repo = repo) =>
+    (await r.git(['for-each-ref', '--format=%(refname)', 'refs/looksee/']))
+      .split('\n')
+      .filter(Boolean)
+      .map((x) => x.split('/').pop());
   const head = async () => (await repo.git(['rev-parse', 'HEAD'])).trim();
   const submit = async (actor: string | undefined, verdict: string) => {
     const headers = actor ? { 'x-looksee-actor': actor } : undefined;
@@ -70,6 +76,8 @@ describe('review session', () => {
     });
     expect(await pin('opened')).toBe(s.openedAt?.tree);
     expect(await pin('approved')).toBeNull();
+    expect(await refs()).toEqual(['opened', 'opened-head']);
+    expect(await readPin(repo.dir, key, 'opened-head')).toBe(await head());
     await settle();
     expect(await ensureSession(repo.dir)).toEqual(s);
     expect(await getSession(repo.dir)).toEqual(s);
@@ -158,6 +166,7 @@ describe('review session', () => {
     expect(Date.parse(ended?.endedAt ?? '')).not.toBeNaN();
     expect(await pin('opened')).toBeNull();
     expect(await pin('approved')).toBeNull();
+    expect(await refs()).toEqual([]);
     expect(await getSession(repo.dir)).toEqual(ended);
     await repo.write('src/cart.js', 'export const cart = [3];\n');
     await settle();
@@ -179,8 +188,33 @@ describe('review session', () => {
       expect(await readPin(bare.dir, repoKey(bare.dir), 'opened')).toBe(
         s.openedAt?.tree
       );
+      expect(await refs(bare)).toEqual(['opened']);
+      const st = await computeRepoState(
+        bare.dir,
+        { preset: 'session', custom: null, session: s, baseFlag: null },
+        1
+      );
+      expect(st.comparison?.label).not.toMatch(/ {2}/);
+      expect(st.comparison?.baseline.short).toBe(s.openedAt?.tree.slice(0, 7));
     } finally {
       await bare.cleanup();
+    }
+  });
+
+  it('a failed store write leaves no refs behind', async () => {
+    const other = await makeRepo();
+    const ro = await fs.mkdtemp(path.join(os.tmpdir(), 'looksee-ro-'));
+    process.env['LOOKSEE_HOME'] = ro;
+    try {
+      await seedRepo(other);
+      await fs.chmod(ro, 0o500);
+      await expect(ensureSession(other.dir)).rejects.toThrow(/EACCES/);
+      expect(await refs(other)).toEqual([]);
+    } finally {
+      process.env['LOOKSEE_HOME'] = home;
+      await fs.chmod(ro, 0o700);
+      await fs.rm(ro, { recursive: true, force: true });
+      await other.cleanup();
     }
   });
 });

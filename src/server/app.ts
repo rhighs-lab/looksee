@@ -50,6 +50,7 @@ export function createApp(opts: AppOpts): LookseeApp {
     watcher,
     clientDir: opts.clientDir ?? null,
     state: (): RepoState => (watcher ? watcher.state : sample),
+    statusDigest: (): string | null => watcher?.statusDigest ?? null,
   };
 
   const app = new Hono();

@@ -14,5 +14,6 @@ export interface AppContext {
   hub: EventHub;
   watcher: RepoWatcher | null;
   state(): RepoState;
+  statusDigest(): string | null;
   clientDir: string | null;
 }

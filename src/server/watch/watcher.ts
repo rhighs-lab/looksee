@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { computeRepoState, stateFingerprint } from '@/server/git/state.js';
+import {
+  computeRepoState,
+  readStatus,
+  stateFingerprint,
+  statusDigest,
+} from '@/server/git/state.js';
 import { getSession } from '@/server/review/store.js';
 import type { EventHub } from '@/server/watch/events.js';
 import type {
@@ -65,6 +70,7 @@ export const emptyState = (
 
 export class RepoWatcher {
   state: RepoState;
+  statusDigest: string | null = null;
   private version = 0;
   private fingerprint = '';
   private timer: NodeJS.Timeout | null = null;
@@ -167,24 +173,30 @@ export class RepoWatcher {
   private async run(): Promise<void> {
     let next: RepoState;
     let session: Session | null = null;
+    let digest: string | null = null;
     try {
       session = await getSession(this.repoRoot);
+      const status = await readStatus(this.repoRoot);
+      digest = await statusDigest(this.repoRoot, status);
       next = await computeRepoState(
         this.repoRoot,
         {
           ...this.scope(),
           session,
+          status,
           baseFlag: this.opts.baseFlag,
           headRef: this.opts.headRef ?? null,
         },
         this.version + 1
       );
     } catch (err) {
+      digest = null;
       next = {
         ...emptyState(this.repoRoot, (err as Error).message),
         version: this.version + 1,
       };
     }
+    this.statusDigest = digest;
     const fp = `${stateFingerprint(next)}#${pinsPart(session)}${next.error ?? ''}`;
     if (fp === this.fingerprint && this.version > 0) return;
     this.fingerprint = fp;

@@ -12,6 +12,7 @@ export { getSession };
 
 const PINS = ['opened', 'approved'] as const;
 type PinName = (typeof PINS)[number];
+type Pinner = (name: PinName) => Promise<Pin>;
 
 const headSha = async (repoRoot: string): Promise<string> =>
   (
@@ -20,21 +21,49 @@ const headSha = async (repoRoot: string): Promise<string> =>
     })
   ).trim();
 
-async function pin(repoRoot: string, name: PinName): Promise<Pin> {
-  const tree = await snapshotWorktree(repoRoot);
-  const head = await headSha(repoRoot);
-  await pinRef(repoRoot, repoKey(repoRoot), name, tree);
-  return { tree, head, at: new Date().toISOString() };
+async function writePin(
+  repoRoot: string,
+  name: PinName,
+  p: Pin
+): Promise<void> {
+  const key = repoKey(repoRoot);
+  await pinRef(repoRoot, key, name, p.tree);
+  if (p.head) await pinRef(repoRoot, key, `${name}-head`, p.head);
+  else await unpinRef(repoRoot, key, `${name}-head`);
 }
 
-const unpin = (repoRoot: string, name: PinName): Promise<void> =>
-  unpinRef(repoRoot, repoKey(repoRoot), name);
+async function unpin(repoRoot: string, name: PinName): Promise<void> {
+  const key = repoKey(repoRoot);
+  await unpinRef(repoRoot, key, name);
+  await unpinRef(repoRoot, key, `${name}-head`);
+}
 
-const live = async (repoRoot: string, cur: Session | null): Promise<Session> =>
+async function update<S extends Session | null>(
+  repoRoot: string,
+  fn: (cur: Session | null, pin: Pinner) => Promise<S>
+): Promise<S> {
+  const made: PinName[] = [];
+  const pin: Pinner = async (name) => {
+    const tree = await snapshotWorktree(repoRoot);
+    const head = await headSha(repoRoot);
+    const p = { tree, head, at: new Date().toISOString() };
+    made.push(name);
+    await writePin(repoRoot, name, p);
+    return p;
+  };
+  try {
+    return await setSession(repoRoot, (cur) => fn(cur, pin));
+  } catch (err) {
+    for (const name of made) await unpin(repoRoot, name);
+    throw err;
+  }
+}
+
+const live = async (cur: Session | null, pin: Pinner): Promise<Session> =>
   cur && !cur.endedAt
     ? cur
     : {
-        openedAt: await pin(repoRoot, 'opened'),
+        openedAt: await pin('opened'),
         approvedAt: null,
         scope: 'session',
         custom: null,
@@ -42,11 +71,11 @@ const live = async (repoRoot: string, cur: Session | null): Promise<Session> =>
       };
 
 export const ensureSession = (repoRoot: string): Promise<Session> =>
-  setSession(repoRoot, (cur) => live(repoRoot, cur));
+  update(repoRoot, live);
 
 export const repin = (repoRoot: string): Promise<Session> =>
-  setSession(repoRoot, async (cur) => {
-    const openedAt = await pin(repoRoot, 'opened');
+  update(repoRoot, async (cur, pin) => {
+    const openedAt = await pin('opened');
     await unpin(repoRoot, 'approved');
     return {
       scope: cur?.scope ?? 'session',
@@ -58,9 +87,9 @@ export const repin = (repoRoot: string): Promise<Session> =>
   });
 
 export const pinApproved = (repoRoot: string): Promise<Session> =>
-  setSession(repoRoot, async (cur) => {
-    const s = await live(repoRoot, cur);
-    return { ...s, approvedAt: await pin(repoRoot, 'approved') };
+  update(repoRoot, async (cur, pin) => {
+    const s = await live(cur, pin);
+    return { ...s, approvedAt: await pin('approved') };
   });
 
 export const endSession = (repoRoot: string): Promise<Session | null> =>
@@ -75,7 +104,7 @@ export const setScope = (
   preset: ScopePreset,
   custom?: Comparison
 ): Promise<Session> =>
-  setSession(repoRoot, async (cur) => {
-    const s = await live(repoRoot, cur);
+  update(repoRoot, async (cur, pin) => {
+    const s = await live(cur, pin);
     return { ...s, scope: preset, custom: custom ?? s.custom };
   });

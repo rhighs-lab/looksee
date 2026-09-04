@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { parseComparison } from '@/server/git/comparison.js';
 import {
   type Comment,
   type Comparison,
@@ -136,7 +137,7 @@ function normalizeSession(s: unknown): Session | null {
     openedAt: normPin(x.openedAt),
     approvedAt: normPin(x.approvedAt),
     scope: x.scope && SCOPE_PRESETS.includes(x.scope) ? x.scope : 'session',
-    custom: x.custom ?? null,
+    custom: parseComparison(x.custom),
     endedAt: x.endedAt ?? null,
   };
 }

@@ -1,7 +1,13 @@
 import { getLineCount } from '@/server/git/blobs.js';
 import { parsePatch } from '@/server/git/diff-parser.js';
 import { indexTree, snapshotWorktree } from '@/server/git/snapshot.js';
-import { planScope, readStatus, scopePatch } from '@/server/git/state.js';
+import {
+  planScope,
+  readStatus,
+  scopePatch,
+  statusDigest,
+} from '@/server/git/state.js';
+import type { StatusEntry } from '@/server/git/status.js';
 import { highlightHunks } from '@/server/render/highlighter.js';
 import { annotateWordDiffs } from '@/server/render/word-diff.js';
 import type {
@@ -16,6 +22,7 @@ import { LARGE_DIFF_LINES } from '@/shared/protocol.js';
 export interface DiffCtx {
   refs: RepoRefs;
   comparison: ResolvedComparison | null;
+  statusDigest?: string | null;
 }
 
 export function scopeRevs(
@@ -45,12 +52,18 @@ export interface BuildOpts {
 async function freshen(
   repoRoot: string,
   ctx: DiffCtx,
+  status: StatusEntry[],
   paths: string[]
 ): Promise<ResolvedComparison | null> {
   const cmp = ctx.comparison;
   if (!cmp || !ctx.refs.head.checkedOut) return cmp;
   const ep = cmp.endpoint;
   if (ep.kind !== 'worktree' && ep.kind !== 'index') return cmp;
+  if (
+    ctx.statusDigest &&
+    ctx.statusDigest === (await statusDigest(repoRoot, status))
+  )
+    return cmp;
   const oid =
     (ep.kind === 'index' ? await indexTree(repoRoot) : null) ??
     (await snapshotWorktree(repoRoot, paths));
@@ -71,7 +84,7 @@ export async function buildFileDiffs(
     ctx.refs,
     status,
     paths,
-    scope === 'cumulative' ? await freshen(repoRoot, ctx, paths) : null
+    scope === 'cumulative' ? await freshen(repoRoot, ctx, status, paths) : null
   );
   const { rev, oldRev } = scopeRevs(scope, ctx);
   const parsed = parsePatch(patch);

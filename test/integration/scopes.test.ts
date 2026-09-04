@@ -10,6 +10,7 @@ import {
 } from '@test/helpers/repo.js';
 import { startTestServer, type TestServer } from '@test/helpers/server.js';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { repoKey } from '@/server/review/store.js';
 import type {
   ChangedFile,
   DiffResponse,
@@ -283,6 +284,50 @@ describe('scope presets on the default branch', () => {
       baseline: { kind: 'head' },
       endpoint: { kind: 'worktree' },
     });
+  });
+});
+
+describe('custom preset without a comparison', () => {
+  let repo: Repo;
+  let srv: TestServer;
+  beforeAll(async () => {
+    repo = await makeRepo();
+    await seedRepo(repo);
+    await fs.writeFile(
+      path.join(home, `${repoKey(repo.dir)}.json`),
+      JSON.stringify({
+        version: 3,
+        repoRoot: repo.dir,
+        reviews: [],
+        comments: [],
+        done: [],
+        session: {
+          openedAt: null,
+          approvedAt: null,
+          scope: 'custom',
+          custom: { baseline: { kind: 'nope' } },
+          endedAt: null,
+        },
+      })
+    );
+    srv = await startTestServer({ repoRoot: repo.dir });
+  });
+  afterAll(async () => {
+    await srv.close();
+    await repo.cleanup();
+  });
+
+  it('computes state and falls back to the session comparison', async () => {
+    const s = await state(srv);
+    expect(s.error).toBeNull();
+    expect(s.comparison).toMatchObject({
+      preset: 'custom',
+      baseline: { kind: 'head' },
+      endpoint: { kind: 'worktree' },
+    });
+    const sess = (await srv.json<Session>('GET', '/api/session')).body;
+    expect(sess.scope).toBe('custom');
+    expect(sess.custom).toBeNull();
   });
 });
 

@@ -13,6 +13,7 @@ import {
   isBinaryText,
   splitLines,
 } from '@/server/git/blobs.js';
+import { parseComparison } from '@/server/git/comparison.js';
 import { inferLanguage } from '@/server/git/diff-parser.js';
 import { isSafeRef } from '@/server/git/exec.js';
 import { safeRelPath } from '@/server/git/paths.js';
@@ -33,7 +34,6 @@ import type {
   Comparison,
   ContextResponse,
   DiffResponse,
-  Endpoint,
   FileViewResponse,
   HealthResponse,
   RefSelection,
@@ -68,39 +68,6 @@ function parseRev(raw: string | undefined): Rev | null {
 
 const isPreset = (v: unknown): v is ScopePreset =>
   SCOPE_PRESETS.includes(v as ScopePreset);
-
-function parseEndpoint(v: unknown): Endpoint | null {
-  if (!v || typeof v !== 'object') return null;
-  const e = v as Record<string, unknown>;
-  switch (e['kind']) {
-    case 'head':
-    case 'index':
-    case 'worktree':
-      return { kind: e['kind'] };
-    case 'commit':
-      return isSafeRef(e['oid']) ? { kind: 'commit', oid: e['oid'] } : null;
-    case 'ref':
-      return isSafeRef(e['name']) ? { kind: 'ref', name: e['name'] } : null;
-    case 'merge-base':
-      return isSafeRef(e['left']) && isSafeRef(e['right'])
-        ? { kind: 'merge-base', left: e['left'], right: e['right'] }
-        : null;
-    case 'pin':
-      return e['name'] === 'opened' || e['name'] === 'approved'
-        ? { kind: 'pin', name: e['name'] }
-        : null;
-    default:
-      return null;
-  }
-}
-
-function parseComparison(v: unknown): Comparison | null {
-  if (!v || typeof v !== 'object') return null;
-  const c = v as Record<string, unknown>;
-  const baseline = parseEndpoint(c['baseline']);
-  const endpoint = parseEndpoint(c['endpoint']);
-  return baseline && endpoint ? { baseline, endpoint } : null;
-}
 
 const jsonBody = async (c: {
   req: { json(): Promise<unknown> };
@@ -286,7 +253,11 @@ export function repoRoutes(ctx: AppContext): Hono {
       const files = await buildFileDiffs(
         ctx.repoRoot,
         scope,
-        { refs: state.refs, comparison: state.comparison },
+        {
+          refs: state.refs,
+          comparison: state.comparison,
+          statusDigest: ctx.statusDigest(),
+        },
         { paths, full }
       );
       if (attribute)
@@ -357,7 +328,11 @@ export function repoRoutes(ctx: AppContext): Hono {
       state.files.find((f) => f.path === filePath || f.oldPath === filePath) ??
       null;
     const deleted = entry?.kind === 'deleted';
-    const diffCtx = { refs: state.refs, comparison: state.comparison };
+    const diffCtx = {
+      refs: state.refs,
+      comparison: state.comparison,
+      statusDigest: ctx.statusDigest(),
+    };
     const { rev: scopeRev, oldRev } = scopeRevs(scope, diffCtx);
     const rev: Rev = deleted ? oldRev : scopeRev;
     const text = await getBlobText(ctx.repoRoot, rev, filePath);
