@@ -23,7 +23,7 @@ export function highlightRange(
   hi: number
 ): void {
   clearRangeHighlight();
-  if (hi <= lo) return;
+  if (hi < lo) return;
   const file = document.querySelector(
     `.file[data-path="${CSS.escape(filePath)}"]`
   );
@@ -95,18 +95,19 @@ export function useRangeSelection(
       if (!g) return;
       const file = g.closest<HTMLElement>('.file');
       if (!file) return;
-      drag.current = {
-        filePath: file.dataset['path'] ?? '',
-        side: g.dataset['side'] as CommentSide,
-        line: Number(g.dataset['commentLine']),
-        anchor: g,
-        moved: false,
-      };
+      const line = Number(g.dataset['commentLine']);
+      const filePath = file.dataset['path'] ?? '';
+      const side = g.dataset['side'] as CommentSide;
+      drag.current = { filePath, side, line, anchor: g, moved: false };
+      // the bar and the wash appear on press, not on the first move, so the
+      // anchor line is already selected before the pointer travels
+      highlightRange(filePath, side, line, line);
+      castBar(g, g);
     };
     const onMove = (e: MouseEvent) => {
       const d = drag.current;
       if (!d) return;
-      const row = (e.target as Element | null)?.closest('tr');
+      const row = e.target instanceof Element ? e.target.closest('tr') : null;
       const cell = row?.querySelector<HTMLElement>(
         `.commentable[data-side="${d.side}"]`
       );
@@ -132,7 +133,7 @@ export function useRangeSelection(
       if (!d?.moved) return;
       suppress.current = true;
       setTimeout(() => (suppress.current = false), 300);
-      const row = (e.target as Element | null)?.closest('tr');
+      const row = e.target instanceof Element ? e.target.closest('tr') : null;
       const cell = row?.querySelector<HTMLElement>(
         `.commentable[data-side="${d.side}"]`
       );

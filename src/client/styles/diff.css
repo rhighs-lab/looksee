@@ -986,8 +986,14 @@ body {
 }
 
 /* selected line range while composing / dragging */
+/* the selection wash follows the active theme's accent instead of a fixed
+   GitHub blue, which read as foreign under Solarized and Atom */
 .mq-range-line {
-  background-color: rgba(84, 174, 255, 0.22) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--bgColor-accent-emphasis, #0969da) 22%,
+    transparent
+  ) !important;
 }
 
 .comment-body {
