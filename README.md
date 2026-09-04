@@ -46,6 +46,12 @@ One daemon per repo, found again by path, so every command below works from
 anywhere inside the repo. `looksee --help` and `looksee <command> --help`
 document everything; the CLI is meant to be self-teaching.
 
+Review several repos at once. Each gets its own daemon on the next free port
+from 4711, and every command applies to the repo your shell is inside, so
+nothing has to be told which review you mean. The browser tab reads
+`looksee · <repo>` so the tabs stay apart; `looksee review . --title Payments`
+names one yourself, even while it is already running.
+
 ## Features
 
 ![review](assets/review.jpg)
@@ -89,7 +95,19 @@ CLI, so an agent can review another agent's work.
 tinted by the git layer that introduced it, so staged, unstaged and untracked
 edits inside one hunk are told apart at a glance.
 
+![file view](assets/file-view.png)
+
+**File view.** Open any file whole, with the repository tree beside it, to
+read the code the diff only shows in pieces. Status icons mark what happened
+to each changed file.
+
 ## CLI
+
+The CLI is how agents and scripts reach the same daemon the browser is
+looking at. It reads the review, writes comments and replies, and streams
+events, so an agent can answer a thread while you are still reading it. Every
+command runs from anywhere inside the repo and starts the daemon if it is not
+up yet.
 
 Every command prints JSON unless `--pretty` is given. `--as <name>` names the
 actor (default `LOOKSEE_ACTOR`, then `agent`); `user` is reserved for the
@@ -98,6 +116,7 @@ browser.
 | Command | What it does |
 | --- | --- |
 | `looksee review [path]` | Start the server for a repo and open the browser |
+| `looksee review . --title <name>` | Name this review in the browser tab |
 | `looksee status` | Server, pending reviews, open threads and session pins |
 | `looksee stop` | Shut down the server for this repo |
 | `looksee listen` | Stream review events as JSON lines until killed |
