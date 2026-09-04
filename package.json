@@ -21,6 +21,11 @@
   "bin": {
     "looksee": "dist/server/cli/main.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "git",
     "diff",
@@ -30,12 +35,15 @@
   ],
   "scripts": {
     "start": "node dist/server/cli/main.js",
+    "looksee": "node dist/server/cli/main.js",
     "dev": "pnpm run --parallel \"/^dev:/\"",
     "dev:server": "tsx watch src/cli/main.ts serve --repo . --port 4711",
     "dev:client": "vite",
-    "build": "pnpm run build:server && pnpm run build:client",
+    "build": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json && vite build",
     "build:server": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "build:client": "vite build",
+    "prepare": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json && vite build",
+    "prepublishOnly": "pnpm test && pnpm build",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json",
     "test": "vitest run",
     "test:watch": "vitest",
