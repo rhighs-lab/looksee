@@ -1,3 +1,5 @@
+import type { ScopePreset } from '@/shared/protocol.js';
+
 export type View = 'split' | 'unified';
 
 const read = <T>(key: string, fallback: T): T => {
@@ -33,6 +35,10 @@ export const prefs = {
     read(repoKey(repoRoot, 'viewed'), {}),
   setViewed: (repoRoot: string | null, v: Record<string, string>) =>
     write(repoKey(repoRoot, 'viewed'), v),
+  scope: (repoRoot: string | null): ScopePreset | null =>
+    read<ScopePreset | null>(repoKey(repoRoot, 'scope'), null),
+  setScope: (repoRoot: string | null, v: ScopePreset) =>
+    write(repoKey(repoRoot, 'scope'), v),
   collapsed: (repoRoot: string | null): Record<string, boolean> =>
     read(repoKey(repoRoot, 'collapsed'), {}),
   setCollapsed: (repoRoot: string | null, v: Record<string, boolean>) =>

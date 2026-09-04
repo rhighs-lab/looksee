@@ -13,6 +13,7 @@ import {
   useRangeSelection,
 } from '@/client/components/comments/use-range-selection.js';
 import type { LineSlots } from '@/client/components/diff/diff-table.js';
+import { ScopeNotices } from '@/client/components/scope-switcher.js';
 import { snapshotForRange } from '@/client/lib/snapshot.js';
 import { ReviewPage } from '@/client/pages/review-page.js';
 import { useRevealHiddenLines } from '@/client/pages/use-reveal-hidden-lines.js';
@@ -236,7 +237,12 @@ export function ReviewWithComments() {
           </>
         ) : null
       }
-      headerBelow={enabled ? <DoneBanner /> : null}
+      headerBelow={
+        <>
+          <ScopeNotices />
+          {enabled && <DoneBanner />}
+        </>
+      }
     />
   );
 }

@@ -9,13 +9,16 @@ import { prefs, type View } from '@/client/store/prefs.js';
 import type {
   BranchesResponse,
   ChangedFile,
+  Comparison,
   DiffLine,
   FileDiff,
   Layer,
-  RefSelection,
+  RepoRefs,
   RepoState,
   Scope,
+  ScopePreset,
   ServerEvent,
+  Session,
 } from '@/shared/protocol.js';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
@@ -48,7 +51,8 @@ export interface ReviewStore {
   toast: { message: string; action?: { label: string; fn: () => void } } | null;
   eventListeners: Set<(ev: ServerEvent) => void>;
   branches: BranchesResponse | null;
-  selection: RefSelection;
+  preset: ScopePreset;
+  session: Session | null;
 
   init(): () => void;
   refresh(): Promise<void>;
@@ -66,7 +70,9 @@ export interface ReviewStore {
   setTreeWidth(px: number | null): void;
   setActivePath(path: string | null): void;
   loadBranches(): Promise<void>;
-  setRefs(sel: Partial<RefSelection>): Promise<void>;
+  setPreset(preset: ScopePreset, custom?: Comparison): Promise<void>;
+  repin(): Promise<void>;
+  endSession(): Promise<void>;
   showToast(message: string, action?: { label: string; fn: () => void }): void;
   hideToast(): void;
   onEvent(fn: (ev: ServerEvent) => void): () => void;
@@ -75,6 +81,27 @@ export interface ReviewStore {
 let sub: EventSubscription | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshChain: Promise<void> = Promise.resolve();
+
+const WORKTREE: Comparison['endpoint'] = { kind: 'worktree' };
+
+export const customFrom = (
+  preset: ScopePreset,
+  session: Session | null,
+  refs: RepoRefs | null
+): Comparison => {
+  const live = session && !session.endedAt ? session : null;
+  if (preset === 'session' && live?.openedAt)
+    return {
+      baseline: { kind: 'pin', name: live.approvedAt ? 'approved' : 'opened' },
+      endpoint: WORKTREE,
+    };
+  if (preset === 'branch' && refs?.mergeBase)
+    return {
+      baseline: { kind: 'merge-base', left: refs.base.ref, right: 'HEAD' },
+      endpoint: WORKTREE,
+    };
+  return { baseline: { kind: 'head' }, endpoint: WORKTREE };
+};
 
 export const useReview = create<ReviewStore>((set, get) => {
   const applyDiffs = (
@@ -155,7 +182,7 @@ export const useReview = create<ReviewStore>((set, get) => {
   const doRefresh = async (force: boolean) => {
     const wasReady = get().status === 'ready' && get().state !== null;
     try {
-      const state = await api.state();
+      const [state, session] = await Promise.all([api.state(), api.session()]);
       const prevRepo = get().state?.repoRoot;
       if (!wasReady || prevRepo !== state.repoRoot) {
         set({
@@ -163,7 +190,14 @@ export const useReview = create<ReviewStore>((set, get) => {
           collapsed: prefs.collapsed(state.repoRoot),
         });
       }
-      set({ state });
+      set({
+        state,
+        session,
+        preset:
+          state.comparison?.preset ??
+          prefs.scope(state.repoRoot) ??
+          get().preset,
+      });
       reconcileViewed(state.repoRoot, state.files);
       if (state.error) {
         set({ status: 'error', error: state.error });
@@ -203,7 +237,8 @@ export const useReview = create<ReviewStore>((set, get) => {
     toast: null,
     eventListeners: new Set(),
     branches: null,
-    selection: { base: null, head: null },
+    preset: 'session',
+    session: null,
 
     init() {
       void get().refresh();
@@ -321,30 +356,54 @@ export const useReview = create<ReviewStore>((set, get) => {
 
     async loadBranches() {
       try {
-        const [branches, selection] = await Promise.all([
-          api.branches(),
-          api.refs(),
-        ]);
-        set({ branches, selection });
+        set({ branches: await api.branches() });
       } catch {
         /* outside a repo */
       }
     },
 
-    async setRefs(sel) {
+    async setPreset(preset, custom) {
+      const prev = get().preset;
+      if (preset === prev && !custom) return;
+      const body =
+        preset === 'custom' && !custom && !get().session?.custom
+          ? customFrom(prev, get().session, get().state?.refs ?? null)
+          : custom;
+      set({ preset, expansions: {}, diffs: {}, status: 'loading' });
       try {
-        await api.setRefs(sel);
-        set({
-          selection: { ...get().selection, ...sel },
-          expansions: {},
-          diffs: {},
-        });
-        refreshChain = refreshChain.then(() => doRefresh(true));
-        await refreshChain;
-        void get().loadBranches();
+        const state = await api.setScope(preset, body);
+        prefs.setScope(state.repoRoot, preset);
+        set({ state });
       } catch (err) {
-        get().showToast(`Could not switch branch: ${(err as Error).message}`);
+        set({ preset: prev });
+        get().showToast(`Could not switch scope: ${(err as Error).message}`);
       }
+      refreshChain = refreshChain.then(() => doRefresh(true));
+      await refreshChain;
+    },
+
+    async repin() {
+      try {
+        await api.pin();
+      } catch (err) {
+        get().showToast(`Could not re-pin: ${(err as Error).message}`);
+        return;
+      }
+      set({ expansions: {}, diffs: {} });
+      refreshChain = refreshChain.then(() => doRefresh(true));
+      await refreshChain;
+    },
+
+    async endSession() {
+      try {
+        await api.endSession();
+      } catch (err) {
+        get().showToast(`Could not end session: ${(err as Error).message}`);
+        return;
+      }
+      set({ expansions: {}, diffs: {} });
+      refreshChain = refreshChain.then(() => doRefresh(true));
+      await refreshChain;
     },
 
     showToast(message, action) {

@@ -10,10 +10,6 @@
   font-size: 11px;
 }
 
-.ref-arrow {
-  color: var(--fgColor-muted, #59636e);
-}
-
 .ref-upstream {
   font-size: 12px;
   white-space: nowrap;

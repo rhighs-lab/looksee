@@ -71,10 +71,6 @@ body {
   padding: 2px 6px;
 }
 
-.ref-arrow {
-  color: var(--fgColor-muted, #59636e);
-}
-
 .pr-meta-row {
   display: flex;
   align-items: center;
@@ -93,6 +89,29 @@ body {
 .summary-deletions,
 .file-deletions {
   color: var(--fgColor-danger, #d1242f);
+}
+
+.summary-label {
+  color: var(--ui-fg);
+}
+
+.pr-scope-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+
+.pr-scope-row .ui-nav {
+  border-bottom: 1px solid var(--ui-border-muted);
+}
+
+.pr-scope-pickers {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
 }
 
 .pr-meta-right {

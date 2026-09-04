@@ -1,17 +1,19 @@
 import type {
   BranchesResponse,
+  Comparison,
   ContextResponse,
   DecoratedComment,
   DiffResponse,
   DoneMark,
   FileViewResponse,
-  RefSelection,
   RepoState,
   Rev,
   Review,
   ReviewsResponse,
   SavedReply,
   Scope,
+  ScopePreset,
+  Session,
   Verdict,
 } from '@/shared/protocol.js';
 
@@ -95,9 +97,14 @@ export const api = {
   file: (path: string, scope: Scope) =>
     request<FileViewResponse>('GET', `/api/file${q({ path, scope })}`),
   branches: () => request<BranchesResponse>('GET', '/api/branches'),
-  refs: () => request<RefSelection>('GET', '/api/refs'),
-  setRefs: (sel: Partial<RefSelection>) =>
-    request<RepoState>('POST', '/api/refs', sel),
+  session: () => request<Session | null>('GET', '/api/session'),
+  pin: () => request<RepoState>('POST', '/api/session/pin'),
+  endSession: () => request<RepoState>('POST', '/api/session/end'),
+  setScope: (preset: ScopePreset, custom?: Comparison) =>
+    request<RepoState>('POST', '/api/scope', {
+      preset,
+      ...(custom ? { custom } : {}),
+    }),
 
   comments: (branch: string | null) =>
     request<{ comments: DecoratedComment[] }>(
