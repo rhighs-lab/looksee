@@ -334,6 +334,7 @@ function ExpandableTable({
   slots: LineSlots;
 }) {
   const { expansions, expand, loading } = useExpansion(diff);
+  const arrived = useReview((s) => s.arrivals[diff.path]);
   return (
     <DiffTable
       diff={diff}
@@ -342,6 +343,7 @@ function ExpandableTable({
       expansions={expansions}
       loading={loading}
       onExpand={(gap, dir) => void expand(gap, dir)}
+      arrived={arrived}
     />
   );
 }

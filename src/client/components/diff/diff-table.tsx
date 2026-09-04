@@ -15,6 +15,11 @@ import {
   rangeFor,
 } from '@/client/components/diff/rows.js';
 import { ExpandAll, ExpandDown, ExpandUp } from '@/client/components/icons.js';
+import {
+  type ArrivedLine,
+  markIndex,
+  takeMark,
+} from '@/client/lib/arrivals.js';
 import { type Expansions, useReview } from '@/client/store/review.js';
 import type { DiffLine, FileDiff, LineType } from '@/shared/protocol.js';
 
@@ -41,9 +46,23 @@ const CODE_CLS: Record<LineType, string> = {
 const layerCls = (line: DiffLine, tint: boolean): string =>
   tint && line.layer && line.type !== 'context' ? ` layer-${line.layer}` : '';
 
-function Code({ line, tint }: { line: DiffLine; tint: boolean }) {
+const arrivedCls = (mark: number | undefined): string =>
+  mark === undefined ? '' : ' line-arrived';
+
+function Code({
+  line,
+  tint,
+  mark,
+}: {
+  line: DiffLine;
+  tint: boolean;
+  mark?: number | undefined;
+}) {
   return (
-    <td className={`blob-code ${CODE_CLS[line.type]}${layerCls(line, tint)}`}>
+    <td
+      className={`blob-code ${CODE_CLS[line.type]}${layerCls(line, tint)}${arrivedCls(mark)}`}
+      data-arrival={mark}
+    >
       <span className="blob-code-inner">
         <span className="marker">{MARKER[line.type]}</span>
         {line.html != null ? (
@@ -62,18 +81,21 @@ function Num({
   side,
   slots,
   tint,
+  mark,
 }: {
   n: number | null;
   line: DiffLine;
   side: Side | null;
   slots: LineSlots;
   tint: boolean;
+  mark?: number | undefined;
 }) {
   const commentable = Boolean(slots.commentable && side && n != null);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the inner add-comment button is the keyboard path
     <td
-      className={`blob-num ${NUM_CLS[line.type]}${layerCls(line, tint)}${commentable ? ' commentable' : ''}`}
+      className={`blob-num ${NUM_CLS[line.type]}${layerCls(line, tint)}${commentable ? ' commentable' : ''}${arrivedCls(mark)}`}
+      data-arrival={mark}
       data-line-number={n ?? undefined}
       data-side={commentable ? side : undefined}
       data-comment-line={commentable ? n : undefined}
@@ -165,10 +187,12 @@ function UnifiedLine({
   line,
   slots,
   tint,
+  mark,
 }: {
   line: DiffLine;
   slots: LineSlots;
   tint: boolean;
+  mark?: number | undefined;
 }) {
   const oldSide: Side | null = line.type === 'del' ? 'old' : null;
   const newSide: Side | null = line.type === 'del' ? null : 'new';
@@ -180,6 +204,7 @@ function UnifiedLine({
         side={oldSide}
         slots={slots}
         tint={tint}
+        mark={mark}
       />
       <Num
         n={line.newNumber}
@@ -187,8 +212,9 @@ function UnifiedLine({
         side={newSide}
         slots={slots}
         tint={tint}
+        mark={mark}
       />
-      <Code line={line} tint={tint} />
+      <Code line={line} tint={tint} mark={mark} />
     </tr>
   );
 }
@@ -198,11 +224,13 @@ function SplitPair({
   right,
   slots,
   tint,
+  mark,
 }: {
   left: DiffLine | null;
   right: DiffLine | null;
   slots: LineSlots;
   tint: boolean;
+  mark?: number | undefined;
 }) {
   return (
     <tr>
@@ -228,8 +256,9 @@ function SplitPair({
             side="new"
             slots={slots}
             tint={tint}
+            mark={mark}
           />
-          <Code line={right} tint={tint} />
+          <Code line={right} tint={tint} mark={mark} />
         </>
       ) : (
         <Empty />
@@ -292,6 +321,7 @@ export const DiffTable = memo(function DiffTable({
   expansions,
   loading,
   onExpand,
+  arrived,
 }: {
   diff: FileDiff;
   split: boolean;
@@ -299,11 +329,26 @@ export const DiffTable = memo(function DiffTable({
   expansions: Expansions | undefined;
   loading: Set<string>;
   onExpand: (gap: GapInfo, dir: Dir) => void;
+  arrived?: ArrivedLine[] | undefined;
 }) {
   const rows = useMemo(
     () => buildRows(diff, expansions, split),
     [diff, expansions, split]
   );
+  // marks are stored as content, so they survive the renumbering that follows
+  // an insertion; resolve them back to line objects once per render
+  const marks = useMemo(() => {
+    const found = new Map<DiffLine, number>();
+    if (!arrived?.length) return found;
+    const idx = markIndex(arrived);
+    for (const hunk of diff.hunks)
+      for (const line of hunk.lines) {
+        if (line.type !== 'add') continue;
+        const seq = takeMark(idx, line.content);
+        if (seq !== undefined) found.set(line, seq);
+      }
+    return found;
+  }, [diff, arrived]);
   const tint = useReview((s) => s.colorByLayer);
   const after = slots.after;
   const renderAfter = (row: Row): ReactNode => {
@@ -391,12 +436,14 @@ export const DiffTable = memo(function DiffTable({
                 line={row.line}
                 slots={slots}
                 tint={tint}
+                mark={marks.get(row.line)}
               />
             ) : (
               <SplitPair
                 key={row.key}
                 left={row.left}
                 right={row.right}
+                mark={row.right ? marks.get(row.right) : undefined}
                 slots={slots}
                 tint={tint}
               />

@@ -43,6 +43,7 @@ import {
   useSubnavHeight,
 } from '@/client/components/tree-pane.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
+import type { ArrivedLine } from '@/client/lib/arrivals.js';
 import { bytes, plural } from '@/client/lib/format.js';
 import {
   type LineRange,
@@ -131,6 +132,7 @@ export function FilePage({ pathname }: { pathname: string }) {
   const showToast = useReview((s) => s.showToast);
   const [view, setView] = useState<FileViewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const arrived = useReview((s) => s.arrivals[filePath]);
   const [filter, setFilter] = useState('');
   const [finder, setFinder] = useState(false);
   const [wrap, setWrap] = useState(false);
@@ -447,6 +449,7 @@ export function FilePage({ pathname }: { pathname: string }) {
                       changed={changed}
                       slots={slots}
                       wrap={wrap}
+                      arrived={arrived}
                     />
                   </div>
                 )}
@@ -570,11 +573,13 @@ function BlobTable({
   changed,
   slots,
   wrap,
+  arrived,
 }: {
   diff: FileDiff;
   changed: Set<number>;
   slots: LineSlots;
   wrap: boolean;
+  arrived: ArrivedLine[] | undefined;
 }) {
   const tinted = useMemo<FileDiff>(
     () => ({
@@ -600,6 +605,7 @@ function BlobTable({
         expansions={undefined}
         loading={new Set()}
         onExpand={() => {}}
+        arrived={arrived}
       />
     </div>
   );

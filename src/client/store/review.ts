@@ -5,6 +5,11 @@ import {
   connectEvents,
   type EventSubscription,
 } from '@/client/api/events.js';
+import {
+  type ArrivedLine,
+  newArrivals,
+  nextArrivalSeq,
+} from '@/client/lib/arrivals.js';
 import { applyTheme } from '@/client/lib/theme.js';
 import {
   type Appearance,
@@ -53,6 +58,9 @@ export interface ReviewStore {
   collapsed: Record<string, boolean>;
   viewed: Record<string, string>;
   updated: Record<string, true>;
+  arrivals: Record<string, ArrivedLine[]>;
+  arrivalSeq: number;
+  newLineAttention: boolean;
   treeHidden: boolean;
   treeWidth: number | null;
   activePath: string | null;
@@ -67,6 +75,8 @@ export interface ReviewStore {
   setScope(scope: Scope): Promise<void>;
   setTheme(theme: Theme): void;
   setAppearance(appearance: Appearance): void;
+  setNewLineAttention(on: boolean): void;
+  acknowledgeArrival(seq: number): void;
   toggleLayerFilter(layer: Layer): void;
   clearLayerFilter(): void;
   setView(view: View): void;
@@ -91,6 +101,8 @@ export interface ReviewStore {
 let sub: EventSubscription | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshChain: Promise<void> = Promise.resolve();
+// when the last arrival landed, so a burst of refreshes reads as one arrival
+let lastArrivalAt: number | null = null;
 
 const WORKTREE: Comparison['endpoint'] = { kind: 'worktree' };
 
@@ -128,8 +140,26 @@ export const useReview = create<ReviewStore>((set, get) => {
     const next: Record<string, FileDiff> = replaceAll ? {} : { ...prev };
     const expansions = { ...get().expansions };
     const updated = { ...get().updated };
+    const arrivals = { ...get().arrivals };
+    const marking = get().newLineAttention;
+    let seq = get().arrivalSeq;
+    let opened = false;
     for (const f of files) {
       const old = prev[f.path];
+      if (marking && old && old.digest !== f.digest) {
+        const arrived = newArrivals(old, f);
+        if (arrived.length) {
+          if (!opened) {
+            seq = nextArrivalSeq(seq, lastArrivalAt, Date.now());
+            lastArrivalAt = Date.now();
+            opened = true;
+          }
+          arrivals[f.path] = [
+            ...(arrivals[f.path] ?? []),
+            ...arrived.map((content) => ({ content, seq })),
+          ];
+        }
+      }
       if (old && old.digest !== f.digest) {
         delete expansions[f.path];
         if (old.digest !== 'unchanged') updated[f.path] = true;
@@ -149,7 +179,8 @@ export const useReview = create<ReviewStore>((set, get) => {
       const known = new Set(stateFiles.map((f) => f.path));
       for (const p of Object.keys(next)) if (!known.has(p)) delete next[p];
     }
-    set({ diffs: next, expansions, updated });
+    for (const p of Object.keys(arrivals)) if (!next[p]) delete arrivals[p];
+    set({ diffs: next, expansions, updated, arrivals, arrivalSeq: seq });
   };
 
   const reconcileViewed = (repoRoot: string | null, files: ChangedFile[]) => {
@@ -249,6 +280,9 @@ export const useReview = create<ReviewStore>((set, get) => {
     collapsed: {},
     viewed: {},
     updated: {},
+    arrivals: {},
+    arrivalSeq: 0,
+    newLineAttention: prefs.newLineAttention(),
     treeHidden: prefs.treeHidden(),
     treeWidth: prefs.treeWidth(),
     activePath: null,
@@ -320,6 +354,21 @@ export const useReview = create<ReviewStore>((set, get) => {
       prefs.setAppearance(appearance);
       set({ appearance });
       applyTheme(get().theme, appearance);
+    },
+
+    setNewLineAttention(on) {
+      prefs.setNewLineAttention(on);
+      lastArrivalAt = null;
+      set({ newLineAttention: on, arrivals: {} });
+    },
+
+    acknowledgeArrival(seq) {
+      const arrivals: Record<string, ArrivedLine[]> = {};
+      for (const [path, lines] of Object.entries(get().arrivals)) {
+        const kept = lines.filter((l) => l.seq < seq);
+        if (kept.length) arrivals[path] = kept;
+      }
+      set({ arrivals });
     },
 
     async setColorByLayer(val) {

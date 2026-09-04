@@ -2107,3 +2107,61 @@ kbd {
     background-position: 0 50%;
   }
 }
+
+/* ---- New-line attention (experimental) ---------------------------------- */
+/* A line that just arrived flashes in the theme accent and settles into a
+   faint trace that stays until acknowledged, so an arrival that lands while
+   you are reading another file is still visible when you come back. */
+.line-arrived {
+  animation: line-arrived 2.5s ease-out both;
+}
+
+.blob-num.line-arrived {
+  box-shadow: inset 2px 0 0 var(--bgColor-accent-emphasis, #0969da);
+}
+
+@keyframes line-arrived {
+  0% {
+    background-color: color-mix(
+      in srgb,
+      var(--bgColor-accent-emphasis, #0969da) 55%,
+      transparent
+    );
+  }
+  15% {
+    background-color: color-mix(
+      in srgb,
+      var(--bgColor-accent-emphasis, #0969da) 55%,
+      transparent
+    );
+  }
+  100% {
+    background-color: color-mix(
+      in srgb,
+      var(--bgColor-accent-emphasis, #0969da) 14%,
+      transparent
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-arrived {
+    animation: none;
+    background-color: color-mix(
+      in srgb,
+      var(--bgColor-accent-emphasis, #0969da) 14%,
+      transparent
+    );
+  }
+}
+
+.arrival-jump {
+  gap: 6px;
+}
+
+.arrival-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--bgColor-accent-emphasis, #0969da);
+}

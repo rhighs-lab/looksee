@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { ArrivalJump } from '@/client/components/arrival-jump.js';
 import { DiffStat } from '@/client/components/file-card.js';
 import { Sidebar } from '@/client/components/icons.js';
 import { ScopeSwitcher } from '@/client/components/scope-switcher.js';
@@ -167,6 +168,7 @@ export function Header({
           )}
           <span className="pr-meta-right">
             {right}
+            <ArrivalJump />
             <SettingsMenu />
             <span
               className="repo-path ui-muted ui-mono"

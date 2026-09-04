@@ -72,6 +72,8 @@ export function SettingsMenu() {
   const setColorByLayer = useReview((s) => s.setColorByLayer);
   const treeHidden = useReview((s) => s.treeHidden);
   const setTreeHidden = useReview((s) => s.setTreeHidden);
+  const newLineAttention = useReview((s) => s.newLineAttention);
+  const setNewLineAttention = useReview((s) => s.setNewLineAttention);
   const isRepo = useReview((s) => Boolean(s.state?.repoRoot));
 
   useEffect(() => {
@@ -142,6 +144,14 @@ export function SettingsMenu() {
           )}
           <Row active={!treeHidden} onClick={() => setTreeHidden(!treeHidden)}>
             File tree
+          </Row>
+          <div className="menu-sep" />
+          <div className="menu-label">Experimental</div>
+          <Row
+            active={newLineAttention}
+            onClick={() => setNewLineAttention(!newLineAttention)}
+          >
+            Mark arriving lines
           </Row>
         </div>
       )}
