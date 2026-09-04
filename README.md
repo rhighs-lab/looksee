@@ -4,6 +4,12 @@
 
 <p align="center"><strong>Review your work before every push.</strong></p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@rhighs-lab/looksee"><img src="https://img.shields.io/npm/v/@rhighs-lab/looksee?color=0969da&label=npm" alt="npm"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0969da" alt="MIT"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D20-0969da" alt="node 20+">
+</p>
+
 A GitHub-style diff of your working tree that updates live while your coding
 agent edits. Comment, suggest, request changes; the agent listens and fixes.
 
@@ -101,7 +107,18 @@ edits inside one hunk are told apart at a glance.
 
 **File view.** Open any file whole, with the repository tree beside it, to
 read the code the diff only shows in pieces. Status icons mark what happened
-to each changed file.
+to each changed file, `t` jumps to a file by name, and images render inline
+instead of being written off as binary.
+
+**Themes.** GitHub, Solarized and Atom, each in light and dark, plus a System
+appearance that follows the OS. Syntax highlighting covers 111 languages and
+is themed in the same pass, so switching costs nothing.
+
+**Marking arriving lines.** Experimental, off by default. Turned on, lines
+added since the last refresh flash in the theme accent and settle into a faint
+trace that stays until you acknowledge it, so a one-line change that lands in
+the middle of a larger one is not lost. A header control counts the pending
+arrivals and jumps to the newest.
 
 ## CLI
 
@@ -170,6 +187,24 @@ looksee stores its pins under `refs/looksee/*` in the repo; `looksee session
 end` removes them. Review data lives in `~/.looksee` (override with
 `LOOKSEE_HOME`).
 
+## Development
+
+```bash
+pnpm install              # installs and builds
+pnpm dev                  # server on 4711, vite client on 5173
+pnpm test                 # vitest
+pnpm run typecheck        # server and client projects
+pnpm run lint             # biome
+```
+
+`src/server` is the Hono daemon and the CLI, `src/client` the React app, and
+`src/shared/protocol.ts` the types both sides agree on. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Credits
 
 Inspired by [prequel](https://github.com/mdesjardins/prequel).
+
+## License
+
+[MIT](LICENSE) (c) Roberto Montalti
