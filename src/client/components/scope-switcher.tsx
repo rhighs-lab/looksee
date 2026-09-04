@@ -1,151 +1,119 @@
-import { customFrom, useReview } from '@/client/store/review.js';
+import { useState } from 'react';
+import { useReview } from '@/client/store/review.js';
 import {
   Button,
   Notice,
   Select,
   type SelectOption,
-  UnderlineNav,
 } from '@/client/ui/index.js';
 import type {
   BranchesResponse,
   Comparison,
-  Endpoint,
+  ComparisonNote,
+  RepoRefs,
   ScopePreset,
   Session,
 } from '@/shared/protocol.js';
 
-type Side = keyof Comparison;
+const WORKTREE: Comparison['endpoint'] = { kind: 'worktree' };
 
 const short = (sha: string): string => sha.slice(0, 7);
 
-const encode = (ep: Endpoint): string => {
-  switch (ep.kind) {
-    case 'head':
-    case 'index':
-    case 'worktree':
-      return ep.kind;
-    case 'pin':
-      return `pin:${ep.name}`;
-    case 'ref':
-      return `ref:${ep.name}`;
-    case 'commit':
-      return `commit:${ep.oid}`;
-    case 'merge-base':
-      return `merge-base:${ep.left}:${ep.right}`;
-  }
+const selected = (
+  preset: ScopePreset,
+  live: Session | null,
+  note: ComparisonNote,
+  custom: Comparison | null
+): string => {
+  if (preset === 'session')
+    return live?.approvedAt ? 'pin:approved' : 'pin:opened';
+  if (preset === 'working') return 'working';
+  if (preset === 'branch')
+    return note === 'same-as-working' ? 'working' : 'branch';
+  const b = custom?.baseline;
+  if (b?.kind === 'pin') return `pin:${b.name}`;
+  if (b?.kind === 'merge-base') return `ref:${b.left}`;
+  return 'custom';
 };
 
-const decode = (v: string): Endpoint | null => {
-  if (v === 'head' || v === 'index' || v === 'worktree') return { kind: v };
-  if (v === 'pin:opened' || v === 'pin:approved')
-    return { kind: 'pin', name: v === 'pin:opened' ? 'opened' : 'approved' };
-  if (v.startsWith('ref:')) return { kind: 'ref', name: v.slice(4) };
-  return null;
-};
-
-const pickerOptions = (
-  session: Session | null,
+const optionsOf = (
+  live: Session | null,
+  refs: RepoRefs | null,
   branches: BranchesResponse | null
 ): SelectOption[] => {
-  const live = session && !session.endedAt ? session : null;
-  const pins: SelectOption[] = [];
-  if (live?.openedAt)
-    pins.push({
-      value: 'pin:opened',
-      label: `Session start ${short(live.openedAt.head)}`,
-      group: 'Session',
-    });
+  const opts: SelectOption[] = [];
   if (live?.approvedAt)
-    pins.push({
+    opts.push({
       value: 'pin:approved',
-      label: `Last approval ${short(live.approvedAt.head)}`,
+      label: `Since last approval ${short(live.approvedAt.head)}`,
       group: 'Session',
     });
-  return [
-    ...pins,
-    { value: 'head', label: 'HEAD', group: 'Checkout' },
-    { value: 'index', label: 'Index', group: 'Checkout' },
-    { value: 'worktree', label: 'Workspace', group: 'Checkout' },
-    ...(branches?.local ?? []).map((b) => ({
-      value: `ref:${b}`,
-      label: b,
-      group: 'Local branches',
-    })),
-    ...(branches?.remote ?? []).map((b) => ({
-      value: `ref:${b}`,
-      label: b,
-      group: 'Remote branches',
-    })),
-  ];
+  if (live?.openedAt)
+    opts.push({
+      value: 'pin:opened',
+      label: `Since session start ${short(live.openedAt.head)}`,
+      group: 'Session',
+    });
+  opts.push({ value: 'working', label: 'Since last commit', group: 'Local' });
+  if (refs?.mergeBase && refs.mergeBase !== refs.head.sha)
+    opts.push({
+      value: 'branch',
+      label: `Since branch base (${refs.base.ref})`,
+      group: 'Local',
+    });
+  const names = [...(branches?.local ?? []), ...(branches?.remote ?? [])];
+  for (const b of names) {
+    if (b === branches?.current) continue;
+    opts.push({ value: `ref:${b}`, label: `Since ${b}`, group: 'Branches' });
+  }
+  return opts;
 };
-
-const PRESETS: { value: ScopePreset; label: string; title: string }[] = [
-  {
-    value: 'session',
-    label: 'Session',
-    title: 'Since the session pin to the workspace',
-  },
-  { value: 'working', label: 'Working', title: 'HEAD to the workspace' },
-  {
-    value: 'branch',
-    label: 'Branch',
-    title: 'Merge base with the base branch to the workspace',
-  },
-  { value: 'custom', label: 'Custom', title: 'Pick baseline and endpoint' },
-];
 
 export function ScopeSwitcher() {
   const preset = useReview((s) => s.preset);
+  const status = useReview((s) => s.status);
   const setPreset = useReview((s) => s.setPreset);
   const session = useReview((s) => s.session);
   const branches = useReview((s) => s.branches);
-  const comparison = useReview((s) => s.state?.comparison ?? null);
   const refs = useReview((s) => s.state?.refs ?? null);
+  const note = useReview((s) => s.state?.comparison?.note ?? null);
+  const label = useReview((s) => s.state?.comparison?.baseline.label ?? '');
+  const [picked, setPicked] = useState<string | null>(null);
 
-  const cur = session?.custom ?? customFrom(preset, session, refs);
-  const options = pickerOptions(session, branches);
-  const optionsFor = (side: Side): SelectOption[] => {
-    const val = encode(cur[side]);
-    if (options.some((o) => o.value === val)) return options;
-    const label = comparison?.[side].label ?? val;
-    return [{ value: val, label }, ...options];
-  };
-  const pick = (side: Side, v: string) => {
-    const ep = decode(v);
-    if (!ep) return;
-    void setPreset('custom', { ...cur, [side]: ep });
+  const live = session && !session.endedAt ? session : null;
+  const derived = selected(preset, live, note, session?.custom ?? null);
+  const value = status === 'loading' && picked ? picked : derived;
+  const options = optionsOf(live, refs, branches);
+  if (!options.some((o) => o.value === value))
+    options.unshift({ value, label: `Since ${label}` });
+
+  const pick = (v: string) => {
+    setPicked(v);
+    if (v === 'pin:approved') return void setPreset('session');
+    if (v === 'pin:opened')
+      return void (live?.approvedAt
+        ? setPreset('custom', {
+            baseline: { kind: 'pin', name: 'opened' },
+            endpoint: WORKTREE,
+          })
+        : setPreset('session'));
+    if (v === 'working' || v === 'branch') return void setPreset(v);
+    if (v.startsWith('ref:'))
+      void setPreset('custom', {
+        baseline: { kind: 'merge-base', left: v.slice(4), right: 'HEAD' },
+        endpoint: WORKTREE,
+      });
   };
 
   return (
-    <div className="pr-scope-row">
-      <UnderlineNav<ScopePreset>
-        label="Comparison scope"
-        value={preset}
-        onChange={(p) => void setPreset(p)}
-        items={PRESETS}
-      />
-      {preset === 'custom' && (
-        <span className="pr-scope-pickers">
-          <Select
-            prefix="baseline:"
-            value={encode(cur.baseline)}
-            options={optionsFor('baseline')}
-            onChange={(v) => pick('baseline', v)}
-            title="Baseline tree"
-            aria-label="Baseline"
-          />
-          <span className="ui-muted">to</span>
-          <Select
-            prefix="endpoint:"
-            value={encode(cur.endpoint)}
-            options={optionsFor('endpoint')}
-            onChange={(v) => pick('endpoint', v)}
-            title="Endpoint tree"
-            aria-label="Endpoint"
-          />
-        </span>
-      )}
-    </div>
+    <Select
+      prefix="compare:"
+      value={value}
+      options={options}
+      onChange={pick}
+      title="Baseline the workspace is compared against"
+      aria-label="Comparison baseline"
+    />
   );
 }
 
@@ -171,7 +139,9 @@ export function ScopeNotices() {
       {note === 'same-as-working' && (
         <div className="review-banner">
           <Notice tone="muted">
-            <span>Branch equals Working on the default branch.</span>
+            <span>
+              Branch base equals the last commit on the default branch.
+            </span>
           </Notice>
         </div>
       )}

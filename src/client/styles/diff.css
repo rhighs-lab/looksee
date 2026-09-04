@@ -95,25 +95,6 @@ body {
   color: var(--ui-fg);
 }
 
-.pr-scope-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  margin-top: 4px;
-}
-
-.pr-scope-row .ui-nav {
-  border-bottom: 1px solid var(--ui-border-muted);
-}
-
-.pr-scope-pickers {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
 .pr-meta-right {
   display: inline-flex;
   align-items: center;

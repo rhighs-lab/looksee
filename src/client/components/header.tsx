@@ -130,6 +130,7 @@ export function Header({
               </span>
             </span>
           )}
+          {filters && isRepo && refs && <ScopeSwitcher />}
           {!isRepo && refs && (
             <span className="pr-refs ui-muted">
               {refs.head.branch} into {refs.base.ref}
@@ -198,7 +199,6 @@ export function Header({
             </span>
           </span>
         </div>
-        {filters && isRepo && summary && <ScopeSwitcher />}
         {filters && isRepo && summary && (
           <div className="pr-layer-row">
             <UnderlineNav<Scope>
