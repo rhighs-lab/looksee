@@ -45,14 +45,20 @@ const lookup = (
 
 export const parseArgv = (argv: string[], specs: Resolvable[]): Parsed => {
   const names = new Set(specs.map((s) => s.name));
+  const leads = (p: string): boolean =>
+    [...names].some((n) => n === p || n.startsWith(`${p} `));
   const cmd: string[] = [];
   let i = 0;
   while (i < argv.length) {
     const tok = argv[i]!;
     if (tok.startsWith('-')) break;
-    if (!names.has([...cmd, tok].join(' '))) break;
+    if (!leads([...cmd, tok].join(' '))) break;
     cmd.push(tok);
     i++;
+  }
+  while (cmd.length && !names.has(cmd.join(' '))) {
+    cmd.pop();
+    i--;
   }
   const own = specs.find((s) => s.name === cmd.join(' '))?.flags ?? [];
   const flags = cmd.length ? [...own, HELP_FLAG] : [HELP_FLAG, VERSION_FLAG];

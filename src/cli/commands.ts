@@ -15,6 +15,7 @@ import {
   runReviewSubmit,
 } from '@/cli/cmd/review-sub.js';
 import { runServe } from '@/cli/cmd/serve.js';
+import { runPin, runScope, runSessionEnd } from '@/cli/cmd/session.js';
 import { runStatus } from '@/cli/cmd/status.js';
 import { runStop } from '@/cli/cmd/stop.js';
 
@@ -85,7 +86,11 @@ const COMMANDS: CommandSpec[] = [
       summary: 'Start the server for a repo and open the browser',
       args: '[path]',
       flags: [
-        { name: 'base', takesValue: true, help: 'Base ref to diff against' },
+        {
+          name: 'base',
+          takesValue: true,
+          help: 'Base ref for the Branch scope only (default: detected)',
+        },
         { name: 'no-open', takesValue: false, help: 'Do not open a browser' },
         PRETTY,
       ],
@@ -254,12 +259,50 @@ const COMMANDS: CommandSpec[] = [
   ),
   placeholder(
     {
+      name: 'pin',
+      example: 'looksee pin',
+      summary: 'Re-pin the session to the current workspace',
+      args: '',
+      flags: [],
+      output: '{ openedAt, approvedAt, label }: short shas and the comparison',
+      notes: 'Clears the approval pin; the Session scope restarts from now',
+    },
+    runPin
+  ),
+  placeholder(
+    {
+      name: 'session end',
+      example: 'looksee session end',
+      summary: 'End the review session and drop its pins',
+      args: '',
+      flags: [],
+      output: '{ ended: boolean }',
+      notes: 'The next server start opens a fresh session',
+    },
+    runSessionEnd
+  ),
+  placeholder(
+    {
+      name: 'scope',
+      example: 'looksee scope working',
+      summary: 'Set or print the default scope for the UI',
+      args: '[session|working|branch]',
+      flags: [PRETTY],
+      output:
+        'The comparison: { preset, baseline, endpoint, label, note } where baseline and endpoint are { kind, oid, short, label }',
+      notes: 'custom is set from the browser pickers, not from the CLI',
+    },
+    runScope
+  ),
+  placeholder(
+    {
       name: 'status',
       example: 'looksee status',
-      summary: 'Report the server for this repo',
+      summary: 'Report the server and session for this repo',
       args: '',
       flags: [PRETTY],
-      output: '{ running, url, pid, pendingReviews, openThreads }',
+      output:
+        '{ running, url, pid, pendingReviews, openThreads, scope, openedAt, approvedAt, drift }: pins as short shas or null',
     },
     runStatus
   ),
@@ -298,7 +341,11 @@ const COMMANDS: CommandSpec[] = [
           takesValue: true,
           help: 'Port (default: free from 4711)',
         },
-        { name: 'base', takesValue: true, help: 'Base ref to diff against' },
+        {
+          name: 'base',
+          takesValue: true,
+          help: 'Base ref for the Branch scope only (default: detected)',
+        },
       ],
       output: 'Log lines',
     },

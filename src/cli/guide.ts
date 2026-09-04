@@ -28,6 +28,7 @@ export const preamble = (): string =>
     'body, bodyHtml, suggestion and an expects hint.',
     `expects is one of: ${EXPECTS.map((e) => `"${e}"`).join(', ')}.`,
     `Respond with ${RESPONSES.map(([c]) => c).join(', ')}.`,
+    'The human reviews a session: workspace since the last pin or approve.',
   ].join('\n');
 
 const MEANING: Record<(typeof EXPECTS)[number], string> = {
@@ -112,6 +113,15 @@ export const fullGuide = (cmds: readonly CommandSpec[]): string =>
     '--not-me drops your own events; --pending replays unanswered items on',
     'connect, marked "replay": true. --as defaults to LOOKSEE_ACTOR, then',
     '"agent"; the human in the browser is always "user".',
+    '',
+    ...rule('Session', '-'),
+    'Each repo has a review session with two pins: openedAt, taken when',
+    'the server starts, and approvedAt, moved forward when the human',
+    'approves. The default Session scope shows the workspace since the',
+    'latest pin, so an approve marks everything before it as seen.',
+    'looksee pin re-pins to now; looksee scope working shows HEAD to',
+    'workspace instead; looksee session end drops the pins. Events and',
+    'the commands below are unaffected by scope.',
     '',
     ...rule('Commands', '-'),
     'Commands print JSON; add --pretty for a table where supported.',

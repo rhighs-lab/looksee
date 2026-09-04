@@ -22,7 +22,9 @@ looksee --help
 ## Agents
 
 Run `looksee listen --not-me --pending` in the background and act on each
-JSON line; `looksee agent` prints the full guide. An event looks like:
+JSON line; `looksee agent` prints the full guide. looksee writes
+`refs/looksee/*` in the repo for its review pins; `looksee session end`
+removes them. An event looks like:
 
 ```json
 {"type":"comment.created","comment":{"id":"c1","filePath":"src/a.ts",

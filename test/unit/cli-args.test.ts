@@ -41,6 +41,16 @@ describe('parseArgv', () => {
     expect(p.positionals).toEqual(['--x']);
   });
 
+  it('resolves a nested command without a bare parent', () => {
+    expect(parseArgv(['session', 'end'], all()).cmd).toEqual([
+      'session',
+      'end',
+    ]);
+    const bare = parseArgv(['session'], all());
+    expect(bare.cmd).toEqual([]);
+    expect(bare.positionals).toEqual(['session']);
+  });
+
   it('rejects an unknown flag', () => {
     expect(() => parseArgv(['status', '--nope'], all())).toThrow(/--nope/);
   });

@@ -173,6 +173,10 @@ describe('daemon lifecycle', () => {
       pid: null,
       pendingReviews: 0,
       openThreads: 0,
+      scope: null,
+      openedAt: null,
+      approvedAt: null,
+      drift: false,
     });
     expect(existsSync(recordPath(root))).toBe(false);
     expect(await serversFor(root)).toBe(0);

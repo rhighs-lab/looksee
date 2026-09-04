@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { all } from '@/cli/commands.js';
 import { EXPECTS } from '@/cli/expects.js';
-import { fullGuide } from '@/cli/guide.js';
+import { fullGuide, preamble } from '@/cli/guide.js';
 import { type Io, run } from '@/cli/main.js';
 
 const R16 = [
@@ -36,9 +36,21 @@ describe('fullGuide', () => {
     }
   });
 
-  it('stays plain text under 120 lines', () => {
+  it('explains sessions, pins and scopes', () => {
+    expect(text).toMatch(/pin/);
+    expect(text).toMatch(/approve/);
+    for (const c of [
+      'looksee pin',
+      'looksee scope working',
+      'looksee session end',
+    ])
+      expect(text).toContain(c);
+    expect(preamble()).toMatch(/pin/);
+  });
+
+  it('stays plain text under 130 lines', () => {
     const lines = text.split('\n');
-    expect(lines.length).toBeLessThan(120);
+    expect(lines.length).toBeLessThan(130);
     expect(text).not.toMatch(/^#/m);
   });
 });

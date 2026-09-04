@@ -16,8 +16,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type Io, run } from '@/cli/main.js';
 import type {
   DecoratedComment,
+  RepoState,
+  ResolvedComparison,
   Review,
   ServerEvent,
+  Session,
 } from '@/shared/protocol.js';
 
 type Thread = DecoratedComment & {
@@ -25,6 +28,15 @@ type Thread = DecoratedComment & {
   replies: DecoratedComment[];
 };
 type ReviewRes = { review: Review; comments: DecoratedComment[] };
+type Status = {
+  running: boolean;
+  url: string | null;
+  scope: string | null;
+  openedAt: string | null;
+  approvedAt: string | null;
+  drift: boolean;
+};
+const SHORT = /^[0-9a-f]{7}$/;
 const FILE = 'src/cart.js';
 const EVENTS: ServerEvent['type'][] = [
   'comment.created',
@@ -327,6 +339,89 @@ describe('cli commands', () => {
     expect(ev.type === 'done.requested' && ev.actor).toBe('bot');
   });
 
+  it('pin resets approvedAt and reports the new comparison', async () => {
+    const started = await srv.json<{ review: Review }>('POST', '/api/reviews');
+    await srv.json('POST', `/api/reviews/${started.body.review.id}/submit`, {
+      verdict: 'approve',
+    });
+    const before = (await srv.json<Session>('GET', '/api/session')).body;
+    expect(before.approvedAt).not.toBeNull();
+    const r = await cli(['pin']);
+    expect(r.code).toBe(0);
+    expect(r.err).toBe('');
+    const out = json<{ openedAt: string; approvedAt: null; label: string }>(
+      r.out
+    );
+    expect(out.openedAt).toMatch(SHORT);
+    expect(out.approvedAt).toBeNull();
+    expect(out.label).toContain(out.openedAt);
+    const after = (await srv.json<Session>('GET', '/api/session')).body;
+    expect(after.approvedAt).toBeNull();
+    expect(after.openedAt?.head.slice(0, 7)).toBe(out.openedAt);
+    expect(after.openedAt?.at).not.toBe(before.openedAt?.at);
+  });
+
+  it('scope working switches and bare scope prints the comparison', async () => {
+    const set = await cli(['scope', 'working']);
+    expect(set.code).toBe(0);
+    expect(json<ResolvedComparison>(set.out).preset).toBe('working');
+    const get = await cli(['scope']);
+    expect(get.code).toBe(0);
+    const cmp = json<ResolvedComparison>(get.out);
+    expect(cmp.preset).toBe('working');
+    expect(cmp.baseline.kind).toBe('head');
+    expect(cmp.endpoint.kind).toBe('worktree');
+    const state = (await srv.json<RepoState>('GET', '/api/state')).body;
+    expect(state.comparison?.preset).toBe('working');
+    const custom = await cli(['scope', 'custom']);
+    expect(custom.code).toBe(1);
+    expect(custom.out).toBe('');
+    expect(custom.err).toMatch(/browser/);
+    const bad = await cli(['scope', 'nope']);
+    expect(bad.code).toBe(1);
+    expect(bad.err).toMatch(/session\|working\|branch/);
+  });
+
+  it('status reports scope and both pins', async () => {
+    const r = await cli(['status']);
+    expect(r.code).toBe(0);
+    const st = json<Status>(r.out);
+    expect(st.running).toBe(true);
+    expect(st.url).toBe(srv.base);
+    expect(st.scope).toBe('working');
+    expect(st.openedAt).toMatch(SHORT);
+    expect(st.approvedAt).toBeNull();
+    expect(st.drift).toBe(false);
+    expect((await cli(['status', '--help'])).out).toContain('openedAt');
+  });
+
+  it('session end clears the session and a new server start creates one', async () => {
+    const end = await cli(['session', 'end']);
+    expect(end.code).toBe(0);
+    expect(json<{ ended: boolean }>(end.out)).toEqual({ ended: true });
+    const st = json<Status>((await cli(['status'])).out);
+    expect(st.running).toBe(true);
+    expect(st.scope).toBeNull();
+    expect(st.openedAt).toBeNull();
+    expect(st.approvedAt).toBeNull();
+    const again = await cli(['session', 'end']);
+    expect(again.code).toBe(0);
+    expect(json<{ ended: boolean }>(again.out)).toEqual({ ended: false });
+    const next = await startTestServer({ repoRoot: repo.dir });
+    try {
+      const s = (await next.json<Session>('GET', '/api/session')).body;
+      expect(s.endedAt).toBeNull();
+      expect(s.openedAt).not.toBeNull();
+      const fresh = json<Status>(
+        (await cli(['status'], { LOOKSEE_URL: next.base })).out
+      );
+      expect(fresh.scope).toBe('session');
+      expect(fresh.openedAt).toBe(s.openedAt?.head.slice(0, 7));
+    } finally {
+      await next.close();
+    }
+  });
+
   it('every command help names its output shape', async () => {
     const names = [
       ['comments'],
@@ -334,6 +429,10 @@ describe('cli commands', () => {
       ['resolve'],
       ['comment'],
       ['done'],
+      ['pin'],
+      ['scope'],
+      ['session', 'end'],
+      ['status'],
       ['review', 'start'],
       ['review', 'comment'],
       ['review', 'submit'],
