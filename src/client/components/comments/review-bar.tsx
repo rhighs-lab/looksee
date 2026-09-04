@@ -39,8 +39,12 @@ export function ReviewBar() {
 
   if (!pending)
     return (
-      <Button small onClick={() => void startReview()}>
-        Start review
+      <Button
+        small
+        title="Hold comments as drafts until you submit them together"
+        onClick={() => void startReview()}
+      >
+        Review
       </Button>
     );
 

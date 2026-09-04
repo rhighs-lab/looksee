@@ -42,6 +42,38 @@ export function highlightRange(
   }
 }
 
+/* The dragged range reads as one control: a bar that runs from the anchor line
+   to the line under the cursor. It is an overlay on the file rather than a
+   taller gutter button, because growing the button stretches its table cell and
+   the cell then swallows every pointer event for the rows below it. */
+function castBar(anchor: HTMLElement, target: HTMLElement): void {
+  const file = anchor.closest<HTMLElement>('.file');
+  if (!file) return;
+  let bar = file.querySelector<HTMLElement>(':scope > .cast-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.className = 'cast-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    bar.textContent = '+';
+    file.appendChild(bar);
+  }
+  const f = file.getBoundingClientRect();
+  const a = anchor.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  const top = Math.min(a.top, t.top);
+  const bottom = Math.max(a.bottom, t.bottom);
+  bar.style.left = `${a.right - f.left - 20}px`;
+  bar.style.top = `${top - f.top + 1}px`;
+  bar.style.height = `${Math.max(bottom - top - 2, 18)}px`;
+  bar.dataset['cast'] = t.top >= a.top ? 'down' : 'up';
+  document.documentElement.dataset['casting'] = '1';
+}
+
+function clearCast(): void {
+  delete document.documentElement.dataset['casting'];
+  for (const el of document.querySelectorAll('.cast-bar')) el.remove();
+}
+
 export function useRangeSelection(
   onPick: (pick: RangePick) => void,
   enabled: boolean
@@ -50,6 +82,7 @@ export function useRangeSelection(
     filePath: string;
     side: CommentSide;
     line: number;
+    anchor: HTMLElement;
     moved: boolean;
   } | null>(null);
   const suppress = useRef(false);
@@ -66,6 +99,7 @@ export function useRangeSelection(
         filePath: file.dataset['path'] ?? '',
         side: g.dataset['side'] as CommentSide,
         line: Number(g.dataset['commentLine']),
+        anchor: g,
         moved: false,
       };
     };
@@ -88,11 +122,13 @@ export function useRangeSelection(
         Math.min(d.line, line),
         Math.max(d.line, line)
       );
+      castBar(d.anchor, cell);
     };
     const onUp = (e: MouseEvent) => {
       const d = drag.current;
       drag.current = null;
       document.body.style.userSelect = '';
+      clearCast();
       if (!d?.moved) return;
       suppress.current = true;
       setTimeout(() => (suppress.current = false), 300);

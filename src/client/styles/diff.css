@@ -362,6 +362,7 @@ body {
 
 /* ---- Per-file block ---------------------------------------------------- */
 .file {
+  position: relative;
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
   margin-bottom: 16px;
@@ -842,6 +843,38 @@ body {
 [data-comments-enabled="1"] .diff-table tr:hover .commentable .add-comment {
   display: inline-flex;
 }
+
+/* the dragged range is drawn as an overlay on the file, so it can span rows
+   without touching table layout; pointer-events stay off so the drag keeps
+   tracking the row under the cursor */
+.cast-bar {
+  position: absolute;
+  width: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 1px;
+  border-radius: 4px;
+  background-color: var(--bgColor-accent-emphasis, #0969da);
+  color: var(--fgColor-onEmphasis, #fff);
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.cast-bar[data-cast="up"] {
+  align-items: flex-end;
+  padding-top: 0;
+  padding-bottom: 1px;
+}
+
+/* has to out-specify the hover rule above, or the row under the cursor keeps
+   showing its own button next to the bar */
+[data-casting="1"] .diff-table tr:hover .commentable .add-comment {
+  display: none;
+}
+
 [data-comments-enabled="1"] .diff-table tr:hover .commentable::before {
   visibility: hidden; /* hide the number while the + overlays the gutter */
 }

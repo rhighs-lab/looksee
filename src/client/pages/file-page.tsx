@@ -142,6 +142,8 @@ export function FilePage({ pathname }: { pathname: string }) {
   const openCompose = useComments((s) => s.openCompose);
   const closeCompose = useComments((s) => s.closeCompose);
   const submitCompose = useComments((s) => s.submitCompose);
+  const pendingReview = useComments((s) => s.pendingReview !== null);
+  const startReviewWith = useComments((s) => s.startReviewWith);
   const bind = useComments((s) => s.bind);
   useEffect(() => bind(), [bind]);
 
@@ -206,6 +208,17 @@ export function FilePage({ pathname }: { pathname: string }) {
     [submitCompose]
   );
 
+  const secondary = pendingReview
+    ? undefined
+    : {
+        label: 'Start a review',
+        title: 'Hold this comment as a draft and keep reviewing',
+        run: async (body: string) => {
+          await startReviewWith(body);
+          clearRangeHighlight();
+        },
+      };
+
   const slots: LineSlots = useMemo(
     () => ({
       commentable,
@@ -262,6 +275,10 @@ export function FilePage({ pathname }: { pathname: string }) {
                 }}
                 onSubmit={submit}
                 onCancel={cancel}
+                submitLabel={
+                  pendingReview ? 'Add to review' : 'Add single comment'
+                }
+                secondary={secondary}
               />
             </CommentRow>
           );
@@ -278,6 +295,8 @@ export function FilePage({ pathname }: { pathname: string }) {
       suppressNextClick,
       submit,
       cancel,
+      pendingReview,
+      secondary,
     ]
   );
 

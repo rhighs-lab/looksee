@@ -116,4 +116,21 @@ describe('parsePatch', () => {
     expect(inferLanguage('noext')).toBeNull();
     expect(inferLanguage(null)).toBeNull();
   });
+
+  it('covers languages beyond the web stack', () => {
+    expect(inferLanguage('mods/init.lua')).toBe('lua');
+    expect(inferLanguage('a/b/main.zig')).toBe('zig');
+    expect(inferLanguage('lib.ex')).toBe('elixir');
+    expect(inferLanguage('shader.wgsl')).toBe('wgsl');
+    expect(inferLanguage('Analysis.jl')).toBe('julia');
+    expect(inferLanguage('Contract.sol')).toBe('solidity');
+    expect(inferLanguage('script.ps1')).toBe('powershell');
+  });
+
+  it('reads the language off the file name when there is no extension', () => {
+    expect(inferLanguage('Makefile')).toBe('make');
+    expect(inferLanguage('deploy/CMakeLists.txt')).toBe('cmake');
+    expect(inferLanguage('Gemfile')).toBe('ruby');
+    expect(inferLanguage('docker/Dockerfile.dev')).toBe('docker');
+  });
 });

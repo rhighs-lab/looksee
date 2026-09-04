@@ -171,6 +171,9 @@ export interface ComposerProps {
   onCancel: () => void;
   autoFocus?: boolean;
   submitLabel?: string;
+  secondary?:
+    | { label: string; title?: string; run: (body: string) => Promise<void> }
+    | undefined;
 }
 
 export function Composer({
@@ -179,6 +182,7 @@ export function Composer({
   onCancel,
   autoFocus = true,
   submitLabel,
+  secondary,
 }: ComposerProps) {
   const ta = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState('');
@@ -581,6 +585,22 @@ export function Composer({
         <Button className="comment-cancel" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
+        {secondary && (
+          <Button
+            disabled={busy || !value.trim()}
+            title={secondary.title}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await secondary.run(value);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {secondary.label}
+          </Button>
+        )}
         <Button
           type="submit"
           variant="primary"

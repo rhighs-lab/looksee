@@ -50,6 +50,7 @@ export interface CommentsStore {
   clearAll(): Promise<void>;
   restore(): Promise<void>;
   startReview(): Promise<void>;
+  startReviewWith(body: string): Promise<void>;
   submitReview(verdict: Verdict, body: string): Promise<void>;
   discardReview(): Promise<void>;
   editDraft(id: string, body: string): Promise<void>;
@@ -332,6 +333,13 @@ export const useComments = create<CommentsStore>((set, get) => {
       useReview
         .getState()
         .showToast(`Restored ${restored} comment${restored === 1 ? '' : 's'}`);
+    },
+
+    async startReviewWith(body) {
+      if (!body.trim()) return;
+      await get().startReview();
+      if (!get().pendingReview) return;
+      await get().submitCompose(body);
     },
 
     async startReview() {

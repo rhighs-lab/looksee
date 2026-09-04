@@ -97,6 +97,18 @@ export function ReviewWithComments() {
 
   const submitLabel = pending ? 'Add to review' : 'Add single comment';
 
+  const startReviewWith = useComments((s) => s.startReviewWith);
+  const secondary = pending
+    ? undefined
+    : {
+        label: 'Start a review',
+        title: 'Hold this comment as a draft and keep reviewing',
+        run: async (body: string) => {
+          await startReviewWith(body);
+          clearRangeHighlight();
+        },
+      };
+
   const submit = useCallback(
     async (body: string) => {
       await submitCompose(body);
@@ -157,6 +169,7 @@ export function ReviewWithComments() {
                   onSubmit={submit}
                   onCancel={cancel}
                   submitLabel={submitLabel}
+                  secondary={secondary}
                 />
               </CommentRow>
             );
@@ -174,6 +187,7 @@ export function ReviewWithComments() {
       submit,
       cancel,
       submitLabel,
+      secondary,
     ]
   );
 
@@ -203,13 +217,14 @@ export function ReviewWithComments() {
                 onSubmit={submit}
                 onCancel={cancel}
                 submitLabel={submitLabel}
+                secondary={secondary}
               />
             </div>
           )}
         </>
       );
     },
-    [threadsByFile, compose, submit, cancel, submitLabel]
+    [threadsByFile, compose, submit, cancel, submitLabel, secondary]
   );
 
   const onFileComment = useCallback(
