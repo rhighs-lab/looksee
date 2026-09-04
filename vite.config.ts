@@ -22,7 +22,9 @@ export default defineConfig({
         target: `http://127.0.0.1:${apiPort}`,
         changeOrigin: false,
         bypass: (req) =>
-          /\.tsx?(\?|$)/.test(req.url ?? '') ? req.url : undefined,
+          /^\/api\/(client|events)\.ts(\?|$)/.test(req.url ?? '')
+            ? req.url
+            : undefined,
       },
       '/attachments': `http://127.0.0.1:${apiPort}`,
       '/healthz': `http://127.0.0.1:${apiPort}`,
