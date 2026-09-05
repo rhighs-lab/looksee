@@ -416,7 +416,7 @@ export const helpFor = (spec: CommandSpec): string => {
 
 export const rootHelp = (): string =>
   [
-    'looksee - local GitHub-style review of uncommitted work',
+    'looksee',
     '',
     'Usage:',
     '  looksee <command> [args] [flags]',
