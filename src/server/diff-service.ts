@@ -1,5 +1,7 @@
 import { getLineCount } from '@/server/git/blobs.js';
+import { treeDiffPatch } from '@/server/git/diff.js';
 import { parsePatch } from '@/server/git/diff-parser.js';
+import { git } from '@/server/git/exec.js';
 import { indexTree, snapshotWorktree } from '@/server/git/snapshot.js';
 import {
   planScope,
@@ -87,11 +89,20 @@ export async function buildFileDiffs(
     scope === 'cumulative' ? await freshen(repoRoot, ctx, status, paths) : null
   );
   const { rev, oldRev } = scopeRevs(scope, ctx);
-  const parsed = parsePatch(patch);
+  return assemble(repoRoot, patch, rev, oldRev, opts.full === true);
+}
+
+async function assemble(
+  repoRoot: string,
+  patch: string,
+  rev: Rev,
+  oldRev: Rev,
+  full: boolean
+): Promise<FileDiff[]> {
   const out: FileDiff[] = [];
-  for (const f of parsed) {
+  for (const f of parsePatch(patch)) {
     const lineCount = f.hunks.reduce((n, h) => n + h.lines.length, 0);
-    const truncated = !opts.full && lineCount > LARGE_DIFF_LINES;
+    const truncated = !full && lineCount > LARGE_DIFF_LINES;
     const hunks = truncated ? [] : f.hunks;
     if (!f.binary && !truncated) {
       annotateWordDiffs(hunks);
@@ -104,4 +115,19 @@ export async function buildFileDiffs(
     out.push({ ...f, hunks, newLineCount, rev, oldRev, truncated });
   }
   return out;
+}
+
+// The diff a single commit introduced: its first parent's tree against its own.
+export async function buildCommitDiffs(
+  repoRoot: string,
+  sha: string,
+  full = false
+): Promise<FileDiff[]> {
+  const parent = await git(repoRoot, ['rev-parse', `${sha}^`])
+    .then((s) => s.trim())
+    .catch(() => '');
+  const patch = parent
+    ? await treeDiffPatch(repoRoot, parent, sha)
+    : await git(repoRoot, ['show', '--format=', '--patch', '--no-color', sha]);
+  return assemble(repoRoot, patch, sha, parent || sha, full);
 }

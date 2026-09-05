@@ -131,6 +131,12 @@ export interface CommitsResponse {
   commits: ReviewCommit[];
 }
 
+export interface CommitDetailResponse {
+  commit: ReviewCommit;
+  body: string;
+  files: FileDiff[];
+}
+
 export interface RepoState {
   version: number;
   repoRoot: string | null;

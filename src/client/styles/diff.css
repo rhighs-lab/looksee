@@ -2320,3 +2320,29 @@ kbd {
     transition-duration: 0s;
   }
 }
+
+/* ---- Single-commit view ------------------------------------------------- */
+.commit-title {
+  font-size: 13px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.commit-body {
+  margin: 0 0 var(--file-gap);
+  padding: 10px 12px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  font-family: var(--ui-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+a.commit-row {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.commit-row:hover {
+  background-color: var(--control-transparent-bgColor-hover, #f6f8fa);
+}

@@ -3,7 +3,11 @@ import path from 'node:path';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { AppContext } from '@/server/context.js';
-import { buildFileDiffs, scopeRevs } from '@/server/diff-service.js';
+import {
+  buildCommitDiffs,
+  buildFileDiffs,
+  scopeRevs,
+} from '@/server/diff-service.js';
 import { attributeLayers } from '@/server/git/attribute.js';
 import {
   blobExists,
@@ -39,6 +43,7 @@ import type { RepoWatcher, Selection } from '@/server/watch/watcher.js';
 import { imageTypeOf } from '@/shared/media.js';
 import type {
   BranchesResponse,
+  CommitDetailResponse,
   CommitsResponse,
   Comparison,
   ContextResponse,
@@ -444,6 +449,44 @@ export function repoRoutes(ctx: AppContext): Hono {
       })
       .filter((x) => x.sha);
     return c.json<CommitsResponse>({ commits });
+  });
+
+  app.get('/api/commit/:sha', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repo' }, 400);
+    const sha = c.req.param('sha');
+    if (!isSafeRef(sha)) return c.json({ error: 'invalid sha' }, 400);
+    const SEP = '\u001f';
+    const meta = await git(ctx.repoRoot, [
+      'show',
+      '--no-patch',
+      `--format=%H${SEP}%an${SEP}%aI${SEP}%s${SEP}%b`,
+      sha,
+    ]).catch(() => '');
+    const [full = '', author = '', date = '', subject = '', body = ''] = meta
+      .trim()
+      .split(SEP);
+    if (!full) return c.json({ error: 'not found' }, 404);
+    try {
+      const files = await buildCommitDiffs(
+        ctx.repoRoot,
+        full,
+        c.req.query('full') === '1'
+      );
+      return c.json<CommitDetailResponse>({
+        commit: {
+          sha: full,
+          short: full.slice(0, 7),
+          author,
+          date,
+          subject,
+          files: files.map((f) => f.path),
+        },
+        body: body.trim(),
+        files,
+      });
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 500);
+    }
   });
 
   app.get('/api/file-info', async (c) => {

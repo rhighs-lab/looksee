@@ -1,5 +1,6 @@
 import type {
   BranchesResponse,
+  CommitDetailResponse,
   CommitsResponse,
   Comparison,
   ContextResponse,
@@ -103,6 +104,11 @@ export const api = {
     request<FileInfoResponse>('GET', `/api/file-info${q({ path })}`),
   branches: () => request<BranchesResponse>('GET', '/api/branches'),
   commits: () => request<CommitsResponse>('GET', '/api/commits'),
+  commit: (sha: string) =>
+    request<CommitDetailResponse>(
+      'GET',
+      `/api/commit/${encodeURIComponent(sha)}`
+    ),
   session: () => request<Session | null>('GET', '/api/session'),
   pin: () => request<RepoState>('POST', '/api/session/pin'),
   endSession: () => request<RepoState>('POST', '/api/session/end'),

@@ -17,7 +17,7 @@ export function commitsFor(
 
 export function CommitRow({ c }: { c: ReviewCommit }) {
   return (
-    <div className="commit-row">
+    <a className="commit-row" href={`/commit/${c.sha}`}>
       <span className="commit-sha ui-mono">{c.short}</span>
       <span className="commit-subject" title={c.subject}>
         {c.subject}
@@ -25,7 +25,7 @@ export function CommitRow({ c }: { c: ReviewCommit }) {
       <span className="commit-meta ui-muted">
         {c.author} · {relativeTime(c.date)}
       </span>
-    </div>
+    </a>
   );
 }
 
