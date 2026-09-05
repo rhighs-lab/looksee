@@ -383,8 +383,10 @@ body {
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
   border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
+  /* nested inside the card's 1px border, so one pixel tighter than its 6px
+     or the two arcs do not sit concentric */
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
   font-size: 12px;
 }
 
@@ -399,8 +401,8 @@ body {
 
 .file.is-collapsed .file-header {
   border-bottom: none;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 .file.is-collapsed .file-body {
@@ -1117,8 +1119,8 @@ body {
 }
 
 .file-view .file-body {
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
 }
 
 .blob-view .comment-cell {
@@ -1548,8 +1550,10 @@ body {
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
   border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
+  /* nested inside the card's 1px border, so one pixel tighter than its 6px
+     or the two arcs do not sit concentric */
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
   font-size: 12px;
 }
 
