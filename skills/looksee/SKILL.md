@@ -28,8 +28,9 @@ Then install the standing rule. It is idempotent, so just run it:
 looksee init
 ```
 
-It writes a short looksee block into the repo's `AGENTS.md` and reports
-`added: false` when the block is already there.
+It writes a short review block into the global instruction file of every
+agent installed on the machine, and reports `added: false` for the ones that
+already had it. Pass `--local` to write this repo's `AGENTS.md` instead.
 
 ## Pick the scope, then launch
 
@@ -76,6 +77,19 @@ looksee reply <id> "Applied in 3f2a1c"
 looksee resolve <id>
 looksee done "Addressed all three threads"
 ```
+
+## How to write a reply
+
+The user reads your reply in a review pane next to the code, not in a chat.
+
+- One line whenever one line does it. A short list only for genuinely
+  separate items.
+- Say what you did and where: "Fixed in src/cart.js:20, off-by-one."
+- Plain words. No preamble, no restating the comment, no sign-off, no
+  "Great catch".
+- Did not make the change? Say so and why, in one line.
+- Never hide a problem, a guess, or a risk to stay short. Say it plainly and
+  be short everywhere else.
 
 Stop the listener once the round is done. Reconnecting with `--pending`
 replays anything unanswered, so nothing is lost by dropping it.
