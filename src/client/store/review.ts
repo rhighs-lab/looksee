@@ -108,6 +108,17 @@ let lastArrivalAt: number | null = null;
 // commits only change when the comparison endpoints move, so skip the git log
 // on the refreshes that fire for every file save
 let lastCmpKey = '';
+// Diffs already fetched, per scope. Switching tabs re-renders from here rather
+// than clearing the view and showing the skeleton again; the key carries the
+// repo version and the comparison, so any real change misses the cache.
+const diffCache = new Map<string, Record<string, FileDiff>>();
+
+const cacheKey = (scope: Scope, state: RepoState | null): string | null => {
+  if (!state) return null;
+  const cmp = state.comparison;
+  const c = cmp ? `${cmp.baseline.oid}..${cmp.endpoint.oid}` : '';
+  return `${scope}|${state.version}|${c}`;
+};
 
 const WORKTREE: Comparison['endpoint'] = { kind: 'worktree' };
 
@@ -266,6 +277,8 @@ export const useReview = create<ReviewStore>((set, get) => {
       if (!wasReady || force || scope !== 'cumulative')
         await loadAll(scope, state);
       else await loadChanged(scope, state);
+      const key = cacheKey(scope, state);
+      if (key) diffCache.set(key, get().diffs);
       set({ status: 'ready', error: null });
     } catch (err) {
       set({
@@ -345,6 +358,11 @@ export const useReview = create<ReviewStore>((set, get) => {
 
     async setScope(scope) {
       if (scope === get().scope) return;
+      const hit = diffCache.get(cacheKey(scope, get().state) ?? '');
+      if (hit) {
+        set({ scope, expansions: {}, diffs: hit, status: 'ready' });
+        return;
+      }
       set({ scope, expansions: {}, diffs: {}, status: 'loading' });
       refreshChain = refreshChain.then(() => doRefresh(true));
       await refreshChain;
