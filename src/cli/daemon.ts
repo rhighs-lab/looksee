@@ -42,7 +42,7 @@ const RETRY_MS = 200;
 const sleep = (ms: number): Promise<void> =>
   new Promise((r) => setTimeout(r, ms));
 
-const serversDir = (): string => path.join(lookseeHome(), 'servers');
+export const serversDir = (): string => path.join(lookseeHome(), 'servers');
 
 export const recordPath = (root: string): string =>
   path.join(serversDir(), `${repoKey(root)}.json`);
@@ -103,7 +103,7 @@ const sameRoot = async (a: string, b: string): Promise<boolean> => {
   }
 };
 
-const alive = (pid: number): boolean => {
+export const alive = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
     return true;

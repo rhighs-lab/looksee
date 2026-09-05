@@ -48,9 +48,9 @@ describe('fullGuide', () => {
     expect(preamble()).toMatch(/pin/);
   });
 
-  it('stays plain text under 130 lines', () => {
+  it('stays plain text under 132 lines', () => {
     const lines = text.split('\n');
-    expect(lines.length).toBeLessThan(130);
+    expect(lines.length).toBeLessThan(132);
     expect(text).not.toMatch(/^#/m);
   });
 });

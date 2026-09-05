@@ -5,6 +5,7 @@ import { runComments } from '@/cli/cmd/comments.js';
 import { runDone } from '@/cli/cmd/done.js';
 import { runInit } from '@/cli/cmd/init.js';
 import { runListen } from '@/cli/cmd/listen.js';
+import { runPs } from '@/cli/cmd/ps.js';
 import { runReply } from '@/cli/cmd/reply.js';
 import { runResolve } from '@/cli/cmd/resolve.js';
 import { runReview } from '@/cli/cmd/review.js';
@@ -316,6 +317,19 @@ const COMMANDS: CommandSpec[] = [
         '{ running, url, pid, pendingReviews, openThreads, scope, openedAt, approvedAt, drift }: pins as short shas or null',
     },
     runStatus
+  ),
+  placeholder(
+    {
+      name: 'ps',
+      example: 'looksee ps --pretty',
+      summary: 'List the looksee servers running on this machine',
+      args: '',
+      flags: [PRETTY],
+      output:
+        'An array of { pid, port, url, repoRoot, startedAt, title }, one per live server',
+      notes: 'Covers every repo, not just this one; dead records are skipped',
+    },
+    runPs
   ),
   placeholder(
     {
