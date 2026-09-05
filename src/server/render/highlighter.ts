@@ -5,6 +5,7 @@ import {
   type ThemedToken,
 } from 'shiki';
 import { escapeHtml } from '@/server/render/escape.js';
+import { darkened } from '@/server/render/themes/darkened.js';
 import type { Range, WordLine } from '@/server/render/word-diff.js';
 import type { Hunk } from '@/shared/protocol.js';
 
@@ -18,7 +19,7 @@ const THEMES = {
   sd: 'solarized-dark',
   al: 'one-light',
   ad: 'one-dark-pro',
-  dkd: 'poimandres',
+  dkd: 'darkened',
   drc: 'dracula',
   nrd: 'nord',
   tkl: 'tokyo-night',
@@ -33,7 +34,11 @@ const loadedLangs = new Set<string>();
 
 function getHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({
-    themes: Object.values(THEMES),
+    // the bundled themes are resolved by name; darkened ships with looksee
+    themes: [
+      ...Object.values(THEMES).filter((t) => t !== 'darkened'),
+      darkened,
+    ],
     langs: [],
   });
   return highlighterPromise;
