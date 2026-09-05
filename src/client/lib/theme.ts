@@ -1,4 +1,4 @@
-import type { Appearance, Theme } from '@/client/store/prefs.js';
+import type { Appearance, Theme } from '@/shared/protocol.js';
 
 export const THEME_LABEL: Record<Theme, string> = {
   github: 'GitHub',

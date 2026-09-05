@@ -1,8 +1,6 @@
-import type { ScopePreset } from '@/shared/protocol.js';
+import type { Appearance, ScopePreset, Theme } from '@/shared/protocol.js';
 
 export type View = 'split' | 'unified';
-export type Theme = 'github' | 'solarized' | 'atom';
-export type Appearance = 'auto' | 'light' | 'dark';
 
 const read = <T>(key: string, fallback: T): T => {
   try {

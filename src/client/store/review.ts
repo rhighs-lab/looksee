@@ -11,13 +11,9 @@ import {
   nextArrivalSeq,
 } from '@/client/lib/arrivals.js';
 import { applyTheme } from '@/client/lib/theme.js';
-import {
-  type Appearance,
-  prefs,
-  type Theme,
-  type View,
-} from '@/client/store/prefs.js';
+import { prefs, type View } from '@/client/store/prefs.js';
 import type {
+  Appearance,
   BranchesResponse,
   ChangedFile,
   Comparison,
@@ -30,6 +26,7 @@ import type {
   ScopePreset,
   ServerEvent,
   Session,
+  Theme,
 } from '@/shared/protocol.js';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
@@ -295,6 +292,15 @@ export const useReview = create<ReviewStore>((set, get) => {
     init() {
       void get().refresh();
       void get().loadBranches();
+      void api
+        .uiPrefs()
+        .then((p) => {
+          const theme = p.theme ?? get().theme;
+          const appearance = p.appearance ?? get().appearance;
+          set({ theme, appearance });
+          applyTheme(theme, appearance);
+        })
+        .catch(() => undefined);
       sub?.close();
       sub = connectEvents(
         (ev) => {
@@ -348,12 +354,14 @@ export const useReview = create<ReviewStore>((set, get) => {
       prefs.setTheme(theme);
       set({ theme });
       applyTheme(theme, get().appearance);
+      void api.setUiPrefs({ theme }).catch(() => undefined);
     },
 
     setAppearance(appearance) {
       prefs.setAppearance(appearance);
       set({ appearance });
       applyTheme(get().theme, appearance);
+      void api.setUiPrefs({ appearance }).catch(() => undefined);
     },
 
     setNewLineAttention(on) {

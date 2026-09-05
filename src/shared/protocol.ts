@@ -272,6 +272,16 @@ export interface FileViewResponse {
   tree: TreeEntry[];
 }
 
+export const THEMES = ['github', 'solarized', 'atom'] as const;
+export const APPEARANCES = ['auto', 'light', 'dark'] as const;
+export type Theme = (typeof THEMES)[number];
+export type Appearance = (typeof APPEARANCES)[number];
+
+export interface UiPrefs {
+  theme: Theme | null;
+  appearance: Appearance | null;
+}
+
 export type CommentSide = 'new' | 'old' | 'file';
 export type CommentAuthor = string;
 export const USER_ACTOR = 'user';

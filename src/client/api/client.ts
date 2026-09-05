@@ -15,6 +15,7 @@ import type {
   Scope,
   ScopePreset,
   Session,
+  UiPrefs,
   Verdict,
 } from '@/shared/protocol.js';
 
@@ -150,6 +151,9 @@ export const api = {
       '/api/export',
       { branch, format }
     ),
+  uiPrefs: () => request<UiPrefs>('GET', '/api/ui-prefs'),
+  setUiPrefs: (patch: Partial<UiPrefs>) =>
+    request<UiPrefs>('POST', '/api/ui-prefs', patch),
   listReviews: () => request<ReviewsResponse>('GET', '/api/reviews'),
   startReview: (branch: string | null) =>
     request<{ review: Review }>('POST', '/api/reviews', { branch }),

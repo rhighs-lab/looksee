@@ -28,6 +28,12 @@ import {
   repin,
   setScope,
 } from '@/server/review/session.js';
+import {
+  appearance,
+  readUiPrefs,
+  theme,
+  writeUiPrefs,
+} from '@/server/review/ui-prefs.js';
 import { sampleDiffs } from '@/server/sample.js';
 import type { RepoWatcher, Selection } from '@/server/watch/watcher.js';
 import { imageTypeOf } from '@/shared/media.js';
@@ -97,6 +103,18 @@ export function repoRoutes(ctx: AppContext): Hono {
   });
 
   app.get('/api/state', (c) => c.json(ctx.state()));
+
+  app.get('/api/ui-prefs', async (c) => c.json(await readUiPrefs()));
+
+  app.post('/api/ui-prefs', async (c) => {
+    const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    return c.json(
+      await writeUiPrefs({
+        theme: theme(b['theme']),
+        appearance: appearance(b['appearance']),
+      })
+    );
+  });
 
   app.get('/api/branches', async (c) => {
     if (!ctx.repoRoot)

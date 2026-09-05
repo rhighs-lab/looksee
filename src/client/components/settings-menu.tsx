@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Gear } from '@/client/components/icons.js';
 import { APPEARANCES, THEME_LABEL, THEMES } from '@/client/lib/theme.js';
-import type { Appearance, Theme } from '@/client/store/prefs.js';
 import { useReview } from '@/client/store/review.js';
 import { Button } from '@/client/ui/index.js';
+import type { Appearance, Theme } from '@/shared/protocol.js';
 
 const APPEARANCE_LABEL: Record<Appearance, string> = {
   auto: 'System',
