@@ -22,6 +22,7 @@ import type {
   Layer,
   RepoRefs,
   RepoState,
+  ReviewCommit,
   Scope,
   ScopePreset,
   ServerEvent,
@@ -64,6 +65,7 @@ export interface ReviewStore {
   toast: { message: string; action?: { label: string; fn: () => void } } | null;
   eventListeners: Set<(ev: ServerEvent) => void>;
   branches: BranchesResponse | null;
+  commits: ReviewCommit[];
   preset: ScopePreset;
   session: Session | null;
 
@@ -87,6 +89,7 @@ export interface ReviewStore {
   setTreeWidth(px: number | null): void;
   setActivePath(path: string | null): void;
   loadBranches(): Promise<void>;
+  loadCommits(): Promise<void>;
   setPreset(preset: ScopePreset, custom?: Comparison): Promise<void>;
   repin(): Promise<void>;
   endSession(): Promise<void>;
@@ -100,6 +103,9 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshChain: Promise<void> = Promise.resolve();
 // when the last arrival landed, so a burst of refreshes reads as one arrival
 let lastArrivalAt: number | null = null;
+// commits only change when the comparison endpoints move, so skip the git log
+// on the refreshes that fire for every file save
+let lastCmpKey = '';
 
 const WORKTREE: Comparison['endpoint'] = { kind: 'worktree' };
 
@@ -242,6 +248,13 @@ export const useReview = create<ReviewStore>((set, get) => {
           get().preset,
       });
       applyTitle(state);
+      const cmpKey = state.comparison
+        ? `${state.comparison.baseline.oid}..${state.comparison.endpoint.oid}`
+        : '';
+      if (cmpKey !== lastCmpKey) {
+        lastCmpKey = cmpKey;
+        void get().loadCommits();
+      }
       reconcileViewed(state.repoRoot, state.files);
       if (state.error) {
         set({ status: 'error', error: state.error });
@@ -282,6 +295,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     newLineAttention: prefs.newLineAttention(),
     treeHidden: prefs.treeHidden(),
     treeWidth: prefs.treeWidth(),
+    commits: [],
     activePath: null,
     toast: null,
     eventListeners: new Set(),
@@ -292,6 +306,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     init() {
       void get().refresh();
       void get().loadBranches();
+      void get().loadCommits();
       void api
         .uiPrefs()
         .then((p) => {
@@ -444,6 +459,14 @@ export const useReview = create<ReviewStore>((set, get) => {
     async loadBranches() {
       try {
         set({ branches: await api.branches() });
+      } catch {
+        /* outside a repo */
+      }
+    },
+
+    async loadCommits() {
+      try {
+        set({ commits: (await api.commits()).commits });
       } catch {
         /* outside a repo */
       }

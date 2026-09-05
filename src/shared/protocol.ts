@@ -118,6 +118,19 @@ export interface ResolvedComparison {
   note: ComparisonNote;
 }
 
+export interface ReviewCommit {
+  sha: string;
+  short: string;
+  author: string;
+  date: string;
+  subject: string;
+  files: string[];
+}
+
+export interface CommitsResponse {
+  commits: ReviewCommit[];
+}
+
 export interface RepoState {
   version: number;
   repoRoot: string | null;

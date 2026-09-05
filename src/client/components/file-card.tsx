@@ -12,6 +12,7 @@ import {
   useExpansion,
 } from '@/client/components/diff/diff-table.js';
 import { boundaries, remainingGaps } from '@/client/components/diff/rows.js';
+import { FileCommits } from '@/client/components/file-commits.js';
 import { FileInfo } from '@/client/components/file-info.js';
 import { ForgeLink } from '@/client/components/forge-link.js';
 import { ChevronDown, CommentIcon, Copy } from '@/client/components/icons.js';
@@ -195,6 +196,7 @@ export const FileCard = memo(function FileCard({
             <CommentIcon />
           </Button>
         )}
+        <FileCommits path={file.path} oldPath={file.oldPath} />
         <FileInfo path={file.path} />
         <ForgeLink filePath={file.path} />
         {diff && !diff.binary && diff.hunks.length > 0 && (

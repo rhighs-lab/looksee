@@ -2181,3 +2181,51 @@ kbd {
   border-radius: 50%;
   background-color: var(--bgColor-accent-emphasis, #0969da);
 }
+
+/* ---- Commits popovers --------------------------------------------------- */
+.commits-pop {
+  position: relative;
+  display: inline-flex;
+}
+
+.commit-card {
+  width: 420px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 6px;
+  font-size: 12px;
+  cursor: default;
+  white-space: normal;
+}
+
+.commit-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.commit-row + .commit-row {
+  border-top: 1px solid var(--borderColor-muted, #d8dee4);
+}
+
+.commit-sha {
+  grid-row: span 2;
+  align-self: start;
+  color: var(--fgColor-accent, #0969da);
+}
+
+.commit-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-meta {
+  font-size: 11px;
+}
+
+.file-commits-btn {
+  color: var(--fgColor-accent, #0969da);
+}

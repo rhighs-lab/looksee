@@ -39,6 +39,7 @@ import type { RepoWatcher, Selection } from '@/server/watch/watcher.js';
 import { imageTypeOf } from '@/shared/media.js';
 import type {
   BranchesResponse,
+  CommitsResponse,
   Comparison,
   ContextResponse,
   DiffResponse,
@@ -407,6 +408,42 @@ export function repoRoutes(ctx: AppContext): Hono {
       maxHighlight: MAX_HIGHLIGHT_LINES,
       tree,
     });
+  });
+
+  app.get('/api/commits', async (c) => {
+    const root = ctx.repoRoot;
+    const cmp = ctx.state().comparison;
+    if (!root || !cmp) return c.json<CommitsResponse>({ commits: [] });
+    const from = cmp.baseline.oid;
+    const to = cmp.endpoint.kind === 'worktree' ? 'HEAD' : cmp.endpoint.oid;
+    if (!from || !to) return c.json<CommitsResponse>({ commits: [] });
+    const SEP = '\u001f';
+    const REC = '\u001e';
+    const out = await git(root, [
+      'log',
+      `${from}..${to}`,
+      '--name-only',
+      '--no-merges',
+      `--format=${REC}%H${SEP}%an${SEP}%aI${SEP}%s`,
+    ]).catch(() => '');
+    const commits = out
+      .split(REC)
+      .filter((chunk) => chunk.trim())
+      .map((chunk) => {
+        const [head = '', ...rest] = chunk.split('\n');
+        const [sha = '', author = '', date = '', subject = ''] =
+          head.split(SEP);
+        return {
+          sha,
+          short: sha.slice(0, 7),
+          author,
+          date,
+          subject,
+          files: rest.map((l) => l.trim()).filter(Boolean),
+        };
+      })
+      .filter((x) => x.sha);
+    return c.json<CommitsResponse>({ commits });
   });
 
   app.get('/api/file-info', async (c) => {
