@@ -446,6 +446,46 @@ describe('reviews API', () => {
     expect(eventsSince(mark).map((e) => e.type)).toEqual(['review.submitted']);
   });
 
+  it('guards the branch against a push while a review is open', async () => {
+    const hook = path.join(repo.dir, '.git', 'hooks', 'pre-push');
+    const guard = path.join(repo.dir, '.looksee', 'push-guard');
+    const started = await srv.json<{ review: Review; guard: string }>(
+      'POST',
+      '/api/reviews',
+      {},
+      as('guarder')
+    );
+    expect(started.body.guard).toBe('armed');
+    expect((await fs.readFile(guard, 'utf8')).trim()).toBe('feature/x');
+    expect(await fs.readFile(hook, 'utf8')).toContain('looksee push guard');
+
+    await submit(started.body.review.id, { verdict: 'comment' }, 'guarder');
+    await expect(fs.access(guard)).rejects.toThrow();
+    await expect(fs.access(hook)).rejects.toThrow();
+  });
+
+  it('leaves a pre-push hook it did not write alone', async () => {
+    const hook = path.join(repo.dir, '.git', 'hooks', 'pre-push');
+    await fs.mkdir(path.dirname(hook), { recursive: true });
+    await fs.writeFile(hook, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    const started = await srv.json<{ review: Review; guard: string }>(
+      'POST',
+      '/api/reviews',
+      {},
+      as('keeper')
+    );
+    expect(started.body.guard).toBe('hook-taken');
+    expect(await fs.readFile(hook, 'utf8')).not.toContain('looksee');
+    await srv.json(
+      'DELETE',
+      `/api/reviews/${started.body.review.id}`,
+      undefined,
+      as('keeper')
+    );
+    expect(await fs.readFile(hook, 'utf8')).not.toContain('looksee');
+    await fs.rm(hook);
+  });
+
   it('rejects malformed actor headers', async () => {
     for (const actor of ['a'.repeat(70), 'bad actor!']) {
       const r = await srv.json<{ error: string }>(

@@ -175,7 +175,9 @@ export const api = {
     request<UiPrefs>('POST', '/api/ui-prefs', patch),
   listReviews: () => request<ReviewsResponse>('GET', '/api/reviews'),
   startReview: (branch: string | null) =>
-    request<{ review: Review }>('POST', '/api/reviews', { branch }),
+    request<{ review: Review; guard: string }>('POST', '/api/reviews', {
+      branch,
+    }),
   getReview: (id: string) =>
     request<{ review: Review; comments: DecoratedComment[] }>(
       'GET',

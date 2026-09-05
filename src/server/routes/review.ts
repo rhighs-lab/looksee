@@ -24,6 +24,7 @@ import {
   renderCommentHtml,
   renderMarkdown,
 } from '@/server/review/markdown.js';
+import { armPushGuard, disarmPushGuard } from '@/server/review/push-guard.js';
 import {
   addSavedReply,
   deleteSavedReply,
@@ -156,7 +157,12 @@ export function reviewRoutes(ctx: AppContext): Hono {
         author: actorOf(c),
         branch: str(b['branch']),
       });
-      return c.json({ review });
+      const head = ctx.state().refs?.head;
+      const guard = await armPushGuard(
+        repoRoot,
+        review.branch ?? (head?.checkedOut ? head.branch : null)
+      ).catch(() => 'failed' as const);
+      return c.json({ review, guard });
     } catch (err) {
       if (err instanceof PendingReviewError)
         return c.json(
@@ -188,6 +194,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
       comparison: await comparisonOf(),
     });
     if (!review) return c.json({ error: 'not found' }, 404);
+    await disarmPushGuard(repoRoot).catch(() => {});
     if (review.verdict === 'approve' && actorOf(c) === USER_ACTOR) {
       await pinApproved(repoRoot).catch((err: unknown) => {
         console.error(`looksee: approve pin failed: ${String(err)}`);
@@ -203,7 +210,9 @@ export function reviewRoutes(ctx: AppContext): Hono {
     if (!repoRoot) return c.json({ error: 'no repo' }, 400);
     const r = await ownedPending(c.req.param('id'), actorOf(c));
     if ('status' in r) return c.json({ error: r.error }, r.status);
-    return c.json({ ok: await discardReview(repoRoot, r.review.id) });
+    const ok = await discardReview(repoRoot, r.review.id);
+    await disarmPushGuard(repoRoot).catch(() => {});
+    return c.json({ ok });
   });
 
   app.post('/api/preview', async (c) => {

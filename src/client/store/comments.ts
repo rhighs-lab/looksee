@@ -327,8 +327,14 @@ export const useComments = create<CommentsStore>((set, get) => {
 
     async startReview() {
       try {
-        const { review } = await api.startReview(get().branch);
+        const { review, guard } = await api.startReview(get().branch);
         putReview(review);
+        if (guard === 'hook-taken')
+          useReview
+            .getState()
+            .showToast(
+              'This repo has its own pre-push hook, so pushing is not blocked'
+            );
       } catch (err) {
         const b = (err as ApiError).body as { review?: Review } | null;
         if (err instanceof ApiError && err.status === 409 && b?.review) {
