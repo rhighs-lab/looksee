@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { LineSlots } from '@/client/components/diff/diff-table.js';
+import { CleanEmpty, FilteredEmpty } from '@/client/components/empty-state.js';
 import { FileCard } from '@/client/components/file-card.js';
 import {
   FileFinder,
@@ -126,24 +127,13 @@ export function ReviewPage({
           {status === 'ready' &&
             state?.repoRoot &&
             state.files.length === 0 && (
-              <Notice tone="muted">
-                Nothing to review:{' '}
-                <code>{state.refs?.head.branch ?? 'HEAD'}</code> matches{' '}
-                <code>{state.refs?.base.ref}</code> and the working tree is
-                clean. Edits will appear here as they happen.
-              </Notice>
+              <CleanEmpty base={state.refs?.base.ref ?? 'the base branch'} />
             )}
           {status === 'ready' &&
             state &&
             state.files.length > 0 &&
             files.length === 0 && (
-              <Notice tone="muted">
-                {scope !== 'cumulative'
-                  ? `Nothing in the ${scope} layer.`
-                  : layerFilter.length
-                    ? `No files match the selected layer filter (${layerFilter.join(', ')}).`
-                    : 'No changes in this comparison.'}
-              </Notice>
+              <FilteredEmpty scope={scope} layerFilter={layerFilter} />
             )}
           {status !== 'loading' &&
             files.map((file) => (
