@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
-import { makeRepo, type Repo } from '@test/helpers/repo.js';
+import { makeRepo, type Repo, seedRepo } from '@test/helpers/repo.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   discover,
@@ -20,7 +20,7 @@ import {
 } from '@/cli/daemon.js';
 import { type Io, run } from '@/cli/main.js';
 import { packageRoot } from '@/server/pkg-root.js';
-import type { HealthResponse } from '@/shared/protocol.js';
+import type { HealthResponse, RepoState } from '@/shared/protocol.js';
 
 const exec = promisify(execFile);
 const pkgRoot = packageRoot(import.meta.url);
@@ -39,6 +39,10 @@ const io = () => {
 
 const health = async (url: string): Promise<HealthResponse> =>
   (await (await fetch(`${url}/healthz`)).json()) as HealthResponse;
+
+const scopeOf = async (url: string): Promise<string | undefined> =>
+  ((await (await fetch(`${url}/api/state`)).json()) as RepoState).comparison
+    ?.preset;
 
 const alive = (pid: number): boolean => {
   try {
@@ -89,6 +93,7 @@ describe('daemon lifecycle', () => {
     home = await fs.mkdtemp(path.join(os.tmpdir(), 'looksee-home-'));
     process.env['LOOKSEE_HOME'] = home;
     repo = await makeRepo();
+    await seedRepo(repo);
     other = await makeRepo();
     root = await repoRootOf(repo.dir);
     otherRoot = await repoRootOf(other.dir);
@@ -143,6 +148,39 @@ describe('daemon lifecycle', () => {
     expect(await run(['review', repo.dir, '--no-open'], t.io)).toBe(0);
     expect(JSON.parse(t.out.join(''))).toEqual({ url: first.url });
     expect(await serversFor(root)).toBe(1);
+  });
+
+  it('review --scope sets the comparison on the running server', async () => {
+    const t = io();
+    expect(
+      await run(['review', repo.dir, '--no-open', '--scope', 'working'], t.io)
+    ).toBe(0);
+    expect(await scopeOf(first.url)).toBe('working');
+    expect(await serversFor(root)).toBe(1);
+  });
+
+  it('review without --scope leaves the stored scope alone', async () => {
+    const t = io();
+    expect(await run(['review', repo.dir, '--no-open'], t.io)).toBe(0);
+    expect(await scopeOf(first.url)).toBe('working');
+  });
+
+  it('review --scope rejects an unknown preset without spawning', async () => {
+    const t = io();
+    expect(
+      await run(['review', other.dir, '--no-open', '--scope', 'nope'], t.io)
+    ).toBe(1);
+    expect(t.err.join('')).toContain('session|working|branch');
+    expect(await discover(otherRoot)).toBeNull();
+  });
+
+  it('review --scope custom points at the browser pickers', async () => {
+    const t = io();
+    expect(
+      await run(['review', other.dir, '--no-open', '--scope', 'custom'], t.io)
+    ).toBe(1);
+    expect(t.err.join('')).toContain('browser pickers');
+    expect(await discover(otherRoot)).toBeNull();
   });
 
   it('treats a record for another repo root as stale', async () => {

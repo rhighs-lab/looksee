@@ -96,6 +96,11 @@ const COMMANDS: CommandSpec[] = [
           takesValue: true,
           help: 'Name this review in the browser tab (default: repo folder)',
         },
+        {
+          name: 'scope',
+          takesValue: true,
+          help: 'Comparison to open on: session | working | branch',
+        },
         { name: 'no-open', takesValue: false, help: 'Do not open a browser' },
         PRETTY,
       ],

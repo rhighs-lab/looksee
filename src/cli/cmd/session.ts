@@ -8,7 +8,7 @@ import type {
   Session,
 } from '@/shared/protocol.js';
 
-const CLI_PRESETS: ScopePreset[] = ['session', 'working', 'branch'];
+export const CLI_PRESETS: ScopePreset[] = ['session', 'working', 'branch'];
 
 export const pinShort = (pin: Pin | null | undefined): string | null =>
   pin ? pin.head.slice(0, 7) : null;
@@ -44,16 +44,20 @@ export const runSessionEnd = async ({ flags, io }: RunCtx): Promise<number> => {
 const isCliPreset = (v: string): v is ScopePreset =>
   (CLI_PRESETS as string[]).includes(v);
 
+export const assertCliPreset = (v: string): ScopePreset => {
+  if (v === 'custom') throw new Error('custom is set from the browser pickers');
+  if (!isCliPreset(v))
+    throw new Error(`scope must be one of ${CLI_PRESETS.join('|')}`);
+  return v;
+};
+
 export const runScope = async ({
   positionals,
   flags,
   io,
 }: RunCtx): Promise<number> => {
   const preset = positionals[0];
-  if (preset === 'custom')
-    throw new Error('custom is set from the browser pickers');
-  if (preset !== undefined && !isCliPreset(preset))
-    throw new Error(`scope must be one of ${CLI_PRESETS.join('|')}`);
+  if (preset !== undefined) assertCliPreset(preset);
   const { http } = await connect(flags, io.env);
   const state = preset
     ? await http.post<RepoState>('/api/scope', { preset })
