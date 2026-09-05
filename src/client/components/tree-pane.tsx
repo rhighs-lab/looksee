@@ -201,7 +201,7 @@ export function useSubnavHeight(): void {
       if (el)
         document.documentElement.style.setProperty(
           '--subnav-h',
-          `${el.offsetHeight}px`
+          `${el.getBoundingClientRect().height}px`
         );
     };
     sync();

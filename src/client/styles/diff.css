@@ -10,6 +10,8 @@
   /* Height of the sticky subnav; used to offset sticky file headers, the tree
      pane, and scroll anchors. Kept in sync with the subnav's rendered height. */
   --subnav-h: 62px;
+  /* Breathing room above the first file card and between cards. */
+  --file-gap: 2em;
 }
 
 html,
@@ -134,8 +136,8 @@ body {
 .diff-container {
   flex: 1 1 auto;
   min-width: 0; /* allow the column to shrink so wide tables wrap, not overflow */
-  margin: 16px 0;
-  padding: 0 16px;
+  margin: 0 0 16px;
+  padding: var(--file-gap) 16px 0;
 }
 
 /* Draggable divider between the file pane and the diff. It spans the full
@@ -365,13 +367,15 @@ body {
   position: relative;
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: var(--file-gap);
   background-color: var(--bgColor-default, #fff);
 }
 
 .file-header {
   position: sticky;
-  top: var(--subnav-h, 62px);
+  /* the 1px overlap swallows any sub-pixel rounding in the measured subnav
+     height, which otherwise leaves a sliver of scrolling rows showing above */
+  top: calc(var(--subnav-h, 62px) - 1px);
   z-index: 10;
   display: flex;
   align-items: center;
