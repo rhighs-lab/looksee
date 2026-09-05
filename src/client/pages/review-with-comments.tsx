@@ -265,7 +265,9 @@ export function ReviewWithComments() {
 function ReviewActions() {
   const { count, applyable } = useComments(
     useShallow((s) => {
-      const roots = Object.values(s.threads).map((t) => t.root);
+      const roots = Object.values(s.threads)
+        .map((t) => t.root)
+        .filter((r) => r.status !== 'resolved');
       return { count: roots.length, applyable: roots.filter(canApply).length };
     })
   );
