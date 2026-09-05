@@ -1942,13 +1942,14 @@ kbd {
   width: 20px;
   height: 20px;
   flex: none;
+  overflow: hidden;
   border-radius: 50%;
-  color: #fff;
-  fill: currentColor;
 }
 
-.avatar-user {
-  background-color: var(--bgColor-neutral-emphasis, #59636e);
+/* an agent reads as a chip, a person as a disc; the identicon inside carries
+   the identity, the outline carries the kind */
+.avatar-agent {
+  border-radius: 5px;
 }
 
 /* ---- File info popover -------------------------------------------------- */
