@@ -30,6 +30,12 @@ npm install -g @rhighs-lab/looksee
 npx @rhighs-lab/looksee review .
 ```
 
+**Agent skill** (teaches any supported agent to use looksee):
+
+```bash
+npx skills add rhighs-lab/looksee
+```
+
 **From source**:
 
 ```bash
@@ -86,6 +92,7 @@ Diff comparison modes include:
 | --- | --- |
 | `looksee review [path]` | Start the server for a repo and open the browser |
 | `looksee review . --title <name>` | Name this review in the browser tab |
+| `looksee review . --scope <preset>` | Open on `session`, `working` or `branch` |
 | `looksee status` | Server, pending reviews, open threads and session pins |
 | `looksee stop` | Shut down the server for this repo |
 | `looksee listen` | Stream review events as JSON lines until killed |
@@ -103,6 +110,7 @@ Diff comparison modes include:
 | `looksee scope [session\|working\|branch]` | Set or print the default comparison |
 | `looksee session end` | End the session and drop its pins |
 | `looksee agent` | Print the agent guide |
+| `looksee init` | Add the looksee review rule to `AGENTS.md` |
 | `looksee serve --repo .` | Run the server in the foreground |
 
 ## Development
