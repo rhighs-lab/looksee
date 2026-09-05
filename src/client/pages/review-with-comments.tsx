@@ -1,6 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { CommentRow } from '@/client/components/comments/comment-rows.js';
+import {
+  CommentsPanel,
+  CommentsPanelToggle,
+} from '@/client/components/comments/comments-panel.js';
 import { Composer } from '@/client/components/comments/composer.js';
 import {
   DoneBanner,
@@ -240,25 +244,29 @@ export function ReviewWithComments() {
   );
 
   return (
-    <ReviewPage
-      slotsFor={enabled ? slotsFor : undefined}
-      fileCommentsFor={enabled ? fileCommentsFor : undefined}
-      onFileComment={enabled ? onFileComment : undefined}
-      headerRight={
-        enabled ? (
+    <>
+      {enabled && <CommentsPanel />}
+      <ReviewPage
+        slotsFor={enabled ? slotsFor : undefined}
+        fileCommentsFor={enabled ? fileCommentsFor : undefined}
+        onFileComment={enabled ? onFileComment : undefined}
+        headerRight={
+          enabled ? (
+            <>
+              <CommentsPanelToggle />
+              <ReviewActions />
+              <ReviewBar />
+            </>
+          ) : null
+        }
+        headerBelow={
           <>
-            <ReviewActions />
-            <ReviewBar />
+            <ScopeNotices />
+            {enabled && <DoneBanner />}
           </>
-        ) : null
-      }
-      headerBelow={
-        <>
-          <ScopeNotices />
-          {enabled && <DoneBanner />}
-        </>
-      }
-    />
+        }
+      />
+    </>
   );
 }
 
