@@ -414,7 +414,7 @@
   --bgColor-neutral-muted: #32374a;
   --bgColor-neutral-emphasis: #6272a4;
   --fgColor-default: #f8f8f2;
-  --fgColor-muted: #a6accd;
+  --fgColor-muted: #6272a4;
   --fgColor-disabled: #6272a4;
   --fgColor-onEmphasis: #282a36;
   --fgColor-accent: #bd93f9;
@@ -465,9 +465,9 @@
   --diffBlob-deletionWord-bgColor: #823c43;
   --diffBlob-emptyLine-bgColor: #21222c;
   --diffBlob-emptyNum-bgColor: #21222c;
-  --diffBlob-expander-iconColor: #a6accd;
+  --diffBlob-expander-iconColor: #6272a4;
   --diffBlob-hunkLine-bgColor: #3d3951;
-  --diffBlob-hunkLine-fgColor: #a6accd;
+  --diffBlob-hunkLine-fgColor: #6272a4;
   --diffBlob-hunkNum-bgColor-rest: #4c4365;
   --diffBlob-hunkNum-bgColor-hover: #5b4e78;
   --shadow-floating-small:

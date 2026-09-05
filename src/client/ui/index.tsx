@@ -299,6 +299,10 @@ export function Select({
     e.preventDefault();
   };
 
+  const alignEnd =
+    (btn.current?.getBoundingClientRect().left ?? 0) >
+    globalThis.innerWidth / 2;
+
   const groups = new Map<string, Array<[SelectOption, number]>>();
   options.forEach((o, i) => {
     const g = o.group ?? '';
@@ -327,7 +331,12 @@ export function Select({
         <ChevronDown className="ui-select-caret" width={12} height={12} />
       </button>
       {open && (
-        <div className="ui-select-menu" role="listbox" ref={list}>
+        <div
+          className="ui-select-menu"
+          data-align={alignEnd ? 'end' : 'start'}
+          role="listbox"
+          ref={list}
+        >
           {[...groups.entries()].map(([g, list]) => (
             <Fragment key={g || '_'}>
               {g && <div className="ui-select-group">{g}</div>}
