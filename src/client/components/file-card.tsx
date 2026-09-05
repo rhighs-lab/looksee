@@ -94,6 +94,11 @@ export const FileCard = memo(function FileCard({
   const loadFull = useReview((s) => s.loadFull);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // in a layer scope the cumulative entry reads +0/-0/unchanged while the diff
+  // on screen is the layer's own, so the diff wins wherever it exists
+  const additions = diff?.additions ?? file.additions;
+  const deletions = diff?.deletions ?? file.deletions;
+  const kind = diff?.kind ?? file.kind;
 
   useEffect(() => {
     if (!updated || !ref.current) return;
@@ -141,11 +146,11 @@ export const FileCard = memo(function FileCard({
         >
           <ChevronDown className="chevron" />
         </Button>
-        <DiffStat additions={file.additions} deletions={file.deletions} />
-        <span className="file-additions">+{file.additions}</span>
-        <span className="file-deletions">−{file.deletions}</span>
+        <DiffStat additions={additions} deletions={deletions} />
+        <span className="file-additions">+{additions}</span>
+        <span className="file-deletions">−{deletions}</span>
         <span className="file-info">
-          <KindIcon kind={file.kind} />
+          <KindIcon kind={kind} />
           {file.oldPath && file.oldPath !== file.path && (
             <span className="file-rename ui-mono ui-muted">
               {file.oldPath} →{' '}
@@ -165,8 +170,8 @@ export const FileCard = memo(function FileCard({
           >
             <Copy />
           </Button>
-          {file.kind !== 'modified' && (
-            <Label tone={KIND_TONE[file.kind]}>{KIND_LABEL[file.kind]}</Label>
+          {kind !== 'modified' && (
+            <Label tone={KIND_TONE[kind]}>{KIND_LABEL[kind]}</Label>
           )}
           {file.binary && <Label>binary</Label>}
           {file.generated && (
@@ -279,7 +284,7 @@ function FileBody({
     ) : (
       <div className="file-notice-body">Binary file not shown.</div>
     );
-  if (file.kind === 'unchanged')
+  if (file.kind === 'unchanged' && !diff?.hunks.length)
     return (
       <div className="file-notice-body">
         No net change against the base branch; the staged and working-tree edits
