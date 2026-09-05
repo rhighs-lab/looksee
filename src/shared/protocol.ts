@@ -285,7 +285,25 @@ export interface FileViewResponse {
   tree: TreeEntry[];
 }
 
-export const THEMES = ['github', 'solarized', 'atom'] as const;
+export const THEMES = [
+  'github',
+  'solarized',
+  'atom',
+  'darkened',
+  'dracula',
+  'nord',
+  'tokyo',
+  'catppuccin',
+  'everforest',
+] as const;
+
+// Themes with no light palette: choosing one pins the appearance to dark.
+export const DARK_ONLY_THEMES = [
+  'darkened',
+  'dracula',
+  'nord',
+  'tokyo',
+] as const;
 export const APPEARANCES = ['auto', 'light', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 export type Appearance = (typeof APPEARANCES)[number];

@@ -18,6 +18,14 @@ const THEMES = {
   sd: 'solarized-dark',
   al: 'one-light',
   ad: 'one-dark-pro',
+  dkd: 'poimandres',
+  drc: 'dracula',
+  nrd: 'nord',
+  tkl: 'tokyo-night',
+  ctl: 'catppuccin-latte',
+  ctd: 'catppuccin-mocha',
+  efl: 'everforest-light',
+  efd: 'everforest-dark',
 } as const;
 
 let highlighterPromise: Promise<Highlighter> | null = null;

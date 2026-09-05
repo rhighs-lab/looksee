@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Gear } from '@/client/components/icons.js';
-import { APPEARANCES, THEME_LABEL, THEMES } from '@/client/lib/theme.js';
+import {
+  APPEARANCES,
+  isDarkOnly,
+  THEME_LABEL,
+  THEMES,
+} from '@/client/lib/theme.js';
 import { useReview } from '@/client/store/review.js';
 import { Button } from '@/client/ui/index.js';
 import type { Appearance, Theme } from '@/shared/protocol.js';
@@ -23,6 +28,30 @@ const SWATCHES: Record<Theme, Record<'light' | 'dark', string[]>> = {
   atom: {
     light: ['#fafafa', '#50a14f', '#e45649', '#4078f2'],
     dark: ['#282c34', '#98c379', '#e06c75', '#61afef'],
+  },
+  darkened: {
+    light: ['#000000', '#9cda7c', '#db6088', '#b968fc'],
+    dark: ['#000000', '#9cda7c', '#db6088', '#b968fc'],
+  },
+  dracula: {
+    light: ['#282a36', '#50fa7b', '#ff5555', '#bd93f9'],
+    dark: ['#282a36', '#50fa7b', '#ff5555', '#bd93f9'],
+  },
+  nord: {
+    light: ['#2e3440', '#a3be8c', '#bf616a', '#88c0d0'],
+    dark: ['#2e3440', '#a3be8c', '#bf616a', '#88c0d0'],
+  },
+  tokyo: {
+    light: ['#1a1b26', '#9ece6a', '#f7768e', '#7aa2f7'],
+    dark: ['#1a1b26', '#9ece6a', '#f7768e', '#7aa2f7'],
+  },
+  catppuccin: {
+    light: ['#eff1f5', '#40a02b', '#d20f39', '#1e66f5'],
+    dark: ['#1e1e2e', '#a6e3a1', '#f38ba8', '#89b4fa'],
+  },
+  everforest: {
+    light: ['#fdf6e3', '#8da101', '#f85552', '#3a94c5'],
+    dark: ['#2d353b', '#a7c080', '#e67e80', '#7fbbb3'],
   },
 };
 
@@ -111,21 +140,30 @@ export function SettingsMenu() {
           <div className="menu-label">Theme</div>
           {THEMES.map((t) => (
             <Row key={t} active={t === theme} onClick={() => setTheme(t)}>
-              <Swatch theme={t} mode={mode} />
+              <Swatch theme={t} mode={isDarkOnly(t) ? 'dark' : mode} />
               {THEME_LABEL[t]}
             </Row>
           ))}
           <div className="menu-sep" />
-          <div className="menu-label">Appearance</div>
-          {APPEARANCES.map((a) => (
-            <Row
-              key={a}
-              active={a === appearance}
-              onClick={() => setAppearance(a)}
-            >
-              {APPEARANCE_LABEL[a]}
-            </Row>
-          ))}
+          <div className="menu-label">
+            Appearance
+            {isDarkOnly(theme) && (
+              <span className="ui-muted">
+                {' '}
+                · {THEME_LABEL[theme]} is dark only
+              </span>
+            )}
+          </div>
+          {!isDarkOnly(theme) &&
+            APPEARANCES.map((a) => (
+              <Row
+                key={a}
+                active={a === appearance}
+                onClick={() => setAppearance(a)}
+              >
+                {APPEARANCE_LABEL[a]}
+              </Row>
+            ))}
           <div className="menu-sep" />
           <div className="menu-label">Diff</div>
           <Row

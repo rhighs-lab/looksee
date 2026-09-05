@@ -194,7 +194,9 @@ export function Header({
                   title:
                     'Everything between the base branch and the working tree',
                 },
-                ...LAYERS.map((l) => ({
+                ...LAYERS.filter(
+                  (l) => summary.byLayer[l] > 0 || scope === l
+                ).map((l) => ({
                   value: l,
                   label: (
                     <>
@@ -208,7 +210,6 @@ export function Header({
                   ),
                   count: summary.byLayer[l],
                   title: layerTitle(l),
-                  disabled: summary.byLayer[l] === 0 && scope !== l,
                 })),
               ]}
             />

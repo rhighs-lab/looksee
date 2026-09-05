@@ -318,6 +318,638 @@
     0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+:root[data-theme="darkened"][data-mode="dark"] {
+  --bgColor-default: #000000;
+  --bgColor-muted: #0d0d14;
+  --bgColor-inset: #08080c;
+  --bgColor-accent-muted: #291737;
+  --bgColor-accent-emphasis: #b968fc;
+  --bgColor-success-muted: #22301b;
+  --bgColor-success-emphasis: #9cda7c;
+  --bgColor-danger-muted: #30151e;
+  --bgColor-danger-emphasis: #db6088;
+  --bgColor-attention-muted: #313012;
+  --bgColor-attention-emphasis: #dedc52;
+  --bgColor-done-muted: #2e2334;
+  --bgColor-done-emphasis: #cfa1ed;
+  --bgColor-neutral-muted: #0e0e16;
+  --bgColor-neutral-emphasis: #4e4c78;
+  --fgColor-default: #bec7d1;
+  --fgColor-muted: #8784ad;
+  --fgColor-disabled: #4e4c78;
+  --fgColor-onEmphasis: #000000;
+  --fgColor-accent: #b968fc;
+  --fgColor-success: #9cda7c;
+  --fgColor-danger: #db6088;
+  --fgColor-attention: #dedc52;
+  --fgColor-done: #cfa1ed;
+  --borderColor-default: #26243a;
+  --borderColor-muted: #1a1926;
+  --borderColor-emphasis: #4e4c78;
+  --borderColor-neutral-emphasis: #4e4c78;
+  --borderColor-accent-muted: #532f71;
+  --borderColor-accent-emphasis: #b968fc;
+  --borderColor-success-muted: #466238;
+  --borderColor-success-emphasis: #9cda7c;
+  --borderColor-danger-muted: #632b3d;
+  --borderColor-danger-emphasis: #db6088;
+  --borderColor-attention-muted: #646325;
+  --borderColor-attention-emphasis: #dedc52;
+  --borderColor-done-emphasis: #cfa1ed;
+  --underlineNav-borderColor-active: #dedc52;
+  --control-borderColor-emphasis: #4e4c78;
+  --control-transparent-bgColor-hover: #0d0d14;
+  --controlKnob-bgColor-rest: #000000;
+  --controlKnob-borderColor-rest: #4e4c78;
+  --controlTrack-bgColor-rest: #08080c;
+  --button-default-bgColor-rest: #0d0d14;
+  --button-default-bgColor-hover: #22232b;
+  --button-default-borderColor-rest: #26243a;
+  --button-primary-bgColor-rest: #9cda7c;
+  --button-primary-bgColor-hover: #a2d78b;
+  --button-primary-bgColor-disabled: #4e6d3e;
+  --button-primary-borderColor-rest: #26243a;
+  --button-primary-fgColor-disabled: #000000;
+  --button-danger-bgColor-hover: #a44866;
+  --button-danger-borderColor-hover: #db6088;
+  --focus-outlineColor: #b968fc;
+  --overlay-bgColor: #0d0d14;
+  --diffBlob-additionLine-bgColor: #192314;
+  --diffBlob-additionLine-fgColor: #bec7d1;
+  --diffBlob-additionNum-bgColor: #2c3d23;
+  --diffBlob-additionNum-fgColor: #bec7d1;
+  --diffBlob-additionWord-bgColor: #425c34;
+  --diffBlob-deletionLine-bgColor: #230f16;
+  --diffBlob-deletionLine-fgColor: #bec7d1;
+  --diffBlob-deletionNum-bgColor: #3d1b26;
+  --diffBlob-deletionNum-fgColor: #bec7d1;
+  --diffBlob-deletionWord-bgColor: #5c2839;
+  --diffBlob-emptyLine-bgColor: #08080c;
+  --diffBlob-emptyNum-bgColor: #08080c;
+  --diffBlob-expander-iconColor: #8784ad;
+  --diffBlob-hunkLine-bgColor: #1a0f23;
+  --diffBlob-hunkLine-fgColor: #8784ad;
+  --diffBlob-hunkNum-bgColor-rest: #2c193c;
+  --diffBlob-hunkNum-bgColor-hover: #3f2356;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dracula"][data-mode="dark"] {
+  --bgColor-default: #282a36;
+  --bgColor-muted: #343746;
+  --bgColor-inset: #21222c;
+  --bgColor-accent-muted: #494161;
+  --bgColor-accent-emphasis: #bd93f9;
+  --bgColor-success-muted: #315845;
+  --bgColor-success-emphasis: #50fa7b;
+  --bgColor-danger-muted: #57333d;
+  --bgColor-danger-emphasis: #ff5555;
+  --bgColor-attention-muted: #545849;
+  --bgColor-attention-emphasis: #f1fa8c;
+  --bgColor-done-muted: #573b56;
+  --bgColor-done-emphasis: #ff79c6;
+  --bgColor-neutral-muted: #32374a;
+  --bgColor-neutral-emphasis: #6272a4;
+  --fgColor-default: #f8f8f2;
+  --fgColor-muted: #a6accd;
+  --fgColor-disabled: #6272a4;
+  --fgColor-onEmphasis: #282a36;
+  --fgColor-accent: #bd93f9;
+  --fgColor-success: #50fa7b;
+  --fgColor-danger: #ff5555;
+  --fgColor-attention: #f1fa8c;
+  --fgColor-done: #ff79c6;
+  --borderColor-default: #44475a;
+  --borderColor-muted: #383a4a;
+  --borderColor-emphasis: #6272a4;
+  --borderColor-neutral-emphasis: #6272a4;
+  --borderColor-accent-muted: #6b598e;
+  --borderColor-accent-emphasis: #bd93f9;
+  --borderColor-success-muted: #3a8855;
+  --borderColor-success-emphasis: #50fa7b;
+  --borderColor-danger-muted: #893d44;
+  --borderColor-danger-emphasis: #ff5555;
+  --borderColor-attention-muted: #82885d;
+  --borderColor-attention-emphasis: #f1fa8c;
+  --borderColor-done-emphasis: #ff79c6;
+  --underlineNav-borderColor-active: #f1fa8c;
+  --control-borderColor-emphasis: #6272a4;
+  --control-transparent-bgColor-hover: #343746;
+  --controlKnob-bgColor-rest: #282a36;
+  --controlKnob-borderColor-rest: #6272a4;
+  --controlTrack-bgColor-rest: #21222c;
+  --button-default-bgColor-rest: #343746;
+  --button-default-bgColor-hover: #4c4e5b;
+  --button-default-borderColor-rest: #44475a;
+  --button-primary-bgColor-rest: #50fa7b;
+  --button-primary-bgColor-hover: #6efa90;
+  --button-primary-bgColor-disabled: #3c9259;
+  --button-primary-borderColor-rest: #44475a;
+  --button-primary-fgColor-disabled: #282a36;
+  --button-danger-bgColor-hover: #c94a4d;
+  --button-danger-borderColor-hover: #ff5555;
+  --focus-outlineColor: #bd93f9;
+  --overlay-bgColor: #343746;
+  --diffBlob-additionLine-bgColor: #2e4b41;
+  --diffBlob-additionLine-fgColor: #f8f8f2;
+  --diffBlob-additionNum-bgColor: #336449;
+  --diffBlob-additionNum-fgColor: #f8f8f2;
+  --diffBlob-additionWord-bgColor: #398153;
+  --diffBlob-deletionLine-bgColor: #4a313b;
+  --diffBlob-deletionLine-fgColor: #f8f8f2;
+  --diffBlob-deletionNum-bgColor: #64363f;
+  --diffBlob-deletionNum-fgColor: #f8f8f2;
+  --diffBlob-deletionWord-bgColor: #823c43;
+  --diffBlob-emptyLine-bgColor: #21222c;
+  --diffBlob-emptyNum-bgColor: #21222c;
+  --diffBlob-expander-iconColor: #a6accd;
+  --diffBlob-hunkLine-bgColor: #3d3951;
+  --diffBlob-hunkLine-fgColor: #a6accd;
+  --diffBlob-hunkNum-bgColor-rest: #4c4365;
+  --diffBlob-hunkNum-bgColor-hover: #5b4e78;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="nord"][data-mode="dark"] {
+  --bgColor-default: #2e3440;
+  --bgColor-muted: #3b4252;
+  --bgColor-inset: #272c36;
+  --bgColor-accent-muted: #425360;
+  --bgColor-accent-emphasis: #88c0d0;
+  --bgColor-success-muted: #485251;
+  --bgColor-success-emphasis: #a3be8c;
+  --bgColor-danger-muted: #4e3e49;
+  --bgColor-danger-emphasis: #bf616a;
+  --bgColor-attention-muted: #585551;
+  --bgColor-attention-emphasis: #ebcb8b;
+  --bgColor-done-muted: #4b4858;
+  --bgColor-done-emphasis: #b48ead;
+  --bgColor-neutral-muted: #363e4c;
+  --bgColor-neutral-emphasis: #5d6b83;
+  --fgColor-default: #eceff4;
+  --fgColor-muted: #b8c0cd;
+  --fgColor-disabled: #6b7689;
+  --fgColor-onEmphasis: #2e3440;
+  --fgColor-accent: #88c0d0;
+  --fgColor-success: #a3be8c;
+  --fgColor-danger: #bf616a;
+  --fgColor-attention: #ebcb8b;
+  --fgColor-done: #b48ead;
+  --borderColor-default: #434c5e;
+  --borderColor-muted: #3a4152;
+  --borderColor-emphasis: #6b7689;
+  --borderColor-neutral-emphasis: #6b7689;
+  --borderColor-accent-muted: #577381;
+  --borderColor-accent-emphasis: #88c0d0;
+  --borderColor-success-muted: #637262;
+  --borderColor-success-emphasis: #a3be8c;
+  --borderColor-danger-muted: #6f4853;
+  --borderColor-danger-emphasis: #bf616a;
+  --borderColor-attention-muted: #837862;
+  --borderColor-attention-emphasis: #ebcb8b;
+  --borderColor-done-emphasis: #b48ead;
+  --underlineNav-borderColor-active: #ebcb8b;
+  --control-borderColor-emphasis: #6b7689;
+  --control-transparent-bgColor-hover: #3b4252;
+  --controlKnob-bgColor-rest: #2e3440;
+  --controlKnob-borderColor-rest: #6b7689;
+  --controlTrack-bgColor-rest: #272c36;
+  --button-default-bgColor-rest: #3b4252;
+  --button-default-bgColor-hover: #505765;
+  --button-default-borderColor-rest: #434c5e;
+  --button-primary-bgColor-rest: #a3be8c;
+  --button-primary-bgColor-hover: #b0c79f;
+  --button-primary-bgColor-disabled: #697966;
+  --button-primary-borderColor-rest: #434c5e;
+  --button-primary-fgColor-disabled: #2e3440;
+  --button-danger-bgColor-hover: #9b5660;
+  --button-danger-borderColor-hover: #bf616a;
+  --focus-outlineColor: #88c0d0;
+  --overlay-bgColor: #3b4252;
+  --diffBlob-additionLine-bgColor: #414a4c;
+  --diffBlob-additionLine-fgColor: #eceff4;
+  --diffBlob-additionNum-bgColor: #4f5b55;
+  --diffBlob-additionNum-fgColor: #eceff4;
+  --diffBlob-additionWord-bgColor: #5f6e60;
+  --diffBlob-deletionLine-bgColor: #453b47;
+  --diffBlob-deletionLine-fgColor: #eceff4;
+  --diffBlob-deletionNum-bgColor: #57414c;
+  --diffBlob-deletionNum-fgColor: #eceff4;
+  --diffBlob-deletionWord-bgColor: #6b4752;
+  --diffBlob-emptyLine-bgColor: #272c36;
+  --diffBlob-emptyNum-bgColor: #272c36;
+  --diffBlob-expander-iconColor: #b8c0cd;
+  --diffBlob-hunkLine-bgColor: #3b4854;
+  --diffBlob-hunkLine-fgColor: #b8c0cd;
+  --diffBlob-hunkNum-bgColor-rest: #445663;
+  --diffBlob-hunkNum-bgColor-hover: #4d6471;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="tokyo"][data-mode="dark"] {
+  --bgColor-default: #1a1b26;
+  --bgColor-muted: #232433;
+  --bgColor-inset: #16161e;
+  --bgColor-accent-muted: #2f3954;
+  --bgColor-accent-emphasis: #7aa2f7;
+  --bgColor-success-muted: #374235;
+  --bgColor-success-emphasis: #9ece6a;
+  --bgColor-danger-muted: #4b2f3d;
+  --bgColor-danger-emphasis: #f7768e;
+  --bgColor-attention-muted: #463c35;
+  --bgColor-attention-emphasis: #e0af68;
+  --bgColor-done-muted: #3d3754;
+  --bgColor-done-emphasis: #bb9af7;
+  --bgColor-neutral-muted: #252738;
+  --bgColor-neutral-emphasis: #565f89;
+  --fgColor-default: #c0caf5;
+  --fgColor-muted: #8b95bb;
+  --fgColor-disabled: #565f89;
+  --fgColor-onEmphasis: #1a1b26;
+  --fgColor-accent: #7aa2f7;
+  --fgColor-success: #9ece6a;
+  --fgColor-danger: #f7768e;
+  --fgColor-attention: #e0af68;
+  --fgColor-done: #bb9af7;
+  --borderColor-default: #2f3244;
+  --borderColor-muted: #252736;
+  --borderColor-emphasis: #565f89;
+  --borderColor-neutral-emphasis: #565f89;
+  --borderColor-accent-muted: #455884;
+  --borderColor-accent-emphasis: #7aa2f7;
+  --borderColor-success-muted: #556c45;
+  --borderColor-success-emphasis: #9ece6a;
+  --borderColor-danger-muted: #7d4455;
+  --borderColor-danger-emphasis: #f7768e;
+  --borderColor-attention-muted: #735e44;
+  --borderColor-attention-emphasis: #e0af68;
+  --borderColor-done-emphasis: #bb9af7;
+  --underlineNav-borderColor-active: #e0af68;
+  --control-borderColor-emphasis: #565f89;
+  --control-transparent-bgColor-hover: #232433;
+  --controlKnob-bgColor-rest: #1a1b26;
+  --controlKnob-borderColor-rest: #565f89;
+  --controlTrack-bgColor-rest: #16161e;
+  --button-default-bgColor-rest: #232433;
+  --button-default-bgColor-hover: #36384a;
+  --button-default-borderColor-rest: #2f3244;
+  --button-primary-bgColor-rest: #9ece6a;
+  --button-primary-bgColor-hover: #a4cd83;
+  --button-primary-bgColor-disabled: #5c7548;
+  --button-primary-borderColor-rest: #2f3244;
+  --button-primary-fgColor-disabled: #1a1b26;
+  --button-danger-bgColor-hover: #c05f74;
+  --button-danger-borderColor-hover: #f7768e;
+  --focus-outlineColor: #7aa2f7;
+  --overlay-bgColor: #232433;
+  --diffBlob-additionLine-bgColor: #2f3831;
+  --diffBlob-additionLine-fgColor: #c0caf5;
+  --diffBlob-additionNum-bgColor: #3f4d39;
+  --diffBlob-additionNum-fgColor: #c0caf5;
+  --diffBlob-additionWord-bgColor: #516643;
+  --diffBlob-deletionLine-bgColor: #3d2a37;
+  --diffBlob-deletionLine-fgColor: #c0caf5;
+  --diffBlob-deletionNum-bgColor: #583443;
+  --diffBlob-deletionNum-fgColor: #c0caf5;
+  --diffBlob-deletionWord-bgColor: #774152;
+  --diffBlob-emptyLine-bgColor: #16161e;
+  --diffBlob-emptyNum-bgColor: #16161e;
+  --diffBlob-expander-iconColor: #8b95bb;
+  --diffBlob-hunkLine-bgColor: #272e43;
+  --diffBlob-hunkLine-fgColor: #8b95bb;
+  --diffBlob-hunkNum-bgColor-rest: #313b58;
+  --diffBlob-hunkNum-bgColor-hover: #3b496d;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="catppuccin"][data-mode="light"] {
+  --bgColor-default: #eff1f5;
+  --bgColor-muted: #e6e9ef;
+  --bgColor-inset: #dce0e8;
+  --bgColor-accent-muted: #c1d2f5;
+  --bgColor-accent-emphasis: #1e66f5;
+  --bgColor-success-muted: #c9dfc9;
+  --bgColor-success-emphasis: #40a02b;
+  --bgColor-danger-muted: #e9bfcc;
+  --bgColor-danger-emphasis: #d20f39;
+  --bgColor-attention-muted: #ebdbc5;
+  --bgColor-attention-emphasis: #df8e1d;
+  --bgColor-done-muted: #d8c9f4;
+  --bgColor-done-emphasis: #8839ef;
+  --bgColor-neutral-muted: #dadce3;
+  --bgColor-neutral-emphasis: #7c7f93;
+  --fgColor-default: #4c4f69;
+  --fgColor-muted: #6c6f85;
+  --fgColor-disabled: #9ca0b0;
+  --fgColor-onEmphasis: #ffffff;
+  --fgColor-accent: #1e66f5;
+  --fgColor-success: #40a02b;
+  --fgColor-danger: #d20f39;
+  --fgColor-attention: #df8e1d;
+  --fgColor-done: #8839ef;
+  --borderColor-default: #ccd0da;
+  --borderColor-muted: #dce0e8;
+  --borderColor-emphasis: #9ca0b0;
+  --borderColor-neutral-emphasis: #9ca0b0;
+  --borderColor-accent-muted: #91b2f5;
+  --borderColor-accent-emphasis: #1e66f5;
+  --borderColor-success-muted: #a0cd9a;
+  --borderColor-success-emphasis: #40a02b;
+  --borderColor-danger-muted: #e28ba0;
+  --borderColor-danger-emphasis: #d20f39;
+  --borderColor-attention-muted: #e8c494;
+  --borderColor-attention-emphasis: #df8e1d;
+  --borderColor-done-emphasis: #8839ef;
+  --underlineNav-borderColor-active: #df8e1d;
+  --control-borderColor-emphasis: #9ca0b0;
+  --control-transparent-bgColor-hover: #e6e9ef;
+  --controlKnob-bgColor-rest: #eff1f5;
+  --controlKnob-borderColor-rest: #9ca0b0;
+  --controlTrack-bgColor-rest: #dce0e8;
+  --button-default-bgColor-rest: #e6e9ef;
+  --button-default-bgColor-hover: #d4d7df;
+  --button-default-borderColor-rest: #ccd0da;
+  --button-primary-bgColor-rest: #40a02b;
+  --button-primary-bgColor-hover: #429136;
+  --button-primary-bgColor-disabled: #98c990;
+  --button-primary-borderColor-rest: #ccd0da;
+  --button-primary-fgColor-disabled: #ffffff;
+  --button-danger-bgColor-hover: #d94868;
+  --button-danger-borderColor-hover: #d20f39;
+  --focus-outlineColor: #1e66f5;
+  --overlay-bgColor: #e6e9ef;
+  --diffBlob-additionLine-bgColor: #d3e4d5;
+  --diffBlob-additionLine-fgColor: #4c4f69;
+  --diffBlob-additionNum-bgColor: #bedabc;
+  --diffBlob-additionNum-fgColor: #4c4f69;
+  --diffBlob-additionWord-bgColor: #a6cfa0;
+  --diffBlob-deletionLine-bgColor: #eacdd7;
+  --diffBlob-deletionLine-fgColor: #4c4f69;
+  --diffBlob-deletionNum-bgColor: #e7b2c0;
+  --diffBlob-deletionNum-fgColor: #4c4f69;
+  --diffBlob-deletionWord-bgColor: #e392a6;
+  --diffBlob-emptyLine-bgColor: #dce0e8;
+  --diffBlob-emptyNum-bgColor: #dce0e8;
+  --diffBlob-expander-iconColor: #6c6f85;
+  --diffBlob-hunkLine-bgColor: #d2def5;
+  --diffBlob-hunkLine-fgColor: #6c6f85;
+  --diffBlob-hunkNum-bgColor-rest: #bdd0f5;
+  --diffBlob-hunkNum-bgColor-hover: #a8c2f5;
+  --shadow-floating-small:
+    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+  --shadow-floating-medium:
+    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+}
+
+:root[data-theme="catppuccin"][data-mode="dark"] {
+  --bgColor-default: #1e1e2e;
+  --bgColor-muted: #282839;
+  --bgColor-inset: #181825;
+  --bgColor-accent-muted: #363f5b;
+  --bgColor-accent-emphasis: #89b4fa;
+  --bgColor-success-muted: #3c4947;
+  --bgColor-success-emphasis: #a6e3a1;
+  --bgColor-danger-muted: #4d3649;
+  --bgColor-danger-emphasis: #f38ba8;
+  --bgColor-attention-muted: #4e494a;
+  --bgColor-attention-emphasis: #f9e2af;
+  --bgColor-done-muted: #443c5a;
+  --bgColor-done-emphasis: #cba6f7;
+  --bgColor-neutral-muted: #2c2d3e;
+  --bgColor-neutral-emphasis: #6c7086;
+  --fgColor-default: #cdd6f4;
+  --fgColor-muted: #a6adc8;
+  --fgColor-disabled: #6c7086;
+  --fgColor-onEmphasis: #1e1e2e;
+  --fgColor-accent: #89b4fa;
+  --fgColor-success: #a6e3a1;
+  --fgColor-danger: #f38ba8;
+  --fgColor-attention: #f9e2af;
+  --fgColor-done: #cba6f7;
+  --borderColor-default: #383a4d;
+  --borderColor-muted: #2c2e40;
+  --borderColor-emphasis: #6c7086;
+  --borderColor-neutral-emphasis: #6c7086;
+  --borderColor-accent-muted: #4e628a;
+  --borderColor-accent-emphasis: #89b4fa;
+  --borderColor-success-muted: #5b7762;
+  --borderColor-success-emphasis: #a6e3a1;
+  --borderColor-danger-muted: #7e4f65;
+  --borderColor-danger-emphasis: #f38ba8;
+  --borderColor-attention-muted: #817668;
+  --borderColor-attention-emphasis: #f9e2af;
+  --borderColor-done-emphasis: #cba6f7;
+  --underlineNav-borderColor-active: #f9e2af;
+  --control-borderColor-emphasis: #6c7086;
+  --control-transparent-bgColor-hover: #282839;
+  --controlKnob-bgColor-rest: #1e1e2e;
+  --controlKnob-borderColor-rest: #6c7086;
+  --controlTrack-bgColor-rest: #181825;
+  --button-default-bgColor-rest: #282839;
+  --button-default-bgColor-hover: #3c3d4f;
+  --button-default-borderColor-rest: #383a4d;
+  --button-primary-bgColor-rest: #a6e3a1;
+  --button-primary-bgColor-hover: #ade1b0;
+  --button-primary-bgColor-disabled: #628168;
+  --button-primary-borderColor-rest: #383a4d;
+  --button-primary-fgColor-disabled: #1e1e2e;
+  --button-danger-bgColor-hover: #be708a;
+  --button-danger-borderColor-hover: #f38ba8;
+  --focus-outlineColor: #89b4fa;
+  --overlay-bgColor: #282839;
+  --diffBlob-additionLine-bgColor: #343e40;
+  --diffBlob-additionLine-fgColor: #cdd6f4;
+  --diffBlob-additionNum-bgColor: #44554e;
+  --diffBlob-additionNum-fgColor: #cdd6f4;
+  --diffBlob-additionWord-bgColor: #57715e;
+  --diffBlob-deletionLine-bgColor: #402f42;
+  --diffBlob-deletionLine-fgColor: #cdd6f4;
+  --diffBlob-deletionNum-bgColor: #5a3d50;
+  --diffBlob-deletionNum-fgColor: #cdd6f4;
+  --diffBlob-deletionWord-bgColor: #774c61;
+  --diffBlob-emptyLine-bgColor: #181825;
+  --diffBlob-emptyNum-bgColor: #181825;
+  --diffBlob-expander-iconColor: #a6adc8;
+  --diffBlob-hunkLine-bgColor: #2d334b;
+  --diffBlob-hunkLine-fgColor: #a6adc8;
+  --diffBlob-hunkNum-bgColor-rest: #38425f;
+  --diffBlob-hunkNum-bgColor-hover: #425173;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="everforest"][data-mode="light"] {
+  --bgColor-default: #fdf6e3;
+  --bgColor-muted: #f4f0d9;
+  --bgColor-inset: #efebd4;
+  --bgColor-accent-muted: #d2e0dc;
+  --bgColor-accent-emphasis: #3a94c5;
+  --bgColor-success-muted: #e4e3b1;
+  --bgColor-success-emphasis: #8da101;
+  --bgColor-danger-muted: #fcd3c3;
+  --bgColor-danger-emphasis: #f85552;
+  --bgColor-attention-muted: #f6e3b1;
+  --bgColor-attention-emphasis: #dfa000;
+  --bgColor-done-muted: #f6d7da;
+  --bgColor-done-emphasis: #df69ba;
+  --bgColor-neutral-muted: #eae6d4;
+  --bgColor-neutral-emphasis: #939f91;
+  --fgColor-default: #5c6a72;
+  --fgColor-muted: #829181;
+  --fgColor-disabled: #a6b0a0;
+  --fgColor-onEmphasis: #ffffff;
+  --fgColor-accent: #3a94c5;
+  --fgColor-success: #8da101;
+  --fgColor-danger: #f85552;
+  --fgColor-attention: #dfa000;
+  --fgColor-done: #df69ba;
+  --borderColor-default: #e0dcc7;
+  --borderColor-muted: #eae5d3;
+  --borderColor-emphasis: #a6b0a0;
+  --borderColor-neutral-emphasis: #a6b0a0;
+  --borderColor-accent-muted: #a5cad6;
+  --borderColor-accent-emphasis: #3a94c5;
+  --borderColor-success-muted: #cbd07d;
+  --borderColor-success-emphasis: #8da101;
+  --borderColor-danger-muted: #fbaea2;
+  --borderColor-danger-emphasis: #f85552;
+  --borderColor-attention-muted: #f0cf7d;
+  --borderColor-attention-emphasis: #dfa000;
+  --borderColor-done-emphasis: #df69ba;
+  --underlineNav-borderColor-active: #dfa000;
+  --control-borderColor-emphasis: #a6b0a0;
+  --control-transparent-bgColor-hover: #f4f0d9;
+  --controlKnob-bgColor-rest: #fdf6e3;
+  --controlKnob-borderColor-rest: #a6b0a0;
+  --controlTrack-bgColor-rest: #efebd4;
+  --button-default-bgColor-rest: #f4f0d9;
+  --button-default-bgColor-hover: #e2e0cd;
+  --button-default-borderColor-rest: #e0dcc7;
+  --button-primary-bgColor-rest: #8da101;
+  --button-primary-bgColor-hover: #849715;
+  --button-primary-bgColor-disabled: #c5cc72;
+  --button-primary-borderColor-rest: #e0dcc7;
+  --button-primary-fgColor-disabled: #ffffff;
+  --button-danger-bgColor-hover: #f97d76;
+  --button-danger-borderColor-hover: #f85552;
+  --focus-outlineColor: #3a94c5;
+  --overlay-bgColor: #f4f0d9;
+  --diffBlob-additionLine-bgColor: #ebe8bf;
+  --diffBlob-additionLine-fgColor: #5c6a72;
+  --diffBlob-additionNum-bgColor: #dedea4;
+  --diffBlob-additionNum-fgColor: #5c6a72;
+  --diffBlob-additionWord-bgColor: #ced284;
+  --diffBlob-deletionLine-bgColor: #fcdccc;
+  --diffBlob-deletionLine-fgColor: #5c6a72;
+  --diffBlob-deletionNum-bgColor: #fcc9ba;
+  --diffBlob-deletionNum-fgColor: #5c6a72;
+  --diffBlob-deletionWord-bgColor: #fbb2a6;
+  --diffBlob-emptyLine-bgColor: #efebd4;
+  --diffBlob-emptyNum-bgColor: #efebd4;
+  --diffBlob-expander-iconColor: #829181;
+  --diffBlob-hunkLine-bgColor: #e2e8df;
+  --diffBlob-hunkLine-fgColor: #829181;
+  --diffBlob-hunkNum-bgColor-rest: #cededc;
+  --diffBlob-hunkNum-bgColor-hover: #bbd5d9;
+  --shadow-floating-small:
+    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+  --shadow-floating-medium:
+    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+}
+
+:root[data-theme="everforest"][data-mode="dark"] {
+  --bgColor-default: #2d353b;
+  --bgColor-muted: #343f44;
+  --bgColor-inset: #272e33;
+  --bgColor-accent-muted: #3f5255;
+  --bgColor-accent-emphasis: #7fbbb3;
+  --bgColor-success-muted: #48544a;
+  --bgColor-success-emphasis: #a7c080;
+  --bgColor-danger-muted: #56454a;
+  --bgColor-danger-emphasis: #e67e80;
+  --bgColor-attention-muted: #53534a;
+  --bgColor-attention-emphasis: #dbbc7f;
+  --bgColor-done-muted: #524b56;
+  --bgColor-done-emphasis: #d699b6;
+  --bgColor-neutral-muted: #3b4346;
+  --bgColor-neutral-emphasis: #7a8478;
+  --fgColor-default: #d3c6aa;
+  --fgColor-muted: #9da9a0;
+  --fgColor-disabled: #7a8478;
+  --fgColor-onEmphasis: #2d353b;
+  --fgColor-accent: #7fbbb3;
+  --fgColor-success: #a7c080;
+  --fgColor-danger: #e67e80;
+  --fgColor-attention: #dbbc7f;
+  --fgColor-done: #d699b6;
+  --borderColor-default: #3d484d;
+  --borderColor-muted: #343f44;
+  --borderColor-emphasis: #7a8478;
+  --borderColor-neutral-emphasis: #7a8478;
+  --borderColor-accent-muted: #527171;
+  --borderColor-accent-emphasis: #7fbbb3;
+  --borderColor-success-muted: #64745a;
+  --borderColor-success-emphasis: #a7c080;
+  --borderColor-danger-muted: #80565a;
+  --borderColor-danger-emphasis: #e67e80;
+  --borderColor-attention-muted: #7b725a;
+  --borderColor-attention-emphasis: #dbbc7f;
+  --borderColor-done-emphasis: #d699b6;
+  --underlineNav-borderColor-active: #dbbc7f;
+  --control-borderColor-emphasis: #7a8478;
+  --control-transparent-bgColor-hover: #343f44;
+  --controlKnob-bgColor-rest: #2d353b;
+  --controlKnob-borderColor-rest: #7a8478;
+  --controlTrack-bgColor-rest: #272e33;
+  --button-default-bgColor-rest: #343f44;
+  --button-default-bgColor-hover: #474f50;
+  --button-default-borderColor-rest: #3d484d;
+  --button-primary-bgColor-rest: #a7c080;
+  --button-primary-bgColor-hover: #afc188;
+  --button-primary-bgColor-disabled: #6a7b5e;
+  --button-primary-borderColor-rest: #3d484d;
+  --button-primary-fgColor-disabled: #2d353b;
+  --button-danger-bgColor-hover: #b86c6f;
+  --button-danger-borderColor-hover: #e67e80;
+  --focus-outlineColor: #7fbbb3;
+  --overlay-bgColor: #343f44;
+  --diffBlob-additionLine-bgColor: #414b46;
+  --diffBlob-additionLine-fgColor: #d3c6aa;
+  --diffBlob-additionNum-bgColor: #4f5c4e;
+  --diffBlob-additionNum-fgColor: #d3c6aa;
+  --diffBlob-additionWord-bgColor: #606f58;
+  --diffBlob-deletionLine-bgColor: #4b4146;
+  --diffBlob-deletionLine-fgColor: #d3c6aa;
+  --diffBlob-deletionNum-bgColor: #61494e;
+  --diffBlob-deletionNum-fgColor: #d3c6aa;
+  --diffBlob-deletionWord-bgColor: #7b5458;
+  --diffBlob-emptyLine-bgColor: #272e33;
+  --diffBlob-emptyNum-bgColor: #272e33;
+  --diffBlob-expander-iconColor: #9da9a0;
+  --diffBlob-hunkLine-bgColor: #38484c;
+  --diffBlob-hunkLine-fgColor: #9da9a0;
+  --diffBlob-hunkNum-bgColor-rest: #415558;
+  --diffBlob-hunkNum-bgColor-hover: #496364;
+  --shadow-floating-small:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-floating-medium:
+    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 /* Shiki emits every theme's color for each token: the default in `color`, the rest as
    custom properties. The active theme picks which one wins. */
 :root[data-mode="dark"] .tok {
@@ -334,4 +966,28 @@
 }
 :root[data-theme="atom"][data-mode="dark"] .tok {
   color: var(--shiki-ad) !important;
+}
+:root[data-theme="darkened"][data-mode="dark"] .tok {
+  color: var(--shiki-dkd) !important;
+}
+:root[data-theme="dracula"][data-mode="dark"] .tok {
+  color: var(--shiki-drc) !important;
+}
+:root[data-theme="nord"][data-mode="dark"] .tok {
+  color: var(--shiki-nrd) !important;
+}
+:root[data-theme="tokyo"][data-mode="dark"] .tok {
+  color: var(--shiki-tkl) !important;
+}
+:root[data-theme="catppuccin"][data-mode="light"] .tok {
+  color: var(--shiki-ctl) !important;
+}
+:root[data-theme="catppuccin"][data-mode="dark"] .tok {
+  color: var(--shiki-ctd) !important;
+}
+:root[data-theme="everforest"][data-mode="light"] .tok {
+  color: var(--shiki-efl) !important;
+}
+:root[data-theme="everforest"][data-mode="dark"] .tok {
+  color: var(--shiki-efd) !important;
 }
