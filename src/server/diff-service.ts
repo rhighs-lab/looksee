@@ -117,7 +117,6 @@ async function assemble(
   return out;
 }
 
-// The diff a single commit introduced: its first parent's tree against its own.
 export async function buildCommitDiffs(
   repoRoot: string,
   sha: string,

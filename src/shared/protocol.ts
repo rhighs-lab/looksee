@@ -303,7 +303,6 @@ export const THEMES = [
   'everforest',
 ] as const;
 
-// Themes with no light palette: choosing one pins the appearance to dark.
 export const DARK_ONLY_THEMES = [
   'darkened',
   'dracula',

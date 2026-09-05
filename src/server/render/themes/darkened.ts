@@ -1,8 +1,6 @@
 import type { ThemeRegistrationRaw } from 'shiki';
 
-// rhighs/darkened, vendored from the VS Code extension so looksee highlights
-// code with the real theme rather than a lookalike.
-// Source: https://github.com/rhighs/darkened (v0.0.2)
+// Vendored from https://github.com/rhighs/darkened (v0.0.2)
 export const darkened = {
   name: 'darkened',
   type: 'dark',

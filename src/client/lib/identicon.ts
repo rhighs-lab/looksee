@@ -15,9 +15,6 @@ export interface Identicon {
   cells: boolean[];
 }
 
-// A deterministic 5x5 identicon, mirrored down the middle so the shape reads
-// as a face rather than noise. Only the left half plus the spine is drawn from
-// the hash; the rest is its reflection.
 export function identicon(seed: string): Identicon {
   const h = hash(seed);
   const cells: boolean[] = new Array(GRID * GRID).fill(false);

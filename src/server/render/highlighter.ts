@@ -34,7 +34,6 @@ const loadedLangs = new Set<string>();
 
 function getHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({
-    // the bundled themes are resolved by name; darkened ships with looksee
     themes: [
       ...Object.values(THEMES).filter((t) => t !== 'darkened'),
       darkened,

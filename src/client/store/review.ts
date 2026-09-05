@@ -105,12 +105,7 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshChain: Promise<void> = Promise.resolve();
 // when the last arrival landed, so a burst of refreshes reads as one arrival
 let lastArrivalAt: number | null = null;
-// commits only change when the comparison endpoints move, so skip the git log
-// on the refreshes that fire for every file save
 let lastCmpKey = '';
-// Diffs already fetched, per scope. Switching tabs re-renders from here rather
-// than clearing the view and showing the skeleton again; the key carries the
-// repo version and the comparison, so any real change misses the cache.
 const diffCache = new Map<string, Record<string, FileDiff>>();
 
 const cacheKey = (scope: Scope, state: RepoState | null): string | null => {

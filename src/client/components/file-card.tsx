@@ -94,8 +94,6 @@ export const FileCard = memo(function FileCard({
   const loadFull = useReview((s) => s.loadFull);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  // in a layer scope the cumulative entry reads +0/-0/unchanged while the diff
-  // on screen is the layer's own, so the diff wins wherever it exists
   const additions = diff?.additions ?? file.additions;
   const deletions = diff?.deletions ?? file.deletions;
   const kind = diff?.kind ?? file.kind;

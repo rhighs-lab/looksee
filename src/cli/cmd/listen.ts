@@ -52,7 +52,6 @@ const pending = async (
     http.get<{ comments: DecoratedComment[] }>('/api/comments'),
     http.get<{ reviews: Review[] }>('/api/reviews?state=submitted'),
   ]);
-  // a request_changes round is outstanding while any of its threads is open
   const openReviewIds = new Set(
     comments
       .filter((c) => !c.parentId && c.status === 'open' && c.reviewId)
