@@ -1358,7 +1358,7 @@ body {
   border: 1px solid var(--borderColor-default, #d0d7de);
   border-radius: 6px;
   background-color: var(--overlay-bgColor, var(--bgColor-default, #fff));
-  box-shadow: var(--shadow-floating-small, 0 8px 24px rgba(31, 35, 40, 0.12));
+  box-shadow: var(--shadow-floating-small);
   font-family: var(--ui-font);
   font-size: 13px;
 }
@@ -1458,7 +1458,9 @@ body {
   right: 0;
   z-index: 30;
   width: 420px;
-  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 12px;
+  box-shadow: var(--shadow-floating-small);
 }
 .review-submit .ui-segmented {
   margin-bottom: 8px;
@@ -1644,7 +1646,7 @@ body {
   background-color: var(--bgColor-default, #fff);
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.2);
+  box-shadow: var(--shadow-floating-medium);
 }
 
 .finder-input {
@@ -1799,7 +1801,7 @@ kbd {
   background-color: var(--overlay-bgColor, #fff);
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 12px;
-  box-shadow: var(--shadow-floating-small, 0 8px 24px rgba(31, 35, 40, 0.2));
+  box-shadow: var(--shadow-floating-small);
 }
 
 .menu-label {
@@ -2267,7 +2269,7 @@ kbd {
   width: min(480px, 92vw);
   background-color: var(--bgColor-default, #fff);
   border-left: 1px solid var(--borderColor-default, #d1d9e0);
-  box-shadow: var(--shadow-floating-medium, 0 8px 24px rgba(31, 35, 40, 0.2));
+  box-shadow: var(--shadow-floating-medium);
   transform: translateX(100%);
   transition: transform 0.16s cubic-bezier(0.4, 0, 1, 1);
 }

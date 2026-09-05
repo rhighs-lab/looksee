@@ -181,7 +181,7 @@ th {
   color: var(--ui-fg);
   background-color: var(--controlKnob-bgColor-rest, #fff);
   border-color: var(--controlKnob-borderColor-rest, var(--ui-border));
-  box-shadow: 0 1px 1px rgba(31, 35, 40, 0.1);
+  box-shadow: var(--shadow-resting-xsmall);
 }
 
 .ui-segmented-item:disabled {
@@ -388,12 +388,7 @@ th {
   background-color: var(--overlay-bgColor, var(--ui-bg));
   border: 1px solid var(--borderColor-default, var(--ui-border));
   border-radius: 6px;
-  box-shadow: var(
-    --shadow-floating-small,
-    0 0 0 1px rgba(209, 217, 224, 0.25),
-    0 6px 12px -3px rgba(37, 41, 46, 0.04),
-    0 6px 18px 0 rgba(37, 41, 46, 0.12)
-  );
+  box-shadow: var(--shadow-floating-small);
 }
 
 .ui-select-menu[data-align="end"] {
@@ -567,7 +562,7 @@ textarea.ui-input,
   background-color: var(--overlay-bgColor, var(--ui-bg));
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
-  box-shadow: var(--shadow-floating-medium, 0 8px 24px rgba(31, 35, 40, 0.12));
+  box-shadow: var(--shadow-floating-medium);
 }
 
 /* ---- Text ---------------------------------------------------------------- */

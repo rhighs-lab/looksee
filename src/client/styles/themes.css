@@ -2,6 +2,26 @@
    @primer/primitives; these blocks redefine the same functional variables so the
    whole UI, diff blobs included, follows the chosen theme. */
 
+/* The only shadows in the UI, and they are GitHub's (Primer shadow-floating-*)
+   minus its hairline ring, which every overlay here already draws as a border. */
+:root[data-theme][data-mode] {
+  --shadowColor-overlay: rgba(31, 35, 40, 0.12);
+  --shadow-floating-small:
+    0 6px 12px -3px var(--shadowColor-overlay),
+    0 6px 18px 0 var(--shadowColor-overlay);
+  --shadow-floating-medium:
+    0 8px 16px -4px var(--shadowColor-overlay),
+    0 4px 32px -4px var(--shadowColor-overlay),
+    0 24px 48px -12px var(--shadowColor-overlay),
+    0 48px 96px -24px var(--shadowColor-overlay);
+  --shadow-resting-xsmall: 0 1px 0 rgba(31, 35, 40, 0.04);
+}
+
+:root[data-theme][data-mode="dark"] {
+  --shadowColor-overlay: rgba(1, 4, 9, 0.3);
+  --shadow-resting-xsmall: 0 1px 0 rgba(1, 4, 9, 0.04);
+}
+
 :root[data-theme="solarized"][data-mode="light"] {
   --bgColor-default: #fdf6e3;
   --bgColor-muted: #f4ecd8;
@@ -75,10 +95,6 @@
   --diffBlob-hunkLine-fgColor: #93a1a1;
   --diffBlob-hunkNum-bgColor-rest: #dfe7e1;
   --diffBlob-hunkNum-bgColor-hover: #dfe7e1;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 :root[data-theme="solarized"][data-mode="dark"] {
@@ -154,10 +170,6 @@
   --diffBlob-hunkLine-fgColor: #657b83;
   --diffBlob-hunkNum-bgColor-rest: #083e55;
   --diffBlob-hunkNum-bgColor-hover: #084058;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme="atom"][data-mode="light"] {
@@ -233,10 +245,6 @@
   --diffBlob-hunkLine-fgColor: #8a8b93;
   --diffBlob-hunkNum-bgColor-rest: #e0e8f9;
   --diffBlob-hunkNum-bgColor-hover: #e0e8f9;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 :root[data-theme="atom"][data-mode="dark"] {
@@ -312,10 +320,6 @@
   --diffBlob-hunkLine-fgColor: #7f8796;
   --diffBlob-hunkNum-bgColor-rest: #334659;
   --diffBlob-hunkNum-bgColor-hover: #35495d;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme="darkened"][data-mode="dark"] {
@@ -391,10 +395,6 @@
   --diffBlob-hunkLine-fgColor: #8784ad;
   --diffBlob-hunkNum-bgColor-rest: #2c193c;
   --diffBlob-hunkNum-bgColor-hover: #3f2356;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="dracula"][data-mode="dark"] {
@@ -470,10 +470,6 @@
   --diffBlob-hunkLine-fgColor: #6272a4;
   --diffBlob-hunkNum-bgColor-rest: #4c4365;
   --diffBlob-hunkNum-bgColor-hover: #5b4e78;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="nord"][data-mode="dark"] {
@@ -549,10 +545,6 @@
   --diffBlob-hunkLine-fgColor: #b8c0cd;
   --diffBlob-hunkNum-bgColor-rest: #445663;
   --diffBlob-hunkNum-bgColor-hover: #4d6471;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="tokyo"][data-mode="dark"] {
@@ -628,10 +620,6 @@
   --diffBlob-hunkLine-fgColor: #8b95bb;
   --diffBlob-hunkNum-bgColor-rest: #313b58;
   --diffBlob-hunkNum-bgColor-hover: #3b496d;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="catppuccin"][data-mode="light"] {
@@ -707,10 +695,6 @@
   --diffBlob-hunkLine-fgColor: #6c6f85;
   --diffBlob-hunkNum-bgColor-rest: #bdd0f5;
   --diffBlob-hunkNum-bgColor-hover: #a8c2f5;
-  --shadow-floating-small:
-    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
-  --shadow-floating-medium:
-    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
 }
 
 :root[data-theme="catppuccin"][data-mode="dark"] {
@@ -786,10 +770,6 @@
   --diffBlob-hunkLine-fgColor: #a6adc8;
   --diffBlob-hunkNum-bgColor-rest: #38425f;
   --diffBlob-hunkNum-bgColor-hover: #425173;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="everforest"][data-mode="light"] {
@@ -865,10 +845,6 @@
   --diffBlob-hunkLine-fgColor: #829181;
   --diffBlob-hunkNum-bgColor-rest: #cededc;
   --diffBlob-hunkNum-bgColor-hover: #bbd5d9;
-  --shadow-floating-small:
-    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
-  --shadow-floating-medium:
-    0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
 }
 
 :root[data-theme="everforest"][data-mode="dark"] {
@@ -944,10 +920,6 @@
   --diffBlob-hunkLine-fgColor: #9da9a0;
   --diffBlob-hunkNum-bgColor-rest: #415558;
   --diffBlob-hunkNum-bgColor-hover: #496364;
-  --shadow-floating-small:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-floating-medium:
-    0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* Shiki emits every theme's color for each token: the default in `color`, the rest as
