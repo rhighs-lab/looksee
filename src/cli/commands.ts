@@ -2,7 +2,6 @@ import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
 import { runAgent } from '@/cli/cmd/agent.js';
 import { runComment } from '@/cli/cmd/comment.js';
 import { runComments } from '@/cli/cmd/comments.js';
-import { runDone } from '@/cli/cmd/done.js';
 import { runInit } from '@/cli/cmd/init.js';
 import { runListen } from '@/cli/cmd/listen.js';
 import { runPs } from '@/cli/cmd/ps.js';
@@ -201,7 +200,7 @@ const COMMANDS: CommandSpec[] = [
         { name: 'quiet', takesValue: false, help: 'Skip the guide in hello' },
       ],
       output:
-        'One JSON event per line: { type: "hello", actor, guide } first, then review.submitted { review, comments, expects }, comment.created { comment }, comment.replied { comment }, thread.resolved { id, actor }, thread.reopened { id, actor }, done.requested { actor, body, at }; every comment carries expects',
+        'One JSON event per line: { type: "hello", actor, guide } first, then review.submitted { review, comments, expects }, comment.created { comment }, comment.replied { comment }, thread.resolved { id, actor }, thread.reopened { id, actor }; every comment carries expects',
       notes:
         'Exits 1 with one stderr line when the server stays unreachable for ten seconds',
     },
@@ -263,17 +262,6 @@ const COMMANDS: CommandSpec[] = [
         'The created comment: { id, filePath, side, startLine, endLine, lineSnapshot, body, bodyHtml, kind, suggestion, ... }',
     },
     runComment
-  ),
-  placeholder(
-    {
-      name: 'done',
-      example: 'looksee done "Addressed all three threads"',
-      summary: 'Record that the actor addressed the current round',
-      args: '[body]',
-      flags: [AS],
-      output: '{ actor, body, at }',
-    },
-    runDone
   ),
   placeholder(
     {

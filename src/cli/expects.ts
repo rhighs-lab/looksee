@@ -4,7 +4,7 @@ export const EXPECTS = [
   'apply or reply',
   'answer',
   'fix and reply',
-  'fix, reply, resolve, then run looksee done',
+  'fix, reply and resolve every thread',
   'read, reply if asked',
   'none',
 ] as const;
@@ -18,7 +18,7 @@ const BY_KIND: Record<CommentKind, Expects> = {
 };
 
 const BY_VERDICT: Record<Verdict, Expects> = {
-  request_changes: 'fix, reply, resolve, then run looksee done',
+  request_changes: 'fix, reply and resolve every thread',
   comment: 'read, reply if asked',
   approve: 'none',
 };

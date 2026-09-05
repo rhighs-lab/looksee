@@ -368,12 +368,6 @@ export interface Review {
   comparison: Comparison | null;
 }
 
-export interface DoneMark {
-  actor: string;
-  body: string;
-  at: string;
-}
-
 export interface ReviewsResponse {
   reviews: Review[];
 }
@@ -422,13 +416,6 @@ export type ServerEvent =
       type: 'thread.reopened';
       id: string;
       actor: string;
-      origin: string | null;
-    }
-  | {
-      type: 'done.requested';
-      actor: string;
-      body: string;
-      at: string;
       origin: string | null;
     };
 

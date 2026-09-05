@@ -165,7 +165,7 @@ describe('cli listen', () => {
     expect(hello?.['actor']).toBe('agent');
     expect(typeof hello?.['guide']).toBe('string');
     expect(String(hello?.['guide'])).toContain('looksee reply');
-    expect(String(hello?.['guide'])).toContain('looksee done');
+    expect(String(hello?.['guide'])).toContain('looksee resolve');
     const r = await l.stop();
     expect(r.code).toBe(0);
     expect(r.err).toBe('');
@@ -196,7 +196,7 @@ describe('cli listen', () => {
     };
     expect(ev.review.id).toBe(submitted.review.id);
     expect(ev.review.author).toBe('reviewer');
-    expect(ev.expects).toBe('fix, reply, resolve, then run looksee done');
+    expect(ev.expects).toBe('fix, reply and resolve every thread');
     expect(ev.comments).toHaveLength(1);
     expect(ev.comments[0]?.expects).toBe('fix and reply');
     expect(ev.comments[0]?.lineSnapshot).toEqual(['x']);
@@ -204,7 +204,7 @@ describe('cli listen', () => {
     expect((await l.stop()).code).toBe(0);
   });
 
-  it('AE5: --pending replays unanswered roots and undone reviews first', async () => {
+  it('AE5: --pending replays unanswered roots and unresolved reviews first', async () => {
     const asked = await single('unanswered', 3);
     const answered = await single('answered', 4);
     const r = await cli(['reply', answered.id, 'on it'], {
@@ -242,8 +242,10 @@ describe('cli listen', () => {
     expect(ls[liveIdx]).not.toHaveProperty('replay');
     expect((await l.stop()).code).toBe(0);
 
-    const done = await cli(['done', 'all fixed'], { LOOKSEE_ACTOR: 'agent' });
-    expect(done.code).toBe(0);
+    for (const c of rv.comments) {
+      const res = await cli(['resolve', c.id], { LOOKSEE_ACTOR: 'agent' });
+      expect(res.code).toBe(0);
+    }
     const again = listen(['--pending', '--as', 'agent']);
     const ls2 = await again.until((ls) =>
       ls.some(
@@ -329,15 +331,13 @@ describe('cli listen', () => {
       { status: 'open' },
       { 'x-looksee-actor': 'bot' }
     );
-    await cli(['done', 'round'], { LOOKSEE_ACTOR: 'bot' });
-    const ls = await l.until(has('done.requested'));
+    const ls = await l.until(has('thread.reopened'));
     expect(ls.map((x) => x.type)).toEqual([
       'hello',
       'comment.created',
       'comment.replied',
       'thread.resolved',
       'thread.reopened',
-      'done.requested',
     ]);
     for (const x of ls) expect(typeof x.type).toBe('string');
     const replied = ls[2] as Line & { comment: { expects: string } };

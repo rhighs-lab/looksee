@@ -66,7 +66,7 @@ Each line is one JSON event and one work item. Every comment and every
 | `apply or reply` | Apply the suggested lines, or say why not |
 | `answer` | Reply with the answer |
 | `fix and reply` | Change the code, then reply with what you did |
-| `fix, reply, resolve, then run looksee done` | Handle every comment, then ask for re-review |
+| `fix, reply and resolve every thread` | Handle every comment, then resolve it |
 | `read, reply if asked` | Nothing unless asked |
 | `none` | An approval. Pushing stays with the user |
 
@@ -75,7 +75,6 @@ Write back from the terminal:
 ```bash
 looksee reply <id> "Applied in 3f2a1c"
 looksee resolve <id>
-looksee done "Addressed all three threads"
 ```
 
 ## How to write a reply

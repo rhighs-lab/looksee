@@ -5,12 +5,10 @@ import path from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   addComment,
-  addDone,
   discardReview,
   getReview,
   getSession,
   listComments,
-  listDone,
   listReviews,
   type NewComment,
   PendingReviewError,
@@ -113,7 +111,7 @@ describe('store v2', () => {
     };
     expect(data.version).toBe(3);
     expect(data.reviews).toEqual([]);
-    expect(data.done).toEqual([]);
+    expect('done' in data).toBe(false);
     expect(data.comments[0]?.author).toBe('agent');
     expect('handoff' in (data.comments[0] ?? {})).toBe(false);
   });
@@ -318,12 +316,5 @@ describe('store v2', () => {
       (await listComments(repoRoot, null, 'reviewer')).map((x) => x.id)
     ).toEqual([keep.id]);
     expect(await discardReview(repoRoot, rv.id)).toBe(false);
-  });
-
-  it('addDone appends and listDone keeps insertion order', async () => {
-    const a = await addDone(repoRoot, { actor: 'agent', body: 'round 1' });
-    const b = await addDone(repoRoot, { actor: 'agent', body: 'round 2' });
-    expect(a.at <= b.at).toBe(true);
-    expect(await listDone(repoRoot)).toEqual([a, b]);
   });
 });

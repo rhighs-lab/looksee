@@ -46,7 +46,6 @@ const EVENTS: ServerEvent['type'][] = [
   'review.submitted',
   'thread.resolved',
   'thread.reopened',
-  'done.requested',
 ];
 const settle = () => new Promise((r) => setTimeout(r, 150));
 
@@ -328,17 +327,6 @@ describe('cli commands', () => {
     expect(shown.err).toContain('run looksee review start first');
   });
 
-  it('done records the round and emits done.requested', async () => {
-    const r = await cli(['done', 'fixed all'], { LOOKSEE_ACTOR: 'bot' });
-    expect(r.code).toBe(0);
-    const done = json<{ actor: string; body: string; at: string }>(r.out);
-    expect(done.actor).toBe('bot');
-    expect(done.body).toBe('fixed all');
-    const ev = await tap.next('done.requested');
-    expect(ev.type === 'done.requested' && ev.body).toBe('fixed all');
-    expect(ev.type === 'done.requested' && ev.actor).toBe('bot');
-  });
-
   it('pin resets approvedAt and reports the new comparison', async () => {
     const started = await srv.json<{ review: Review }>('POST', '/api/reviews');
     await srv.json('POST', `/api/reviews/${started.body.review.id}/submit`, {
@@ -428,7 +416,6 @@ describe('cli commands', () => {
       ['reply'],
       ['resolve'],
       ['comment'],
-      ['done'],
       ['pin'],
       ['scope'],
       ['session', 'end'],

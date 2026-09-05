@@ -5,7 +5,6 @@ import type {
   CommentSide,
   CommentStatus,
   DecoratedComment,
-  DoneMark,
   Review,
   ServerEvent,
   Verdict,
@@ -33,8 +32,6 @@ export interface CommentsStore {
   loaded: boolean;
   pendingReview: Review | null;
   reviews: Review[];
-  done: DoneMark[];
-  bannerDismissedAt: string | null;
 
   load(): Promise<void>;
   bind(): () => void;
@@ -54,7 +51,6 @@ export interface CommentsStore {
   submitReview(verdict: Verdict, body: string): Promise<void>;
   discardReview(): Promise<void>;
   editDraft(id: string, body: string): Promise<void>;
-  dismissBanner(): void;
 }
 
 const byRoot = (comments: DecoratedComment[]): Record<string, Thread> => {
@@ -124,8 +120,6 @@ export const useComments = create<CommentsStore>((set, get) => {
     loaded: false,
     pendingReview: null,
     reviews: [],
-    done: [],
-    bannerDismissedAt: null,
 
     async load() {
       const state = useReview.getState().state;
@@ -137,16 +131,14 @@ export const useComments = create<CommentsStore>((set, get) => {
         return;
       }
       try {
-        const [{ comments }, { reviews }, { done }] = await Promise.all([
+        const [{ comments }, { reviews }] = await Promise.all([
           api.comments(branch),
           api.listReviews(),
-          api.listDone(),
         ]);
         set({
           threads: byRoot(comments),
           reviews,
           pendingReview: ownPending(reviews),
-          done,
           loaded: true,
         });
       } catch {
@@ -192,14 +184,6 @@ export const useComments = create<CommentsStore>((set, get) => {
           case 'comments.reset':
             void get().load();
             return;
-          case 'done.requested':
-            set({
-              done: [
-                ...get().done,
-                { actor: ev.actor, body: ev.body, at: ev.at },
-              ],
-            });
-            return;
           case 'diff.changed':
             void useReview.getState().refresh();
             return;
@@ -236,7 +220,6 @@ export const useComments = create<CommentsStore>((set, get) => {
       });
       upsert(comment);
       set({ compose: null });
-      if (!reviewId) set({ bannerDismissedAt: new Date().toISOString() });
     },
 
     async reply(rootId, body) {
@@ -389,10 +372,6 @@ export const useComments = create<CommentsStore>((set, get) => {
       const { comment } = await api.patchComment(id, { body });
       upsert(comment);
     },
-
-    dismissBanner() {
-      set({ bannerDismissedAt: new Date().toISOString() });
-    },
   };
 });
 
@@ -415,17 +394,4 @@ export const selectDraftCount = (s: CommentsStore): number => {
   const id = s.pendingReview?.id;
   if (!id) return 0;
   return Object.values(s.threads).filter((t) => t.root.reviewId === id).length;
-};
-
-export const selectBanner = (s: CommentsStore): DoneMark | null => {
-  const d = s.done[s.done.length - 1];
-  if (!d) return null;
-  const last = s.reviews
-    .filter((r) => r.author === USER_ACTOR && r.submittedAt)
-    .map((r) => r.submittedAt as string)
-    .sort()
-    .pop();
-  if (last && last >= d.at) return null;
-  if (s.bannerDismissedAt && s.bannerDismissedAt >= d.at) return null;
-  return d;
 };

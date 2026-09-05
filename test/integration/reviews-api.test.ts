@@ -15,7 +15,6 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type {
   DecoratedComment,
-  DoneMark,
   Review,
   ServerEvent,
 } from '@/shared/protocol.js';
@@ -350,29 +349,6 @@ describe('reviews API', () => {
       undefined,
       as('bot')
     );
-  });
-
-  it('AE7: done emits done.requested and is listed', async () => {
-    const r = await srv.json<{ done: DoneMark }>(
-      'POST',
-      '/api/done',
-      { body: 'round one addressed' },
-      as('agent')
-    );
-    expect(r.status).toBe(200);
-    expect(r.body.done).toMatchObject({
-      actor: 'agent',
-      body: 'round one addressed',
-    });
-    const ev = await tap.next('done.requested');
-    expect(ev).toMatchObject({
-      type: 'done.requested',
-      actor: 'agent',
-      body: 'round one addressed',
-    });
-    const all = await srv.json<{ done: DoneMark[] }>('GET', '/api/done');
-    expect(all.body.done).toHaveLength(1);
-    expect(all.body.done[0]!.at).toBe(r.body.done.at);
   });
 
   it('resolves the author from the actor header', async () => {

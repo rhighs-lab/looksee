@@ -6,10 +6,7 @@ import {
   CommentsPanelToggle,
 } from '@/client/components/comments/comments-panel.js';
 import { Composer } from '@/client/components/comments/composer.js';
-import {
-  DoneBanner,
-  ReviewBar,
-} from '@/client/components/comments/review-bar.js';
+import { ReviewBar } from '@/client/components/comments/review-bar.js';
 import { Thread } from '@/client/components/comments/thread.js';
 import {
   clearRangeHighlight,
@@ -262,7 +259,6 @@ export function ReviewWithComments() {
         headerBelow={
           <>
             <ScopeNotices />
-            {enabled && <DoneBanner />}
           </>
         }
       />

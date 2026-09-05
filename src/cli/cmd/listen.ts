@@ -5,7 +5,6 @@ import { EVENTS, preamble } from '@/cli/guide.js';
 import { events } from '@/cli/sse.js';
 import type {
   DecoratedComment,
-  DoneMark,
   Review,
   ServerEvent,
 } from '@/shared/protocol.js';
@@ -49,22 +48,18 @@ const pending = async (
   http: { get: <T>(p: string) => Promise<T> },
   actor: string
 ): Promise<Line[]> => {
-  const [{ comments }, { reviews }, { done }] = await Promise.all([
+  const [{ comments }, { reviews }] = await Promise.all([
     http.get<{ comments: DecoratedComment[] }>('/api/comments'),
     http.get<{ reviews: Review[] }>('/api/reviews?state=submitted'),
-    http.get<{ done: DoneMark[] }>('/api/done'),
   ]);
-  const doneAt = done
-    .filter((d) => d.actor === actor)
-    .map((d) => d.at)
-    .sort()
-    .at(-1);
+  // a request_changes round is outstanding while any of its threads is open
+  const openReviewIds = new Set(
+    comments
+      .filter((c) => !c.parentId && c.status === 'open' && c.reviewId)
+      .map((c) => c.reviewId as string)
+  );
   const undone = reviews
-    .filter(
-      (r) =>
-        r.verdict === 'request_changes' &&
-        (!doneAt || !r.submittedAt || doneAt <= r.submittedAt)
-    )
+    .filter((r) => r.verdict === 'request_changes' && openReviewIds.has(r.id))
     .sort((a, b) => (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''));
   const covered = new Set(undone.map((r) => r.id));
   const open = comments.filter((c) => c.status === 'open');

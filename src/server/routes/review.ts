@@ -32,7 +32,6 @@ import {
 import { getSession, pinApproved } from '@/server/review/session.js';
 import {
   addComment,
-  addDone,
   type CommentPatch,
   clearComments,
   deleteComment,
@@ -40,7 +39,6 @@ import {
   getComment,
   getReview,
   listComments,
-  listDone,
   listReviews,
   PendingReviewError,
   restoreCleared,
@@ -206,21 +204,6 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const r = await ownedPending(c.req.param('id'), actorOf(c));
     if ('status' in r) return c.json({ error: r.error }, r.status);
     return c.json({ ok: await discardReview(repoRoot, r.review.id) });
-  });
-
-  app.get('/api/done', async (c) =>
-    c.json({ done: repoRoot ? await listDone(repoRoot) : [] })
-  );
-
-  app.post('/api/done', async (c) => {
-    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
-    const b = await body(c);
-    const done = await addDone(repoRoot, {
-      actor: actorOf(c),
-      body: typeof b['body'] === 'string' ? b['body'] : '',
-    });
-    emit({ type: 'done.requested', ...done, origin: originOf(c) });
-    return c.json({ done });
   });
 
   app.post('/api/preview', async (c) => {

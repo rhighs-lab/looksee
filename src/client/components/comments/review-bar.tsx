@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SubmitReview } from '@/client/components/comments/submit-review.js';
-import {
-  selectBanner,
-  selectDraftCount,
-  useComments,
-} from '@/client/store/comments.js';
+import { selectDraftCount, useComments } from '@/client/store/comments.js';
 import { Button, Counter, Notice } from '@/client/ui/index.js';
 
 export function ReviewBar() {
@@ -79,23 +75,5 @@ export function ReviewBar() {
       )}
       {open && <SubmitReview count={drafts} onClose={() => setOpen(false)} />}
     </span>
-  );
-}
-
-export function DoneBanner() {
-  const banner = useComments(selectBanner);
-  const dismissBanner = useComments((s) => s.dismissBanner);
-  if (!banner) return null;
-  return (
-    <div className="review-banner">
-      <Notice tone="attention">
-        <span>
-          {banner.actor} says: {banner.body || 'done'} - re-review when ready
-        </span>
-        <Button small onClick={dismissBanner}>
-          Dismiss
-        </Button>
-      </Notice>
-    </div>
   );
 }

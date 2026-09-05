@@ -10,7 +10,6 @@ const R16 = [
   'comment.replied',
   'thread.resolved',
   'thread.reopened',
-  'done.requested',
   'hello',
 ];
 

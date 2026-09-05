@@ -9,7 +9,6 @@ export const EVENTS = [
   ['comment.replied', 'a reply on a thread'],
   ['thread.resolved', 'a thread was resolved'],
   ['thread.reopened', 'a thread was reopened'],
-  ['done.requested', 'an actor finished a round'],
 ] as const;
 
 export type EventType = (typeof EVENTS)[number][0];
@@ -17,7 +16,6 @@ export type EventType = (typeof EVENTS)[number][0];
 export const RESPONSES = [
   ['looksee reply <id> "..."', 'answer a thread'],
   ['looksee resolve <id>', 'close a thread you addressed'],
-  ['looksee done "..."', 'ask for re-review after a round'],
 ] as const;
 
 export const preamble = (): string =>
@@ -35,8 +33,8 @@ const MEANING: Record<(typeof EXPECTS)[number], string> = {
   'apply or reply': 'a suggestion: apply the proposed lines or say why not',
   answer: 'a question: reply with the answer',
   'fix and reply': 'a comment: change the code, then reply with what you did',
-  'fix, reply, resolve, then run looksee done':
-    'a request_changes review: handle every comment, then run looksee done',
+  'fix, reply and resolve every thread':
+    'a request_changes review: handle every comment, then resolve it',
   'read, reply if asked': 'a comment-only review: no action unless asked',
   none: 'an approval: a signal only, pushing stays with you or the human',
 };
@@ -75,13 +73,12 @@ const SAMPLES: Record<string, unknown>[] = [
     type: 'review.submitted',
     review: REVIEW,
     comments: [STUB],
-    expects: 'fix, reply, resolve, then run looksee done',
+    expects: 'fix, reply and resolve every thread',
   },
   { type: 'comment.created', comment: STUB },
   { type: 'comment.replied', comment: { ...STUB, parentId: 'c0' } },
   { type: 'thread.resolved', id: 'c1', actor: 'agent' },
   { type: 'thread.reopened', id: 'c1', actor: 'user' },
-  { type: 'done.requested', actor: 'agent', body: 'All threads handled' },
 ];
 
 const rule = (title: string, ch: string): string[] => [
@@ -105,7 +102,6 @@ export const fullGuide = (cmds: readonly CommandSpec[]): string =>
     '2. Read one JSON object per line; each event is a complete work item.',
     '3. Act: apply the suggestion, fix the code, or answer the question.',
     '4. Write back with looksee reply <id> "..." and looksee resolve <id>.',
-    '5. After a request_changes round, run looksee done "..." for re-review.',
     'Reviewer agents use looksee review start | comment | submit instead.',
     '',
     ...rule('How to write a reply', '-'),

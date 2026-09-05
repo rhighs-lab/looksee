@@ -6,7 +6,6 @@ import { parseComparison } from '@/server/git/comparison.js';
 import {
   type Comment,
   type Comparison,
-  type DoneMark,
   type Pin,
   type Review,
   SCOPE_PRESETS,
@@ -75,7 +74,6 @@ type StoredReview = Partial<Review> & { id: string };
 interface StoreData {
   reviews: Review[];
   comments: Comment[];
-  done: DoneMark[];
   session: Session | null;
 }
 
@@ -142,12 +140,6 @@ function normalizeSession(s: unknown): Session | null {
   };
 }
 
-const normalizeDone = (d: Partial<DoneMark>): DoneMark => ({
-  actor: normAuthor(d.actor),
-  body: d.body ?? '',
-  at: d.at ?? new Date(0).toISOString(),
-});
-
 const list = <T>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
 async function readStore(repoRoot: string): Promise<StoreData> {
@@ -156,14 +148,13 @@ async function readStore(repoRoot: string): Promise<StoreData> {
     raw = await fs.readFile(fileFor(repoRoot), 'utf8');
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT')
-      return { reviews: [], comments: [], done: [], session: null };
+      return { reviews: [], comments: [], session: null };
     throw err;
   }
   const data = JSON.parse(raw) as Record<string, unknown>;
   return {
     reviews: list<StoredReview>(data['reviews']).map(normalizeReview),
     comments: list<StoredComment>(data['comments']).map(normalize),
-    done: list<Partial<DoneMark>>(data['done']).map(normalizeDone),
     session: normalizeSession(data['session']),
   };
 }
@@ -391,23 +382,6 @@ export function discardReview(repoRoot: string, id: string): Promise<boolean> {
     await writeStore(repoRoot, store);
     return true;
   });
-}
-
-export function addDone(
-  repoRoot: string,
-  data: { actor: string; body: string }
-): Promise<DoneMark> {
-  return locked(repoRoot, async () => {
-    const store = await readStore(repoRoot);
-    const mark: DoneMark = { ...data, at: new Date().toISOString() };
-    store.done.push(mark);
-    await writeStore(repoRoot, store);
-    return mark;
-  });
-}
-
-export async function listDone(repoRoot: string): Promise<DoneMark[]> {
-  return (await readStore(repoRoot)).done;
 }
 
 export async function getSession(repoRoot: string): Promise<Session | null> {

@@ -6,7 +6,6 @@ import type {
   ContextResponse,
   DecoratedComment,
   DiffResponse,
-  DoneMark,
   FileInfoResponse,
   FileViewResponse,
   RepoState,
@@ -181,7 +180,6 @@ export const api = {
       'DELETE',
       `/api/reviews/${encodeURIComponent(id)}`
     ),
-  listDone: () => request<{ done: DoneMark[] }>('GET', '/api/done'),
   preview: (body: Record<string, unknown>) =>
     request<{ html: string }>('POST', '/api/preview', body),
   savedReplies: () =>
