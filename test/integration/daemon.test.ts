@@ -183,6 +183,49 @@ describe('daemon lifecycle', () => {
     expect(await discover(otherRoot)).toBeNull();
   });
 
+  it('init creates AGENTS.md with the looksee block', async () => {
+    process.chdir(other.dir);
+    const t = io();
+    expect(await run(['init'], t.io)).toBe(0);
+    expect(JSON.parse(t.out.join(''))).toEqual({
+      file: 'AGENTS.md',
+      added: true,
+    });
+    const md = await fs.readFile(path.join(otherRoot, 'AGENTS.md'), 'utf8');
+    expect(md.trimEnd().startsWith('<!-- looksee:start -->')).toBe(true);
+    expect(md).toContain('looksee review . --scope');
+    expect(md).toContain('before');
+    expect(existsSync(path.join(otherRoot, 'CLAUDE.md'))).toBe(false);
+    process.chdir(cwd);
+  });
+
+  it('init is a no-op the second time', async () => {
+    process.chdir(other.dir);
+    const file = path.join(otherRoot, 'AGENTS.md');
+    const before = await fs.readFile(file, 'utf8');
+    const t = io();
+    expect(await run(['init'], t.io)).toBe(0);
+    expect(JSON.parse(t.out.join(''))).toEqual({
+      file: 'AGENTS.md',
+      added: false,
+    });
+    expect(await fs.readFile(file, 'utf8')).toBe(before);
+    process.chdir(cwd);
+  });
+
+  it('init appends below existing AGENTS.md content', async () => {
+    process.chdir(repo.dir);
+    const file = path.join(root, 'AGENTS.md');
+    await fs.writeFile(file, '# House rules\n\nUse tabs.\n');
+    const t = io();
+    expect(await run(['init'], t.io)).toBe(0);
+    const md = await fs.readFile(file, 'utf8');
+    expect(md.startsWith('# House rules\n\nUse tabs.\n\n')).toBe(true);
+    expect(md).toContain('<!-- looksee:end -->');
+    await fs.rm(file);
+    process.chdir(cwd);
+  });
+
   it('treats a record for another repo root as stale', async () => {
     await fs.writeFile(
       recordPath(otherRoot),

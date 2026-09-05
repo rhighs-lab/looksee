@@ -3,6 +3,7 @@ import { runAgent } from '@/cli/cmd/agent.js';
 import { runComment } from '@/cli/cmd/comment.js';
 import { runComments } from '@/cli/cmd/comments.js';
 import { runDone } from '@/cli/cmd/done.js';
+import { runInit } from '@/cli/cmd/init.js';
 import { runListen } from '@/cli/cmd/listen.js';
 import { runReply } from '@/cli/cmd/reply.js';
 import { runResolve } from '@/cli/cmd/resolve.js';
@@ -326,6 +327,19 @@ const COMMANDS: CommandSpec[] = [
       output: '{ stopped: boolean }',
     },
     runStop
+  ),
+  placeholder(
+    {
+      name: 'init',
+      example: 'looksee init',
+      summary: 'Add the looksee review rule to AGENTS.md',
+      args: '',
+      flags: [],
+      output:
+        '{ file, added }: added is false when the block was already there',
+      notes: 'Writes AGENTS.md only, creating it when the repo has none',
+    },
+    runInit
   ),
   placeholder(
     {
