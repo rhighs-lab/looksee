@@ -69,6 +69,12 @@ const PRETTY: FlagSpec = {
   help: 'Print a readable table instead of JSON',
 };
 
+const LOCAL: FlagSpec = {
+  name: 'local',
+  takesValue: false,
+  help: "Write this repo's AGENTS.md instead of the global agent files",
+};
+
 const ANCHOR = '<file>:<line>[-<line>] <body>';
 
 const todo = (name: string) => async (): Promise<number> => {
@@ -346,12 +352,13 @@ const COMMANDS: CommandSpec[] = [
     {
       name: 'init',
       example: 'looksee init',
-      summary: 'Add the looksee review rule to AGENTS.md',
+      summary: 'Add the looksee review rule to the agent instruction files',
       args: '',
-      flags: [],
+      flags: [LOCAL],
       output:
-        '{ file, added }: added is false when the block was already there',
-      notes: 'Writes AGENTS.md only, creating it when the repo has none',
+        '{ scope, files: [{ agent, file, added }] }: added is false when the block was already there',
+      notes:
+        'Writes the global instruction file of every agent whose home exists; --local writes the repo AGENTS.md instead',
     },
     runInit
   ),

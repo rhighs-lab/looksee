@@ -240,10 +240,10 @@ describe('daemon lifecycle', () => {
   it('init creates AGENTS.md with the looksee block', async () => {
     process.chdir(other.dir);
     const t = io();
-    expect(await run(['init'], t.io)).toBe(0);
+    expect(await run(['init', '--local'], t.io)).toBe(0);
     expect(JSON.parse(t.out.join(''))).toEqual({
-      file: 'AGENTS.md',
-      added: true,
+      scope: 'local',
+      files: [{ file: 'AGENTS.md', added: true }],
     });
     const md = await fs.readFile(path.join(otherRoot, 'AGENTS.md'), 'utf8');
     expect(md.split('\n')[0]).toBe(MARKER);
@@ -266,8 +266,8 @@ describe('daemon lifecycle', () => {
       const file = path.join(await repoRootOf(bare.dir), 'AGENTS.md');
       await fs.writeFile(file, `We use the \`${MARKER}\` marker here.\n`);
       const t = io();
-      expect(await run(['init'], t.io)).toBe(0);
-      expect(JSON.parse(t.out.join('')).added).toBe(true);
+      expect(await run(['init', '--local'], t.io)).toBe(0);
+      expect(JSON.parse(t.out.join('')).files[0].added).toBe(true);
       const md = await fs.readFile(file, 'utf8');
       expect(md.split('\n').filter((l) => l.trim() === MARKER)).toHaveLength(1);
     } finally {
@@ -281,10 +281,10 @@ describe('daemon lifecycle', () => {
     const file = path.join(otherRoot, 'AGENTS.md');
     const before = await fs.readFile(file, 'utf8');
     const t = io();
-    expect(await run(['init'], t.io)).toBe(0);
+    expect(await run(['init', '--local'], t.io)).toBe(0);
     expect(JSON.parse(t.out.join(''))).toEqual({
-      file: 'AGENTS.md',
-      added: false,
+      scope: 'local',
+      files: [{ file: 'AGENTS.md', added: false }],
     });
     expect(await fs.readFile(file, 'utf8')).toBe(before);
     process.chdir(cwd);
@@ -295,7 +295,7 @@ describe('daemon lifecycle', () => {
     const file = path.join(root, 'AGENTS.md');
     await fs.writeFile(file, '# House rules\n\nUse tabs.\n');
     const t = io();
-    expect(await run(['init'], t.io)).toBe(0);
+    expect(await run(['init', '--local'], t.io)).toBe(0);
     const md = await fs.readFile(file, 'utf8');
     expect(md.startsWith('# House rules\n\nUse tabs.\n\n')).toBe(true);
     expect(md.split('\n').filter((l) => l.trim() === MARKER)).toHaveLength(1);
