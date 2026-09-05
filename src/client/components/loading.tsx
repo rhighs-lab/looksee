@@ -1,7 +1,7 @@
 const L_BRACE =
-  'M 101 70 C 84 70 84 84 84 105 C 84 118 63 128 63 128 C 63 128 84 138 84 151 C 84 172 84 185 101 185';
+  'M 79.75 35.05 C 62.75 35.05 62.75 56.06 62.75 90.82 C 62.75 111.83 42.75 128 42.75 128 C 42.75 128 62.75 144.17 62.75 165.18 C 62.75 199.94 62.75 220.95 79.75 220.95';
 const R_BRACE =
-  'M 155 70 C 172 70 172 84 172 105 C 172 118 193 128 193 128 C 193 128 172 138 172 151 C 172 172 172 185 155 185';
+  'M 176.25 35.05 C 193.25 35.05 193.25 56.06 193.25 90.82 C 193.25 111.83 213.25 128 213.25 128 C 213.25 128 193.25 144.17 193.25 165.18 C 193.25 199.94 193.25 220.95 176.25 220.95';
 
 export function Logo({
   size = 24,
@@ -21,7 +21,7 @@ export function Logo({
       role="img"
       aria-label="looksee"
     >
-      <g transform="translate(128 128) scale(1.329) translate(-128 -128)">
+      <g transform="translate(128 128) scale(1.0639) translate(-128 -128)">
         <path
           className="logo-brace logo-brace-l"
           d={L_BRACE}
@@ -41,17 +41,17 @@ export function Logo({
           strokeLinejoin="round"
         />
         <path
-          d="M 88.75 128 L 167.25 128"
+          d="M 93.5 128 L 162.5 128"
           fill="none"
           stroke="#0046fc"
-          strokeWidth="7.1"
+          strokeWidth="9.5"
           strokeLinecap="round"
         />
         <circle
           className="logo-dot"
           cx="128"
           cy="128"
-          r="17.4"
+          r="17.5"
           fill="#0046fc"
         />
       </g>

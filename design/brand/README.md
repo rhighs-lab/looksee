@@ -41,16 +41,23 @@ The mark is drawn on a 256 grid. Both braces are stroked paths with round caps a
 joins; the bar is a stroked line with round caps; the dot is a circle. Nothing is a
 filled outline, so the mark scales without hinting artifacts.
 
+The bar is laid out from the inside out: the dot sets the centre, a fixed visible
+segment extends it on each side, and the brace arms are then placed far enough apart to
+leave a measured air gap beyond the bar's caps. The braces' height follows from that
+width, so widening the gap never crowds the mark.
+
 ```
 viewBox            0 0 256 256
 brace stroke       22
-bar stroke         7.1
-dot radius         17.4
-brace centerline   x 63 → 101 (left), 155 → 193 (right); y 70 → 185
-bar centerline     x 88.75 → 167.25 at y 128
-glyph masters      mark scaled ×1.329 about center — fills ~80% of the square
-icon masters       mark at ×1.0 — the source raster's own ~60% framing
-maskable icons     mark at ×0.82 — inside the W3C 80% safe zone
+bar stroke         9.5
+dot radius         17.5
+brace arm          x 62.75 (left), 193.25 (right); waist tips at 42.75 and 213.25
+brace extent       y 35.05 → 220.95, hooks 17 past the arm
+bar centerline     x 93.5 → 162.5 at y 128
+air gap            15 units between each brace arm's inner edge and the bar's cap
+glyph masters      mark scaled ×1.0639 about center — fills 80% of the square
+icon masters       mark at ×0.752 of that — a 60% framing on a ground
+maskable icons     mark at ×0.617 — inside the W3C 80% safe zone
 ```
 
 **Clearspace**: keep the glyph's own stroke width (22 units, ~8.6% of the square) clear
@@ -129,3 +136,6 @@ Wired into the app on generation:
 - The SVG masters are self-contained — no external fonts, no linked assets, no scripts.
 - The glyph was inspected at 900px before the pack was generated; the bar's round caps
   clear both brace waists, and the bar-to-dot union has no seam.
+- An earlier revision of this pack ran the bar's caps into the braces' waist notches.
+  The bar now stops a measured 15 units short of each arm's inner edge, and the whole
+  mark was re-proportioned around that gap rather than merely trimmed.
