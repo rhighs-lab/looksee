@@ -22,11 +22,14 @@ If it is missing, tell the user and stop:
 
 > looksee isn't installed. `npm install -g @rhighs-lab/looksee`
 
-Then check the repo has the standing rule, and add it once if not:
+Then install the standing rule. It is idempotent, so just run it:
 
 ```bash
-grep -q 'looksee:start' AGENTS.md 2>/dev/null || looksee init
+looksee init
 ```
+
+It writes a short looksee block into the repo's `AGENTS.md` and reports
+`added: false` when the block is already there.
 
 ## Pick the scope, then launch
 

@@ -1,10 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { MARKER } from '@/cli/cmd/init.js';
+import { CLI_PRESETS } from '@/cli/cmd/session.js';
+import { all } from '@/cli/commands.js';
 import { packageRoot } from '@/server/pkg-root.js';
 
 const root = packageRoot(import.meta.url);
 const file = path.join(root, 'skills', 'looksee', 'SKILL.md');
+const read = (): Promise<string> => fs.readFile(file, 'utf8');
 
 const frontmatter = (src: string): Record<string, string> => {
   const m = /^---\n([\s\S]*?)\n---\n/.exec(src);
@@ -17,16 +21,20 @@ const frontmatter = (src: string): Record<string, string> => {
   return out;
 };
 
+const invocations = (src: string): string[] =>
+  [...src.matchAll(/`?looksee ([a-z ]+?)(?=`|\s--|\s\.|\s<|\n)/g)].map((m) =>
+    m[1]!.trim()
+  );
+
 describe('looksee skill', () => {
   it('has frontmatter naming the skill looksee', async () => {
-    const fm = frontmatter(await fs.readFile(file, 'utf8'));
-    expect(fm['name']).toBe('looksee');
+    expect(frontmatter(await read())['name']).toBe('looksee');
   });
 
   it('has a description within the skills length limit', async () => {
-    const fm = frontmatter(await fs.readFile(file, 'utf8'));
-    expect(fm['description']!.length).toBeGreaterThan(0);
-    expect(fm['description']!.length).toBeLessThanOrEqual(1024);
+    const d = frontmatter(await read())['description']!;
+    expect(d.length).toBeGreaterThan(0);
+    expect(d.length).toBeLessThanOrEqual(1024);
   });
 
   it('is shipped in the published package', async () => {
@@ -36,17 +44,29 @@ describe('looksee skill', () => {
     expect(pkg.files).toContain('skills');
   });
 
-  it('names every scope preset the CLI accepts', async () => {
-    const src = await fs.readFile(file, 'utf8');
-    for (const preset of ['session', 'working', 'branch'])
-      expect(src).toContain(`\`${preset}\``);
+  it('only names commands that are registered', async () => {
+    const names = new Set(all().map((c) => c.name));
+    const named = invocations(await read());
+    expect(named.length).toBeGreaterThan(0);
+    for (const n of named) expect(names).toContain(n);
   });
 
-  it('names commands and flags that exist', async () => {
-    const src = await fs.readFile(file, 'utf8');
-    expect(src).toContain('looksee listen --not-me --pending');
-    expect(src).toContain('looksee review . --scope');
-    expect(src).toContain('looksee init');
-    expect(src).toContain('looksee agent');
+  it('names every scope preset the CLI accepts', async () => {
+    const src = await read();
+    for (const preset of CLI_PRESETS) expect(src).toContain(`\`${preset}\``);
+  });
+
+  it('names the listen flags the CLI registers', async () => {
+    const listen = all().find((c) => c.name === 'listen')!;
+    const flags = new Set(listen.flags.map((f) => f.name));
+    const src = await read();
+    for (const f of ['not-me', 'pending']) {
+      expect(flags).toContain(f);
+      expect(src).toContain(`--${f}`);
+    }
+  });
+
+  it('leaves the AGENTS.md marker to looksee init', async () => {
+    expect(await read()).not.toContain(MARKER);
   });
 });

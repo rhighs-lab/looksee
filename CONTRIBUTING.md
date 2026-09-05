@@ -23,6 +23,7 @@ daemon. Run `pnpm looksee review ../some-repo` to review a real working tree.
 | `src/server` | Hono daemon, git plumbing, watcher, CLI |
 | `src/client` | React app: components, stores, styles |
 | `src/shared/protocol.ts` | Types the server and client both depend on |
+| `skills/looksee` | Agent skill shipped with the package |
 | `test/unit` | vitest suites |
 | `design/brand` | Logo masters, exports and favicons |
 

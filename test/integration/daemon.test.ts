@@ -9,6 +9,7 @@ import process from 'node:process';
 import { promisify } from 'node:util';
 import { makeRepo, type Repo, seedRepo } from '@test/helpers/repo.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { MARKER } from '@/cli/cmd/init.js';
 import {
   discover,
   ensureServer,
@@ -151,18 +152,71 @@ describe('daemon lifecycle', () => {
   });
 
   it('review --scope sets the comparison on the running server', async () => {
-    const t = io();
-    expect(
-      await run(['review', repo.dir, '--no-open', '--scope', 'working'], t.io)
-    ).toBe(0);
-    expect(await scopeOf(first.url)).toBe('working');
+    for (const preset of ['working', 'branch', 'session']) {
+      const t = io();
+      expect(
+        await run(['review', repo.dir, '--no-open', '--scope', preset], t.io)
+      ).toBe(0);
+      expect(t.err.join('')).toBe('');
+      expect(await scopeOf(first.url)).toBe(preset);
+    }
     expect(await serversFor(root)).toBe(1);
   });
 
   it('review without --scope leaves the stored scope alone', async () => {
     const t = io();
+    expect(
+      await run(['review', repo.dir, '--no-open', '--scope', 'working'], t.io)
+    ).toBe(0);
     expect(await run(['review', repo.dir, '--no-open'], t.io)).toBe(0);
     expect(await scopeOf(first.url)).toBe('working');
+  });
+
+  it('review --scope applies on a cold start, not just a reuse', async () => {
+    const cold = await makeRepo();
+    await seedRepo(cold);
+    const coldRoot = await repoRootOf(cold.dir);
+    try {
+      const t = io();
+      expect(
+        await run(['review', cold.dir, '--no-open', '--scope', 'working'], t.io)
+      ).toBe(0);
+      const url = JSON.parse(t.out.join('')).url as string;
+      expect(url).not.toBe(first.url);
+      pids.add((await discover(coldRoot))!.pid);
+      expect(await scopeOf(url)).toBe('working');
+    } finally {
+      await stopServer(coldRoot).catch(() => null);
+      await cold.cleanup();
+    }
+  });
+
+  it('serves an unborn-HEAD repo and warns instead of failing on scope', async () => {
+    const bare = await makeRepo();
+    const bareRoot = await repoRootOf(bare.dir);
+    try {
+      const t = io();
+      expect(
+        await run(['review', bare.dir, '--no-open', '--scope', 'working'], t.io)
+      ).toBe(0);
+      const url = JSON.parse(t.out.join('')).url as string;
+      expect(t.err.join('')).toContain('could not set scope working');
+      expect((await health(url)).ok).toBe(true);
+      pids.add((await discover(bareRoot))!.pid);
+    } finally {
+      await stopServer(bareRoot).catch(() => null);
+      await bare.cleanup();
+    }
+  });
+
+  it('review --scope fails before spawning on a bad actor', async () => {
+    const t = io();
+    t.io.env = { ...process.env, LOOKSEE_ACTOR: 'user' };
+    expect(
+      await run(['review', other.dir, '--no-open', '--scope', 'working'], t.io)
+    ).toBe(1);
+    expect(t.err.join('')).toContain('reserved');
+    expect(await discover(otherRoot)).toBeNull();
   });
 
   it('review --scope rejects an unknown preset without spawning', async () => {
@@ -192,11 +246,34 @@ describe('daemon lifecycle', () => {
       added: true,
     });
     const md = await fs.readFile(path.join(otherRoot, 'AGENTS.md'), 'utf8');
-    expect(md.trimEnd().startsWith('<!-- looksee:start -->')).toBe(true);
+    expect(md.split('\n')[0]).toBe(MARKER);
     expect(md).toContain('looksee review . --scope');
-    expect(md).toContain('before');
-    expect(existsSync(path.join(otherRoot, 'CLAUDE.md'))).toBe(false);
+    expect(md).toContain('looksee agent');
     process.chdir(cwd);
+  });
+
+  it('init leaves a marker the block can be found by later', async () => {
+    process.chdir(other.dir);
+    const md = await fs.readFile(path.join(otherRoot, 'AGENTS.md'), 'utf8');
+    expect(md.split('\n').filter((l) => l.trim() === MARKER)).toHaveLength(1);
+    process.chdir(cwd);
+  });
+
+  it('init ignores a marker mentioned inside prose', async () => {
+    const bare = await makeRepo();
+    try {
+      process.chdir(bare.dir);
+      const file = path.join(await repoRootOf(bare.dir), 'AGENTS.md');
+      await fs.writeFile(file, `We use the \`${MARKER}\` marker here.\n`);
+      const t = io();
+      expect(await run(['init'], t.io)).toBe(0);
+      expect(JSON.parse(t.out.join('')).added).toBe(true);
+      const md = await fs.readFile(file, 'utf8');
+      expect(md.split('\n').filter((l) => l.trim() === MARKER)).toHaveLength(1);
+    } finally {
+      process.chdir(cwd);
+      await bare.cleanup();
+    }
   });
 
   it('init is a no-op the second time', async () => {
@@ -221,7 +298,7 @@ describe('daemon lifecycle', () => {
     expect(await run(['init'], t.io)).toBe(0);
     const md = await fs.readFile(file, 'utf8');
     expect(md.startsWith('# House rules\n\nUse tabs.\n\n')).toBe(true);
-    expect(md).toContain('<!-- looksee:end -->');
+    expect(md.split('\n').filter((l) => l.trim() === MARKER)).toHaveLength(1);
     await fs.rm(file);
     process.chdir(cwd);
   });

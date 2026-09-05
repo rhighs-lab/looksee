@@ -13,16 +13,24 @@ export const runReview = async ({
   io,
 }: RunCtx): Promise<number> => {
   const root = await repoRootOf(positionals[0]);
-  const scope =
-    typeof flags['scope'] === 'string' ? assertCliPreset(flags['scope']) : null;
+  const want =
+    typeof flags['scope'] === 'string'
+      ? {
+          preset: assertCliPreset(flags['scope']),
+          actor: resolveActor({}, io.env),
+        }
+      : null;
   const base = typeof flags['base'] === 'string' ? flags['base'] : null;
   const title = typeof flags['title'] === 'string' ? flags['title'] : null;
   const running = await ensureServer(root, { base, title });
-  if (scope)
-    await client(running.url, resolveActor(flags, io.env)).post<RepoState>(
-      '/api/scope',
-      { preset: scope }
-    );
+  if (want)
+    await client(running.url, want.actor)
+      .post<RepoState>('/api/scope', { preset: want.preset })
+      .catch((e: unknown) =>
+        io.err(
+          `could not set scope ${want.preset}: ${e instanceof Error ? e.message : String(e)}\n`
+        )
+      );
   if (!flags['no-open']) await open(running.url).catch(() => {});
   const pretty = flags['pretty'] === true;
   io.out(format(pretty ? running.url : { url: running.url }, pretty));

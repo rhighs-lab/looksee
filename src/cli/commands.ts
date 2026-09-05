@@ -107,7 +107,7 @@ const COMMANDS: CommandSpec[] = [
       ],
       output: '{ url }',
       notes:
-        'Subcommand names win over paths: use ./start for a dir named start',
+        'Subcommand names win over paths: use ./start for a dir named start. custom is set from the browser pickers, not --scope',
     },
     runReview
   ),

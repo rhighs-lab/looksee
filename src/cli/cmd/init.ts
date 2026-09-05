@@ -5,11 +5,10 @@ import { repoRootOf } from '@/cli/daemon.js';
 import { format } from '@/cli/output.js';
 
 const FILE = 'AGENTS.md';
-const START = '<!-- looksee:start -->';
-const END = '<!-- looksee:end -->';
+export const MARKER = '<!-- looksee -->';
 
 const BLOCK = [
-  START,
+  MARKER,
   '## Reviewing changes with looksee',
   '',
   'After finishing a set of code changes, offer the user a review before',
@@ -20,22 +19,13 @@ const BLOCK = [
   'commits, `working` if you only changed the working tree, `session` on a',
   're-review round. Then work the comment loop; `looksee agent` prints the',
   'full guide.',
-  END,
 ].join('\n');
-
-const read = async (p: string): Promise<string | null> => {
-  try {
-    return await fs.readFile(p, 'utf8');
-  } catch {
-    return null;
-  }
-};
 
 export const runInit = async ({ io }: RunCtx): Promise<number> => {
   const root = await repoRootOf();
   const file = path.join(root, FILE);
-  const cur = await read(file);
-  const added = !(cur?.includes(START) && cur.includes(END));
+  const cur = await fs.readFile(file, 'utf8').catch(() => null);
+  const added = !cur?.split('\n').some((l) => l.trim() === MARKER);
   if (added)
     await fs.writeFile(
       file,
