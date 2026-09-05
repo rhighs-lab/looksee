@@ -23,6 +23,8 @@ import type {
 export const CLIENT_ID = (globalThis.crypto?.randomUUID?.() ??
   String(Math.random())) as string;
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -49,7 +51,15 @@ async function request<T>(
     },
   };
   if (body !== undefined) req.body = JSON.stringify(body);
-  const res = await fetch(url, req);
+  req.signal ??= AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(url, req);
+  } catch (err) {
+    if ((err as Error).name === 'TimeoutError')
+      throw new ApiError(0, 'the server did not answer', null);
+    throw err;
+  }
   const text = await res.text();
   let data: unknown = null;
   try {
