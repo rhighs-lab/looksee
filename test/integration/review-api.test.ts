@@ -304,6 +304,10 @@ describe('review API', () => {
     expect(md.body.content).toMatch(/Already applied\./);
     expect(md.body.content).toMatch(/Outdated: the lines changed/);
     expect(md.body.content).toContain(`<!-- looksee:id ${q.id} -->`);
+    expect(md.body.content).toMatch(/^# Review/);
+    expect(md.body.content).toMatch(/## Working through this review/);
+    expect(md.body.content).toContain(`looksee reply ${q.id}`);
+    expect(md.body.content).toMatch(/## Contents/);
     await fs.access(path.join(repo.dir, md.body.path));
     const json = await srv.json<{ content: string }>('POST', '/api/export', {
       format: 'json',

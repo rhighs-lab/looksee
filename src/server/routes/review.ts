@@ -445,7 +445,9 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const content =
       format === 'json'
         ? buildJson(comments)
-        : buildMarkdown(repoRoot, branch, comments);
+        : buildMarkdown(repoRoot, branch, comments, {
+            comparison: ctx.state().comparison?.label ?? null,
+          });
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
     const dir = path.join(repoRoot, '.looksee');
     const filename = `review-${ts}.${format}`;

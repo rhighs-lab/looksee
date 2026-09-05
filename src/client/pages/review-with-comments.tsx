@@ -280,8 +280,13 @@ function ReviewActions() {
           Apply {applyable} suggestion{applyable === 1 ? '' : 's'}
         </Button>
       )}
-      <Button small variant="primary" onClick={() => void exportAll()}>
-        Export {count} comment{count === 1 ? '' : 's'} for the agent
+      <Button
+        small
+        variant="primary"
+        onClick={() => void exportAll()}
+        title={`Write ${count} comment${count === 1 ? '' : 's'} to .looksee as markdown`}
+      >
+        Export review as .md
       </Button>
       <Button small onClick={() => void clearAll()}>
         Clear
