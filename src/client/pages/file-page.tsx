@@ -18,6 +18,7 @@ import {
   DiffTable,
   type LineSlots,
 } from '@/client/components/diff/diff-table.js';
+import { EditorLink } from '@/client/components/editor-link.js';
 import {
   FileFinder,
   useFileFinderHotkey,
@@ -521,6 +522,7 @@ function BlobToolbar({
       </span>
       <span className="blob-actions">
         <FileInfo path={view.path} />
+        <EditorLink filePath={view.path} />
         <ForgeLink filePath={view.path} />
         {!view.binary && (
           <Button

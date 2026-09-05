@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Hono } from 'hono';
@@ -120,6 +121,27 @@ export function repoRoutes(ctx: AppContext): Hono {
         appearance: appearance(b['appearance']),
       })
     );
+  });
+
+  app.post('/api/open-editor', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repository' }, 400);
+    const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const rel = safeRelPath(String(b['path'] ?? ''));
+    if (!rel) return c.json({ error: 'bad path' }, 400);
+    const n = Number(b['line']);
+    const target = path.join(ctx.repoRoot, rel);
+    const at = Number.isInteger(n) && n > 0 ? `${target}:${n}` : target;
+    const child = spawn('code', ['-r', ctx.repoRoot, '-g', at], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    const failed = await new Promise<string | null>((resolve) => {
+      child.once('error', (e) => resolve(e.message));
+      child.once('spawn', () => resolve(null));
+    });
+    if (failed) return c.json({ error: failed }, 500);
+    child.unref();
+    return c.json({ ok: true });
   });
 
   app.get('/api/branches', async (c) => {

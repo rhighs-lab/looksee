@@ -104,7 +104,13 @@ async function commitTree(
 ): Promise<Resolved> {
   const sha = await commitSha(repoRoot, rev);
   const oid = await treeOf(repoRoot, sha);
-  return { kind, oid, short: short(sha), label: label(short(sha)) };
+  return {
+    kind,
+    oid,
+    commit: sha,
+    short: short(sha),
+    label: label(short(sha)),
+  };
 }
 
 export async function resolveEndpoint(
@@ -123,12 +129,24 @@ export async function resolveEndpoint(
           (s) => `${head.branch ?? 'HEAD'} ${s}`
         );
       const oid = await snapshotWorktree(repoRoot);
-      return { kind: 'worktree', oid, short: short(oid), label: 'workspace' };
+      return {
+        kind: 'worktree',
+        oid,
+        commit: null,
+        short: short(oid),
+        label: 'workspace',
+      };
     }
     case 'index': {
       const oid =
         (await indexTree(repoRoot)) ?? (await snapshotWorktree(repoRoot));
-      return { kind: 'index', oid, short: short(oid), label: 'index' };
+      return {
+        kind: 'index',
+        oid,
+        commit: null,
+        short: short(oid),
+        label: 'index',
+      };
     }
     case 'head':
       return commitTree(
@@ -158,6 +176,7 @@ export async function resolveEndpoint(
       return {
         kind: 'pin',
         oid: pin.tree,
+        commit: pin.head || null,
         short: s,
         label: `${PIN_LABEL[ep.name]} ${s}`,
       };

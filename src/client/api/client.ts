@@ -168,6 +168,8 @@ export const api = {
       '/api/export',
       { branch, format }
     ),
+  openEditor: (path: string, line?: number) =>
+    request<{ ok: boolean }>('POST', '/api/open-editor', { path, line }),
   uiPrefs: () => request<UiPrefs>('GET', '/api/ui-prefs'),
   setUiPrefs: (patch: Partial<UiPrefs>) =>
     request<UiPrefs>('POST', '/api/ui-prefs', patch),

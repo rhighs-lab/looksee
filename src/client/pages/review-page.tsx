@@ -43,7 +43,6 @@ export function ReviewPage({
   const files = useReview(useShallow(selectVisibleFiles));
   const diffs = useReview((s) => s.diffs);
   const pendingPaths = useReview((s) => s.pendingPaths);
-  const layerFilter = useReview((s) => s.layerFilter);
   const viewed = useReview((s) => s.viewed);
   const updated = useReview((s) => s.updated);
   const activePath = useReview((s) => s.activePath);
@@ -130,9 +129,7 @@ export function ReviewPage({
           {status === 'ready' &&
             state &&
             state.files.length > 0 &&
-            files.length === 0 && (
-              <FilteredEmpty scope={scope} layerFilter={layerFilter} />
-            )}
+            files.length === 0 && <FilteredEmpty scope={scope} />}
           {status !== 'loading' &&
             files.map((file) => (
               <FileCard

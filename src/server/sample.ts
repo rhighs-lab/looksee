@@ -102,12 +102,14 @@ export function sampleState(): RepoState {
       baseline: {
         kind: 'merge-base',
         oid: 'sample',
+        commit: 'sample',
         short: 'sample',
         label: 'main sample (merge base)',
       },
       endpoint: {
         kind: 'worktree',
         oid: 'sample',
+        commit: null,
         short: 'sample',
         label: 'workspace',
       },

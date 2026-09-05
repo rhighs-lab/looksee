@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SubmitReview } from '@/client/components/comments/submit-review.js';
 import { selectDraftCount, useComments } from '@/client/store/comments.js';
-import { Button, Counter, Notice } from '@/client/ui/index.js';
+import { Button, Counter } from '@/client/ui/index.js';
 
 export function ReviewBar() {
   const pending = useComments((s) => s.pendingReview);

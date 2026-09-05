@@ -1,7 +1,7 @@
 import { CommitIcon, Search } from '@/client/components/icons.js';
 import { useReview } from '@/client/store/review.js';
 import { Button } from '@/client/ui/index.js';
-import type { Layer, Scope } from '@/shared/protocol.js';
+import type { Scope } from '@/shared/protocol.js';
 import { LAYER_LABEL } from '@/shared/protocol.js';
 
 function Shell({
@@ -44,31 +44,8 @@ function Commits() {
   );
 }
 
-export function FilteredEmpty({
-  scope,
-  layerFilter,
-}: {
-  scope: Scope;
-  layerFilter: Layer[];
-}) {
+export function FilteredEmpty({ scope }: { scope: Scope }) {
   const setScope = useReview((s) => s.setScope);
-  const clearLayerFilter = useReview((s) => s.clearLayerFilter);
-
-  if (layerFilter.length)
-    return (
-      <Shell
-        icon={<Search width={22} height={22} />}
-        title="Nothing matches the filter"
-        actions={
-          <Button small onClick={() => clearLayerFilter()}>
-            Clear the filter
-          </Button>
-        }
-      >
-        Files are hidden because the{' '}
-        {layerFilter.map((l) => LAYER_LABEL[l]).join(' and ')} filter is on.
-      </Shell>
-    );
 
   if (scope !== 'cumulative')
     return (

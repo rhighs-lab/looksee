@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { useReview } from '@/client/store/review.js';
-import {
-  Button,
-  Notice,
-  Select,
-  type SelectOption,
-} from '@/client/ui/index.js';
+import { Select, type SelectOption } from '@/client/ui/index.js';
 import type {
   BranchesResponse,
   Comparison,

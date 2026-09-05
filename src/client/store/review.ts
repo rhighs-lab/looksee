@@ -19,7 +19,6 @@ import type {
   Comparison,
   DiffLine,
   FileDiff,
-  Layer,
   RepoRefs,
   RepoState,
   ReviewCommit,
@@ -45,7 +44,6 @@ export interface ReviewStore {
   connection: Connection;
   state: RepoState | null;
   scope: Scope;
-  layerFilter: Layer[];
   view: View;
   theme: Theme;
   appearance: Appearance;
@@ -77,8 +75,6 @@ export interface ReviewStore {
   setAppearance(appearance: Appearance): void;
   setNewLineAttention(on: boolean): void;
   acknowledgeArrival(seq: number): void;
-  toggleLayerFilter(layer: Layer): void;
-  clearLayerFilter(): void;
   setView(view: View): void;
   setColorByLayer(val: boolean): Promise<void>;
   loadFull(path: string): Promise<void>;
@@ -289,7 +285,6 @@ export const useReview = create<ReviewStore>((set, get) => {
     connection: 'off',
     state: null,
     scope: 'cumulative',
-    layerFilter: [],
     view: prefs.view(),
     theme: prefs.theme(),
     appearance: prefs.appearance(),
@@ -361,19 +356,6 @@ export const useReview = create<ReviewStore>((set, get) => {
       set({ scope, expansions: {}, diffs: {}, status: 'loading' });
       refreshChain = refreshChain.then(() => doRefresh(true));
       await refreshChain;
-    },
-
-    toggleLayerFilter(layer) {
-      const cur = get().layerFilter;
-      set({
-        layerFilter: cur.includes(layer)
-          ? cur.filter((l) => l !== layer)
-          : [...cur, layer],
-      });
-    },
-
-    clearLayerFilter() {
-      set({ layerFilter: [] });
     },
 
     setView(view) {
@@ -562,8 +544,5 @@ export const selectVisibleFiles = (s: ReviewStore): ChangedFile[] => {
     const inScope = new Set(Object.keys(s.diffs));
     return files.filter((f) => inScope.has(f.path));
   }
-  const net = files.filter((f) => f.kind !== 'unchanged');
-  if (!s.layerFilter.length) return net;
-  const want = new Set(s.layerFilter);
-  return net.filter((f) => f.layers.some((l) => want.has(l.layer)));
+  return files.filter((f) => f.kind !== 'unchanged');
 };

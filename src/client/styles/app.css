@@ -34,38 +34,6 @@
   margin-top: 4px;
 }
 
-.pr-filter {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding-bottom: 6px;
-  font-size: 12px;
-}
-
-.pr-filter-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font: inherit;
-  font-size: 12px;
-  line-height: 18px;
-  padding: 0 8px;
-  border-radius: 2em;
-  border: 1px solid var(--borderColor-default, #d1d9e0);
-  background-color: var(--bgColor-default, #fff);
-  color: var(--fgColor-muted, #59636e);
-  cursor: pointer;
-}
-.pr-filter-item:hover {
-  background-color: var(--bgColor-muted, #f6f8fa);
-}
-.pr-filter-item.is-active {
-  color: var(--fgColor-default, #1f2328);
-  border-color: var(--fgColor-accent, #0969da);
-  background-color: var(--bgColor-accent-muted, #ddf4ff);
-}
-
 .updated-dot {
   display: inline-block;
   width: 7px;

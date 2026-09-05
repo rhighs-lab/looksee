@@ -63,6 +63,13 @@ body {
   margin: 0;
 }
 
+.pr-title-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .pr-refs {
   display: inline-flex;
   align-items: center;

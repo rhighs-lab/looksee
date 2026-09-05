@@ -11,12 +11,11 @@ import { LAYER_GLYPH, LAYER_TONE, layerTitle } from '@/client/lib/layers.js';
 import { useReview } from '@/client/store/review.js';
 import {
   Button,
-  Counter,
   Label,
   StatusLetter,
   UnderlineNav,
 } from '@/client/ui/index.js';
-import type { Layer, Scope } from '@/shared/protocol.js';
+import type { Scope } from '@/shared/protocol.js';
 import { LAYER_LABEL, LAYERS } from '@/shared/protocol.js';
 
 function useNow(intervalMs = 30_000): number {
@@ -42,9 +41,6 @@ export function Header({
   const state = useReview((s) => s.state);
   const scope = useReview((s) => s.scope);
   const setScope = useReview((s) => s.setScope);
-  const layerFilter = useReview((s) => s.layerFilter);
-  const toggleLayerFilter = useReview((s) => s.toggleLayerFilter);
-  const clearLayerFilter = useReview((s) => s.clearLayerFilter);
   const connection = useReview((s) => s.connection);
   const treeHidden = useReview((s) => s.treeHidden);
   const setTreeHidden = useReview((s) => s.setTreeHidden);
@@ -126,22 +122,24 @@ export function Header({
               </span>
             </span>
           )}
-          {filters && isRepo && refs && <ScopeSwitcher />}
           {!isRepo && refs && (
             <span className="pr-refs ui-muted">
               {refs.head.branch} into {refs.base.ref}
             </span>
           )}
-          {connection !== 'live' && connection !== 'off' && (
-            <span className="pr-conn ui-attention" role="status">
-              {connection === 'connecting' ? 'connecting…' : 'reconnecting…'}
-            </span>
-          )}
-          {connection === 'off' && (
-            <span className="pr-conn ui-muted" role="status">
-              live updates off
-            </span>
-          )}
+          <span className="pr-title-right">
+            {connection !== 'live' && connection !== 'off' && (
+              <span className="pr-conn ui-attention" role="status">
+                {connection === 'connecting' ? 'connecting…' : 'reconnecting…'}
+              </span>
+            )}
+            {connection === 'off' && (
+              <span className="pr-conn ui-muted" role="status">
+                live updates off
+              </span>
+            )}
+            {filters && isRepo && refs && <ScopeSwitcher />}
+          </span>
         </div>
         <div className="pr-meta-row">
           {summary && (
@@ -211,64 +209,9 @@ export function Header({
                 })),
               ]}
             />
-            {scope === 'cumulative' &&
-              summary.files > 0 &&
-              LAYERS.filter((l) => summary.byLayer[l] > 0).length > 1 && (
-                <span
-                  className="pr-filter"
-                  role="group"
-                  aria-label="Filter files by layer"
-                >
-                  <span className="ui-muted">Only files in</span>
-                  {LAYERS.filter((l) => summary.byLayer[l] > 0).map((l) => (
-                    <LayerFilter
-                      key={l}
-                      layer={l}
-                      count={summary.byLayer[l]}
-                      active={layerFilter.includes(l)}
-                      onToggle={() => toggleLayerFilter(l)}
-                    />
-                  ))}
-                  {layerFilter.length > 0 && (
-                    <Button variant="link" small onClick={clearLayerFilter}>
-                      clear
-                    </Button>
-                  )}
-                </span>
-              )}
           </div>
         )}
       </div>
     </header>
-  );
-}
-
-function LayerFilter({
-  layer,
-  count,
-  active,
-  onToggle,
-}: {
-  layer: Layer;
-  count: number;
-  active: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`pr-filter-item${active ? ' is-active' : ''}`}
-      aria-pressed={active}
-      title={layerTitle(layer)}
-      onClick={onToggle}
-    >
-      <StatusLetter
-        letter={LAYER_GLYPH[layer]}
-        tone={LAYER_TONE[layer]}
-        label={LAYER_LABEL[layer]}
-      />
-      {LAYER_LABEL[layer]}
-      <Counter n={count} />
-    </button>
   );
 }

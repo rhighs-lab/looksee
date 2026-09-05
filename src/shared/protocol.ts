@@ -213,6 +213,7 @@ export interface Pin {
 export interface Resolved {
   kind: Endpoint['kind'];
   oid: string;
+  commit: string | null;
   short: string;
   label: string;
 }

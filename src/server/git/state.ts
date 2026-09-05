@@ -98,6 +98,31 @@ export function planScope(scope: Layer, refs: RepoRefs): ScopePlan | null {
   }
 }
 
+async function isAncestor(
+  repoRoot: string,
+  older: string,
+  newer: string
+): Promise<boolean> {
+  try {
+    await git(repoRoot, ['merge-base', '--is-ancestor', older, newer]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function clampToBaseline(
+  repoRoot: string,
+  plan: ScopePlan | null,
+  cmp: ResolvedComparison | null
+): Promise<ScopePlan | null> {
+  const base = cmp?.baseline.commit;
+  if (!plan || !base || plan.from === 'INDEX') return plan;
+  return (await isAncestor(repoRoot, plan.from, base))
+    ? { ...plan, from: base }
+    : plan;
+}
+
 export async function scopePatch(
   repoRoot: string,
   scope: Scope,
@@ -110,7 +135,10 @@ export async function scopePatch(
     if (!cmp) throw new Error('no comparison');
     return treeDiffPatch(repoRoot, cmp.baseline.oid, cmp.endpoint.oid, paths);
   }
-  const plan = planScope(scope, refs);
+  const plan =
+    scope === 'local' || scope === 'pushed'
+      ? await clampToBaseline(repoRoot, planScope(scope, refs), cmp)
+      : planScope(scope, refs);
   if (!plan) return '';
   const want = paths.length ? new Set(paths) : null;
   const conflicted = status.filter((e) => e.unmerged).map((e) => e.path);
@@ -134,14 +162,38 @@ function layerKind(e: StatusEntry, side: 'index' | 'worktree'): ChangeKind {
   return kindFromCode(side === 'index' ? e.index : e.worktree);
 }
 
+export function layersInComparison(
+  cmp: ResolvedComparison,
+  refs: RepoRefs
+): Set<Layer> {
+  const stage = (k: Endpoint['kind']) =>
+    k === 'worktree' ? 2 : k === 'index' ? 1 : 0;
+  const b = stage(cmp.baseline.kind);
+  const e = stage(cmp.endpoint.kind);
+  const out = new Set<Layer>();
+  if (b === 0 && cmp.baseline.commit !== refs.head.sha) {
+    out.add('local');
+    out.add('pushed');
+  }
+  if (b === 0 && e >= 1) out.add('staged');
+  if (b <= 1 && e >= 2) out.add('unstaged');
+  if (e >= 2) {
+    out.add('untracked');
+    out.add('conflicted');
+  }
+  return out;
+}
+
 export function composeFiles(
   cumulative: ParsedFile[],
   status: StatusEntry[],
   local: { path: string; oldPath: string | null; code: string }[],
-  pushed: { path: string; oldPath: string | null; code: string }[]
+  pushed: { path: string; oldPath: string | null; code: string }[],
+  allow: Set<Layer> | null = null
 ): ChangedFile[] {
   const layersByPath = new Map<string, LayerChange[]>();
   const add = (p: string, lc: LayerChange) => {
+    if (allow && !allow.has(lc.layer)) return;
     const list = layersByPath.get(p) ?? [];
     list.push(lc);
     layersByPath.set(p, list);
@@ -204,6 +256,7 @@ export function composeFiles(
   }
   for (const [p, layers] of layersByPath) {
     if (seen.has(p)) continue;
+    if (!layers.length) continue;
     if (layers.every((l) => l.layer === 'pushed')) continue;
     out.push({
       path: p,
@@ -328,8 +381,10 @@ export async function computeRepoState(
     refs,
     status
   );
-  const localPlan = planScope('local', refs);
-  const pushedPlan = planScope('pushed', refs);
+  const [localPlan, pushedPlan] = await Promise.all([
+    clampToBaseline(repoRoot, planScope('local', refs), comparison),
+    clampToBaseline(repoRoot, planScope('pushed', refs), comparison),
+  ]);
   const [cumulativeText, local, pushed] = await Promise.all([
     scopePatch(repoRoot, 'cumulative', refs, status, [], comparison),
     localPlan && refs.head.sha && localPlan.from !== 'INDEX'
@@ -339,7 +394,13 @@ export async function computeRepoState(
       ? nameStatus(repoRoot, pushedPlan.from, pushedPlan.to).catch(() => [])
       : Promise.resolve([]),
   ]);
-  const files = composeFiles(parsePatch(cumulativeText), status, local, pushed);
+  const files = composeFiles(
+    parsePatch(cumulativeText),
+    status,
+    local,
+    pushed,
+    comparison ? layersInComparison(comparison, refs) : null
+  );
   return {
     version,
     repoRoot,

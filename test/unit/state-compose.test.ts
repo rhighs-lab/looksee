@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { parsePatch } from '@/server/git/diff-parser.js';
 import { isSafeRef } from '@/server/git/exec.js';
-import { composeFiles, summarize } from '@/server/git/state.js';
+import {
+  composeFiles,
+  layersInComparison,
+  summarize,
+} from '@/server/git/state.js';
 import { parseStatus } from '@/server/git/status.js';
+import type {
+  Endpoint,
+  Layer,
+  RepoRefs,
+  ResolvedComparison,
+} from '@/shared/protocol.js';
 
 const z = (...recs: string[]) => `${recs.join('\0')}\0`;
 
@@ -85,6 +95,57 @@ describe('composeFiles', () => {
       additions: 0,
     });
     expect(f!.layers.map((l) => l.layer)).toEqual(['staged', 'unstaged']);
+  });
+
+  it('drops layers the comparison does not cover', () => {
+    const status = parseStatus(
+      z(
+        '1 .M N... 100644 100644 100644 a b src/a.js',
+        '1 M. N... 100644 100644 100644 a b src/staged.js'
+      )
+    );
+    const files = composeFiles(
+      parsePatch(PATCH),
+      status,
+      [{ path: 'src/local-only.js', oldPath: null, code: 'M' }],
+      [],
+      new Set<Layer>(['staged', 'unstaged', 'untracked', 'conflicted'])
+    );
+    expect(files.some((f) => f.path === 'src/local-only.js')).toBe(false);
+    expect(summarize(files).byLayer.local).toBe(0);
+  });
+});
+
+describe('layersInComparison', () => {
+  const refs = { head: { sha: 'headsha' } } as RepoRefs;
+  const cmp = (
+    baseline: [Endpoint['kind'], string],
+    endpoint: Endpoint['kind']
+  ) =>
+    ({
+      baseline: { kind: baseline[0], commit: baseline[1], oid: 'tree' },
+      endpoint: { kind: endpoint, commit: null, oid: 'x' },
+    }) as ResolvedComparison;
+
+  it('drops the commit layers when the baseline is HEAD', () => {
+    expect([
+      ...layersInComparison(cmp(['head', 'headsha'], 'worktree'), refs),
+    ]).toEqual(['staged', 'unstaged', 'untracked', 'conflicted']);
+  });
+
+  it('keeps every layer when the baseline is an older commit', () => {
+    const got = layersInComparison(
+      cmp(['merge-base', 'base'], 'worktree'),
+      refs
+    );
+    expect(got.has('local')).toBe(true);
+    expect(got.has('staged')).toBe(true);
+    expect(got.has('unstaged')).toBe(true);
+  });
+
+  it('stops at the index when the endpoint is the index', () => {
+    const got = layersInComparison(cmp(['head', 'headsha'], 'index'), refs);
+    expect([...got]).toEqual(['staged']);
   });
 });
 

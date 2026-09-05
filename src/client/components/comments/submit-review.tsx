@@ -39,6 +39,14 @@ export function SubmitReview({
     ta.current?.focus();
   }, []);
 
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const submit = async () => {
     if (busy) return;
     setBusy(true);
@@ -91,9 +99,7 @@ export function SubmitReview({
       />
       {err && <div className="comment-error">{err}</div>}
       <div className="comment-compose-actions">
-        <Button onClick={onClose} disabled={busy}>
-          Cancel
-        </Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={busy}>
           Submit review
         </Button>
