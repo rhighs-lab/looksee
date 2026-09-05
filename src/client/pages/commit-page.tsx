@@ -45,7 +45,8 @@ export function CommitPage({ sha }: { sha: string }) {
         <div className="pr-subnav-inner">
           <div className="pr-title-row">
             <a className="back-link" href="/">
-              <ArrowLeft width={14} height={14} /> Review
+              <ArrowLeft width={14} height={14} />
+              Review
             </a>
             <h1 className="pr-title ui-mono">{sha.slice(0, 7)}</h1>
             {data && (

@@ -10,7 +10,6 @@
   /* Height of the sticky subnav; used to offset sticky file headers, the tree
      pane, and scroll anchors. Kept in sync with the subnav's rendered height. */
   --subnav-h: 62px;
-  /* Breathing room above the first file card and between cards. */
   --file-gap: 2em;
 }
 
@@ -373,8 +372,6 @@ body {
 
 .file-header {
   position: sticky;
-  /* the 1px overlap swallows any sub-pixel rounding in the measured subnav
-     height, which otherwise leaves a sliver of scrolling rows showing above */
   top: calc(var(--subnav-h, 62px) - 1px);
   z-index: 10;
   display: flex;
@@ -383,16 +380,11 @@ body {
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
   border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  /* nested inside the card's 1px border, so one pixel tighter than its 6px
-     or the two arcs do not sit concentric */
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   font-size: 12px;
 }
 
-/* the sticky header is its own stacking context, so a tooltip or popover
-   inside it cannot rise above the next file's header on its own; lift the
-   whole header while one is showing, staying under the subnav at 20 */
 .file-header:has(.menu),
 .file-header:has([data-tooltip]:hover),
 .file-header:has([data-tooltip]:focus-visible) {
@@ -830,10 +822,7 @@ body {
   position: relative;
 }
 
-/* the hover "+" in the gutter (shown only when commenting is enabled).
-   the selector carries the gutter class so it outweighs [data-tooltip]'s
-   position: relative, which would otherwise put the button in flow and grow
-   the row by a pixel or two as it appears */
+/* the hover "+" in the gutter (shown only when commenting is enabled) */
 .commentable .add-comment {
   position: absolute;
   top: 1px;
@@ -1072,10 +1061,18 @@ body {
 
 /* ---- File page --------------------------------------------------------- */
 .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--fgColor-accent, #0969da);
   text-decoration: none;
   white-space: nowrap;
+}
+
+.back-link svg {
+  fill: currentColor;
+  flex: none;
 }
 
 .back-link:hover {
@@ -1550,8 +1547,6 @@ body {
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
   border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  /* nested inside the card's 1px border, so one pixel tighter than its 6px
-     or the two arcs do not sit concentric */
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   font-size: 12px;
@@ -1950,8 +1945,6 @@ kbd {
   border-radius: 50%;
 }
 
-/* an agent reads as a chip, a person as a disc; the identicon inside carries
-   the identity, the outline carries the kind */
 .avatar-agent {
   border-radius: 5px;
 }
@@ -2268,8 +2261,6 @@ kbd {
   background-color: var(--bgColor-default, #fff);
   border-left: 1px solid var(--borderColor-default, #d1d9e0);
   box-shadow: var(--shadow-floating-medium, 0 8px 24px rgba(31, 35, 40, 0.2));
-  /* leaves on a shorter, sharper curve than it enters, so dismissing feels
-     immediate while opening still settles */
   transform: translateX(100%);
   transition: transform 0.16s cubic-bezier(0.4, 0, 1, 1);
 }
