@@ -384,6 +384,15 @@ body {
   font-size: 12px;
 }
 
+/* the sticky header is its own stacking context, so a tooltip or popover
+   inside it cannot rise above the next file's header on its own; lift the
+   whole header while one is showing, staying under the subnav at 20 */
+.file-header:has(.menu),
+.file-header:has([data-tooltip]:hover),
+.file-header:has([data-tooltip]:focus-visible) {
+  z-index: 19;
+}
+
 .file.is-collapsed .file-header {
   border-bottom: none;
   border-bottom-left-radius: 6px;
@@ -815,8 +824,11 @@ body {
   position: relative;
 }
 
-/* the hover "+" in the gutter (shown only when commenting is enabled) */
-.add-comment {
+/* the hover "+" in the gutter (shown only when commenting is enabled).
+   the selector carries the gutter class so it outweighs [data-tooltip]'s
+   position: relative, which would otherwise put the button in flow and grow
+   the row by a pixel or two as it appears */
+.commentable .add-comment {
   position: absolute;
   top: 1px;
   right: 2px;
