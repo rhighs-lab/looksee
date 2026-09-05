@@ -32,13 +32,11 @@ export function Header({
   title,
   left,
   right,
-  below,
   filters = true,
 }: {
   title?: ReactNode;
   left?: ReactNode;
   right?: ReactNode;
-  below?: ReactNode;
   filters?: boolean;
 }) {
   const state = useReview((s) => s.state);
@@ -241,7 +239,6 @@ export function Header({
           </div>
         )}
       </div>
-      {below}
     </header>
   );
 }

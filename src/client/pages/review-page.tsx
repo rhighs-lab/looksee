@@ -27,7 +27,6 @@ export interface ReviewPageProps {
   fileCommentsFor?: ((file: ChangedFile) => ReactNode) | undefined;
   onFileComment?: ((path: string) => void) | undefined;
   headerRight?: ReactNode;
-  headerBelow?: ReactNode;
 }
 
 export function ReviewPage({
@@ -35,7 +34,6 @@ export function ReviewPage({
   fileCommentsFor,
   onFileComment,
   headerRight,
-  headerBelow,
 }: ReviewPageProps) {
   useSubnavHeight();
   const status = useReview((s) => s.status);
@@ -89,7 +87,7 @@ export function ReviewPage({
 
   return (
     <>
-      <Header right={headerRight} below={headerBelow} />
+      <Header right={headerRight} />
       <div className="review-layout">
         {files.length > 0 && (
           <TreePane
