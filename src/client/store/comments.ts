@@ -352,7 +352,9 @@ export const useComments = create<CommentsStore>((set, get) => {
           putReview(b.review);
           return;
         }
-        useReview.getState().showToast('Could not start the review');
+        useReview
+          .getState()
+          .showToast(`Could not start the review: ${(err as Error).message}`);
       }
     },
 
