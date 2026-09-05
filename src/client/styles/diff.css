@@ -2295,8 +2295,10 @@ kbd {
 }
 
 .comments-panel-anchor {
-  display: block;
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
   text-align: left;
   padding: 2px 0 6px;
   border: 0;
@@ -2304,6 +2306,23 @@ kbd {
   font-size: 11px;
   color: var(--fgColor-accent, #0969da);
   cursor: pointer;
+}
+
+.comments-panel-anchor svg {
+  fill: currentColor;
+  flex: none;
+}
+
+.comments-panel-group {
+  margin: 4px 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.comments-panel-group:not(:first-child) {
+  margin-top: 20px;
 }
 
 .comments-panel-anchor:hover {
