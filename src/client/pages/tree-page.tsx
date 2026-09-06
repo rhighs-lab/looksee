@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
+import { PageError } from '@/client/components/empty-state.js';
 import { ArrowLeft, File as FileIcon } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import {
@@ -82,7 +83,13 @@ export function TreePage({ sha }: { sha: string }) {
           </TreePane>
         )}
         <main className="diff-container">
-          {error && <Notice tone="danger">{error}</Notice>}
+          {error && (
+            <PageError
+              error={error}
+              what="tree"
+              back={{ href: '/', label: 'Back to the review' }}
+            />
+          )}
           {!data && !error && <Loading label="Reading the tree…" />}
           {data && (
             <Notice>

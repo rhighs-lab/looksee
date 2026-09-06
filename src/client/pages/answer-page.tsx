@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
 import { AnswerCard, hitAnchor } from '@/client/components/answer-card.js';
 import { Avatar } from '@/client/components/comments/avatar.js';
+import { PageError } from '@/client/components/empty-state.js';
 import { ArrowLeft, File as FileIcon } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import {
@@ -164,7 +165,13 @@ export function AnswerPage({ id }: { id: string }) {
           </TreePane>
         )}
         <main className="diff-container">
-          {error && <Notice tone="danger">{error}</Notice>}
+          {error && (
+            <PageError
+              error={error}
+              what="answer"
+              back={{ href: '/', label: 'Back to the review' }}
+            />
+          )}
           {!answer && !error && <Loading label="Reading the answer…" />}
           {shown.map(({ hit, index }) => (
             <AnswerCard

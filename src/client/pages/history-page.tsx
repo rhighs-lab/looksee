@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/client/api/client.js';
+import { PageError } from '@/client/components/empty-state.js';
 import { ArrowLeft, CommitIcon, Copy } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import { People } from '@/client/components/people.js';
@@ -54,7 +55,13 @@ export function HistoryPage({ pathname }: { pathname: string }) {
       </header>
       <div className="review-layout tree-hidden">
         <main className="diff-container">
-          {error && <Notice tone="danger">{error}</Notice>}
+          {error && (
+            <PageError
+              error={error}
+              what="history"
+              back={{ href: '/', label: 'Back to the review' }}
+            />
+          )}
           {!data && !error && <Loading label="Reading the history…" />}
           {data && !data.commits.length && (
             <Notice>No commits touch this file yet.</Notice>

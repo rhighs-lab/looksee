@@ -4,7 +4,7 @@ import { Button } from '@/client/ui/index.js';
 import type { Scope } from '@/shared/protocol.js';
 import { LAYER_LABEL } from '@/shared/protocol.js';
 
-function Shell({
+export function Shell({
   icon,
   title,
   children,
@@ -83,6 +83,39 @@ export function CleanEmpty({ base }: { base: string }) {
     >
       The working tree is clean and this branch matches <code>{base}</code>.
       Edits show up here the moment you save.
+    </Shell>
+  );
+}
+
+const GONE = /^(not found|no repo|bad path|invalid sha|bad params)$/i;
+
+/**
+ * A failed page, said in words. Server strings like "not found" are for the
+ * API's callers, not for someone who opened a link that no longer resolves.
+ */
+export function PageError({
+  error,
+  what,
+  back,
+}: {
+  error: string;
+  what: string;
+  back: { href: string; label: string };
+}) {
+  const gone = GONE.test(error.trim());
+  return (
+    <Shell
+      icon={<Search width={22} height={22} />}
+      title={gone ? `That ${what} is not here` : `Could not open this ${what}`}
+      actions={
+        <a className="ui-btn ui-btn-small" href={back.href}>
+          {back.label}
+        </a>
+      }
+    >
+      {gone
+        ? `It may have been renamed, deleted, or belong to a different branch.`
+        : error}
     </Shell>
   );
 }

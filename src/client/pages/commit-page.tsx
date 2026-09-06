@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
 import { useCommentSlots } from '@/client/components/comments/use-comment-slots.js';
+import { PageError } from '@/client/components/empty-state.js';
 import { DiffStat, FileCard } from '@/client/components/file-card.js';
 import {
   ArrowLeft,
@@ -120,7 +121,13 @@ export function CommitPage({ sha }: { sha: string }) {
           </TreePane>
         )}
         <main className="diff-container">
-          {error && <Notice tone="danger">{error}</Notice>}
+          {error && (
+            <PageError
+              error={error}
+              what="commit"
+              back={{ href: '/', label: 'Back to the review' }}
+            />
+          )}
           {!data && !error && <Loading label="Reading the commit…" />}
           {data && (
             <section className="commit-detail">

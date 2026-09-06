@@ -19,6 +19,7 @@ import {
   type LineSlots,
 } from '@/client/components/diff/diff-table.js';
 import { EditorLink } from '@/client/components/editor-link.js';
+import { PageError } from '@/client/components/empty-state.js';
 import {
   FileFinder,
   useFileFinderHotkey,
@@ -470,7 +471,13 @@ export function FilePage({ pathname }: { pathname: string }) {
           )}
         </TreePane>
         <main className="diff-container">
-          {error && <Notice tone="danger">{error}</Notice>}
+          {error && (
+            <PageError
+              error={error}
+              what="file"
+              back={{ href: '/', label: 'Back to the review' }}
+            />
+          )}
           {!view && !error && <Loading label="Opening the file…" />}
           {view && <LastCommit filePath={filePath} />}
           {view && diff && (
