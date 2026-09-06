@@ -88,11 +88,7 @@ Diff comparison modes include:
 
 ![answer](assets/answer.jpg)
 
-**Code answers.** Ask an agent where something happens, or who calls a
-function, and it publishes the answer here instead of a list of paths you
-open one at a time. Every place is a card with the code, the agent's line on
-why it matters, and the answering lines tinted. The tree on the left indexes
-them; the usual expanders, editor and forge links are on each card.
+**Code answers.** Ask an agent where something happens and it answers here, as code, instead of a list of paths.
 
 ```sh
 looksee answer "who calls git()?" \
