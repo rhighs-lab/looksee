@@ -159,6 +159,7 @@ export interface DiffLine {
   content: string;
   html?: string;
   layer?: Layer;
+  hit?: boolean;
 }
 
 export interface Hunk {
@@ -317,6 +318,34 @@ export type Appearance = (typeof APPEARANCES)[number];
 export interface UiPrefs {
   theme: Theme | null;
   appearance: Appearance | null;
+}
+
+export interface AnswerHit {
+  path: string;
+  symbol: string | null;
+  startLine: number;
+  endLine: number;
+  role: string | null;
+  why: string | null;
+  group: string | null;
+}
+
+export interface Answer {
+  id: string;
+  repoRoot: string;
+  question: string;
+  summary: string;
+  author: string;
+  hits: AnswerHit[];
+  createdAt: string;
+}
+
+export interface DecoratedAnswer extends Answer {
+  summaryHtml: string;
+}
+
+export interface AnswersResponse {
+  answers: Answer[];
 }
 
 export type CommentSide = 'new' | 'old' | 'file';

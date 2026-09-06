@@ -1,5 +1,6 @@
 import { type FlagSpec, HELP_FLAG, type Parsed } from '@/cli/args.js';
 import { runAgent } from '@/cli/cmd/agent.js';
+import { runAnswer } from '@/cli/cmd/answer.js';
 import { runComment } from '@/cli/cmd/comment.js';
 import { runComments } from '@/cli/cmd/comments.js';
 import { runInit } from '@/cli/cmd/init.js';
@@ -311,6 +312,38 @@ const COMMANDS: CommandSpec[] = [
         '{ running, url, pid, pendingReviews, openThreads, scope, openedAt, approvedAt, drift }: pins as short shas or null',
     },
     runStatus
+  ),
+  placeholder(
+    {
+      name: 'answer',
+      example:
+        'looksee answer "who calls git()?" --hit src/server/git/refs.ts:10-14 --why "every ref lookup"',
+      summary: 'Publish a code answer to the browser as a navigable map',
+      args: '[question]',
+      flags: [
+        {
+          name: 'hit',
+          takesValue: true,
+          help: 'A place that answers it: <file>:<line>[-<line>]. Repeatable',
+        },
+        {
+          name: 'why',
+          takesValue: true,
+          help: 'One line on what the matching --hit does. Repeatable, paired in order',
+        },
+        {
+          name: 'summary',
+          takesValue: true,
+          help: 'The prose answer shown above the map',
+        },
+        AS,
+        PRETTY,
+      ],
+      output: 'The stored answer plus { url } to open it',
+      notes:
+        'Without --hit, reads a JSON body on stdin: { question, summary, hits: [{ path, startLine, endLine, symbol, role, why, group }] }. Use stdin for anything with more than a handful of places',
+    },
+    runAnswer
   ),
   placeholder(
     {

@@ -9,6 +9,7 @@ export interface Parsed {
   cmd: string[];
   positionals: string[];
   flags: Record<string, string | boolean>;
+  repeated: Record<string, string[]>;
 }
 
 export interface Resolvable {
@@ -62,7 +63,7 @@ export const parseArgv = (argv: string[], specs: Resolvable[]): Parsed => {
   }
   const own = specs.find((s) => s.name === cmd.join(' '))?.flags ?? [];
   const flags = cmd.length ? [...own, HELP_FLAG] : [HELP_FLAG, VERSION_FLAG];
-  const out: Parsed = { cmd, positionals: [], flags: {} };
+  const out: Parsed = { cmd, positionals: [], flags: {}, repeated: {} };
   let rest = false;
   for (; i < argv.length; i++) {
     const tok = argv[i]!;
@@ -84,6 +85,7 @@ export const parseArgv = (argv: string[], specs: Resolvable[]): Parsed => {
     const val = inline ?? argv[++i];
     if (val === undefined) throw new Error(`--${spec.name} needs a value`);
     out.flags[spec.name] = val;
+    (out.repeated[spec.name] ??= []).push(val);
   }
   return out;
 };

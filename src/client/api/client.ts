@@ -1,9 +1,11 @@
 import type {
+  AnswersResponse,
   BranchesResponse,
   CommitDetailResponse,
   CommitsResponse,
   Comparison,
   ContextResponse,
+  DecoratedAnswer,
   DecoratedComment,
   DiffResponse,
   FileInfoResponse,
@@ -173,6 +175,17 @@ export const api = {
   uiPrefs: () => request<UiPrefs>('GET', '/api/ui-prefs'),
   setUiPrefs: (patch: Partial<UiPrefs>) =>
     request<UiPrefs>('POST', '/api/ui-prefs', patch),
+  answers: () => request<AnswersResponse>('GET', '/api/answers'),
+  answer: (id: string) =>
+    request<{ answer: DecoratedAnswer }>(
+      'GET',
+      `/api/answers/${encodeURIComponent(id)}`
+    ),
+  deleteAnswer: (id: string) =>
+    request<{ ok: boolean }>(
+      'DELETE',
+      `/api/answers/${encodeURIComponent(id)}`
+    ),
   listReviews: () => request<ReviewsResponse>('GET', '/api/reviews'),
   startReview: (branch: string | null) =>
     request<{ review: Review; guard: string }>('POST', '/api/reviews', {

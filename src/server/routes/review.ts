@@ -7,6 +7,13 @@ import { getBlobLines } from '@/server/git/blobs.js';
 import { resolveComparison } from '@/server/git/comparison.js';
 import { safeRelPath } from '@/server/git/paths.js';
 import {
+  deleteAnswer,
+  getAnswer,
+  listAnswers,
+  parseHits,
+  saveAnswer,
+} from '@/server/review/answers.js';
+import {
   ATTACHMENT_NAME,
   attachmentsDir,
   ensureExcluded,
@@ -136,6 +143,42 @@ export function reviewRoutes(ctx: AppContext): Hono {
     if (actor !== undefined && !ACTOR.test(actor))
       return c.json({ error: 'invalid actor' }, 400);
     await next();
+  });
+
+  app.get('/api/answers', async (c) => {
+    if (!repoRoot) return c.json({ answers: [] });
+    return c.json({ answers: await listAnswers(repoRoot) });
+  });
+
+  app.get('/api/answers/:id', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const answer = await getAnswer(repoRoot, c.req.param('id'));
+    if (!answer) return c.json({ error: 'not found' }, 404);
+    return c.json({
+      answer: { ...answer, summaryHtml: renderMarkdown(answer.summary) },
+    });
+  });
+
+  app.post('/api/answers', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    const b = await body(c);
+    const question = str(b['question']);
+    if (!question) return c.json({ error: 'question is required' }, 400);
+    const hits = parseHits(b['hits']);
+    if (!hits.length)
+      return c.json({ error: 'at least one hit with a path and line' }, 400);
+    const answer = await saveAnswer(repoRoot, {
+      question,
+      summary: str(b['summary']) ?? '',
+      author: actorOf(c),
+      hits,
+    });
+    return c.json({ answer });
+  });
+
+  app.delete('/api/answers/:id', async (c) => {
+    if (!repoRoot) return c.json({ error: 'no repo' }, 400);
+    return c.json({ ok: await deleteAnswer(repoRoot, c.req.param('id')) });
   });
 
   app.get('/api/reviews', async (c) => {

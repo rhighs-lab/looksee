@@ -49,6 +49,8 @@ const layerCls = (line: DiffLine, tint: boolean): string =>
 const arrivedCls = (mark: number | undefined): string =>
   mark === undefined ? '' : ' line-arrived';
 
+const hitCls = (line: DiffLine): string => (line.hit ? ' line-hit' : '');
+
 function Code({
   line,
   tint,
@@ -60,7 +62,7 @@ function Code({
 }) {
   return (
     <td
-      className={`blob-code ${CODE_CLS[line.type]}${layerCls(line, tint)}${arrivedCls(mark)}`}
+      className={`blob-code ${CODE_CLS[line.type]}${layerCls(line, tint)}${arrivedCls(mark)}${hitCls(line)}`}
       data-arrival={mark}
     >
       <span className="blob-code-inner">
@@ -94,7 +96,7 @@ function Num({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the inner add-comment button is the keyboard path
     <td
-      className={`blob-num ${NUM_CLS[line.type]}${layerCls(line, tint)}${commentable ? ' commentable' : ''}${arrivedCls(mark)}`}
+      className={`blob-num ${NUM_CLS[line.type]}${layerCls(line, tint)}${commentable ? ' commentable' : ''}${arrivedCls(mark)}${hitCls(line)}`}
       data-arrival={mark}
       data-line-number={n ?? undefined}
       data-side={commentable ? side : undefined}

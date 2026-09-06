@@ -2428,3 +2428,47 @@ a.commit-row:hover {
 .empty-state-hint {
   font-size: 12px;
 }
+
+/* ---- answers ------------------------------------------------------------- */
+.answer-summary {
+  max-height: 30vh;
+  margin-top: 8px;
+  overflow-y: auto;
+  font-size: 13.5px;
+}
+
+.answer-summary > *:first-child {
+  margin-top: 0;
+}
+
+.answer-summary > *:last-child {
+  margin-bottom: 0;
+}
+
+.tree-symbol {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.answer-symbol {
+  color: var(--fgColor-accent, #0969da);
+}
+
+.answer-line {
+  font-size: 12px;
+}
+
+.answer-why {
+  margin: 0;
+  padding: 9px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.blob-code.line-hit,
+.blob-num.line-hit {
+  background-color: var(--bgColor-accent-muted, #ddf4ff);
+}

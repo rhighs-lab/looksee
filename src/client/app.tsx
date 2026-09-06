@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AnswerPage } from '@/client/pages/answer-page.js';
 import { CommitPage } from '@/client/pages/commit-page.js';
 import { FilePage } from '@/client/pages/file-page.js';
 import { ReviewWithComments } from '@/client/pages/review-with-comments.js';
@@ -19,6 +20,8 @@ export function App() {
   const path = usePath();
   useEffect(() => init(), [init]);
   if (path.startsWith('/file/')) return <FilePage pathname={path} />;
+  if (path.startsWith('/answer/'))
+    return <AnswerPage id={path.slice('/answer/'.length)} />;
   if (path.startsWith('/commit/'))
     return <CommitPage sha={path.slice('/commit/'.length)} />;
   return <ReviewWithComments />;
