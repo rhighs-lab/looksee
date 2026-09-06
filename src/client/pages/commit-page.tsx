@@ -5,7 +5,7 @@ import { ArrowLeft } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import { useSubnavHeight } from '@/client/components/tree-pane.js';
 import { relativeTime } from '@/client/lib/format.js';
-import { Notice } from '@/client/ui/index.js';
+import { LinkButton, Notice } from '@/client/ui/index.js';
 import type { ChangedFile, CommitDetailResponse } from '@/shared/protocol.js';
 
 const asChanged = (f: CommitDetailResponse['files'][number]): ChangedFile => ({
@@ -44,10 +44,10 @@ export function CommitPage({ sha }: { sha: string }) {
       <header className="pr-subnav">
         <div className="pr-subnav-inner">
           <div className="pr-title-row">
-            <a className="back-link" href="/">
-              <ArrowLeft width={14} height={14} />
+            <LinkButton className="back-link" href="/">
+              <ArrowLeft width={12} height={12} />
               Review
-            </a>
+            </LinkButton>
             <h1 className="pr-title ui-mono">{sha.slice(0, 7)}</h1>
             {data && (
               <span className="commit-title">{data.commit.subject}</span>

@@ -86,6 +86,27 @@ Diff comparison modes include:
 
 **File view.** 
 
+![answer](assets/answer.jpg)
+
+**Code answers.** Ask an agent where something happens, or who calls a
+function, and it publishes the answer here instead of a list of paths you
+open one at a time. Every place is a card with the code, the agent's line on
+why it matters, and the answering lines tinted. The tree on the left indexes
+them; the usual expanders, editor and forge links are on each card.
+
+```sh
+looksee answer "who calls git()?" \
+  --hit src/server/git/refs.ts:10-14 --why "every ref lookup funnels here"
+```
+
+Larger answers go in as JSON on stdin, which is the path an agent takes:
+
+```sh
+echo '{"question":"...","summary":"markdown","hits":[
+  {"path":"src/a.ts","startLine":10,"endLine":20,
+   "symbol":"readPrefs","role":"reads disk","why":"..."}]}' | looksee answer
+```
+
 ## CLI
 
 | Command | What it does |
@@ -95,12 +116,13 @@ Diff comparison modes include:
 | `looksee review . --scope <preset>` | Open on `session`, `working` or `branch` |
 | `looksee status` | Server, pending reviews, open threads and session pins |
 | `looksee stop` | Shut down the server for this repo |
+| `looksee ps` | List the looksee servers running on this machine |
 | `looksee listen` | Stream review events as JSON lines until killed |
 | `looksee comments` | List threads with replies and an `expects` hint |
 | `looksee reply <id> [body]` | Reply to a thread, body from the argument or stdin |
 | `looksee resolve <id>` | Mark a thread resolved |
 | `looksee comment <file>:<line>[-<line>] <body>` | Post a single comment outside a review |
-| `looksee done [body]` | Record that the actor addressed the current round |
+| `looksee answer [question] --hit <file>:<line>` | Publish a code answer as a navigable map |
 | `looksee review start` | Open a pending review for the actor |
 | `looksee review comment <file>:<line> <body>` | Add a draft to the pending review |
 | `looksee review submit --verdict <v> [body]` | Submit with `comment`, `approve` or `request_changes` |

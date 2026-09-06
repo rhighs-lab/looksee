@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/client/api/client.js';
+import { Avatar } from '@/client/components/comments/avatar.js';
 import { DiffTable } from '@/client/components/diff/diff-table.js';
+import { ExpandAllButton } from '@/client/components/diff/expand-all.js';
 import type { Dir, GapInfo } from '@/client/components/diff/rows.js';
 import { EditorLink } from '@/client/components/editor-link.js';
+import { FileCommits } from '@/client/components/file-commits.js';
+import { FileInfo } from '@/client/components/file-info.js';
 import { ForgeLink } from '@/client/components/forge-link.js';
-import { ChevronDown } from '@/client/components/icons.js';
+import { ChevronDown, Copy } from '@/client/components/icons.js';
 import { fileAnchor } from '@/client/lib/anchors.js';
 import type { Expansions } from '@/client/store/review.js';
 import { Button, Label, LinkButton } from '@/client/ui/index.js';
@@ -111,14 +115,25 @@ function useLocalExpansion(diff: FileDiff | null) {
     [diff]
   );
 
-  return { expansions, expand, loading };
+  const collapseAll = useCallback(() => setExpansions({}), []);
+
+  return { expansions, expand, collapseAll, loading };
 }
 
-export function AnswerCard({ hit, index }: { hit: AnswerHit; index: number }) {
+export function AnswerCard({
+  hit,
+  index,
+  author,
+}: {
+  hit: AnswerHit;
+  index: number;
+  author: string;
+}) {
   const [open, setOpen] = useState(true);
   const [diff, setDiff] = useState<FileDiff | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { expansions, expand, loading } = useLocalExpansion(diff);
+  const { expansions, expand, collapseAll, loading } = useLocalExpansion(diff);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -139,6 +154,13 @@ export function AnswerCard({ hit, index }: { hit: AnswerHit; index: number }) {
       alive = false;
     };
   }, [hit.path, hit.startLine, hit.endLine]);
+
+  const copyPath = () => {
+    void navigator.clipboard?.writeText(hit.path).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    });
+  };
 
   return (
     <div
@@ -162,6 +184,17 @@ export function AnswerCard({ hit, index }: { hit: AnswerHit; index: number }) {
           <span className="file-path ui-mono" title={hit.path}>
             {hit.path}
           </span>
+          <Button
+            variant="invisible"
+            icon
+            small
+            className={copied ? 'copied' : ''}
+            title="Copy path"
+            aria-label="Copy path"
+            onClick={copyPath}
+          >
+            <Copy />
+          </Button>
           {hit.symbol && (
             <span className="answer-symbol ui-mono">{hit.symbol}</span>
           )}
@@ -171,15 +204,30 @@ export function AnswerCard({ hit, index }: { hit: AnswerHit; index: number }) {
             {hit.endLine !== hit.startLine ? `-${hit.endLine}` : ''}
           </span>
         </span>
+        <FileCommits path={hit.path} oldPath={null} />
+        <FileInfo path={hit.path} />
         <EditorLink filePath={hit.path} line={hit.startLine} />
         <ForgeLink filePath={hit.path} line={hit.startLine} />
+        {diff && (
+          <ExpandAllButton
+            diff={diff}
+            expansions={expansions}
+            expand={(gap, dir) => void expand(gap, dir)}
+            collapseAll={collapseAll}
+          />
+        )}
         <LinkButton href={`/file/${hit.path}#L${hit.startLine}`}>
           View file
         </LinkButton>
       </div>
       {open && (
         <div className="file-body">
-          {hit.why && <p className="answer-why">{hit.why}</p>}
+          {hit.why && (
+            <p className="answer-why">
+              <Avatar author={author} />
+              <span>{hit.why}</span>
+            </p>
+          )}
           {error && <p className="answer-why ui-attention">{error}</p>}
           {diff && (
             <DiffTable

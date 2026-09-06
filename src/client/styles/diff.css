@@ -1068,22 +1068,7 @@ body {
 
 /* ---- File page --------------------------------------------------------- */
 .back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--fgColor-accent, #0969da);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.back-link svg {
-  fill: currentColor;
-  flex: none;
-}
-
-.back-link:hover {
-  text-decoration: underline;
+  gap: 5px;
 }
 
 .crumbs {
@@ -2471,4 +2456,35 @@ a.commit-row:hover {
 .blob-code.line-hit,
 .blob-num.line-hit {
   background-color: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.answer-summary {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.answer-why {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.answer-why .avatar,
+.answer-summary .avatar {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* answers show one line number, not an old/new pair: collapse the old column
+   through the colgroup, since hiding the cell breaks the fixed table layout */
+.answer-card .diff-table-unified .col-num:first-child {
+  width: 0;
+}
+
+.answer-card .blob-num-context:first-child {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
 }

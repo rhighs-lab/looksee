@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
 import { AnswerCard, hitAnchor } from '@/client/components/answer-card.js';
+import { Avatar } from '@/client/components/comments/avatar.js';
 import { ArrowLeft, File as FileIcon } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import {
@@ -10,7 +11,7 @@ import {
 } from '@/client/components/tree-pane.js';
 import { relativeTime } from '@/client/lib/format.js';
 import { buildTree } from '@/client/lib/tree.js';
-import { Counter, Notice } from '@/client/ui/index.js';
+import { Counter, LinkButton, Notice } from '@/client/ui/index.js';
 import type { AnswerHit, DecoratedAnswer } from '@/shared/protocol.js';
 
 interface Placed {
@@ -53,18 +54,43 @@ export function AnswerPage({ id }: { id: string }) {
 
   useEffect(() => {
     if (!answer) return;
-    const cards = [...document.querySelectorAll<HTMLElement>('.answer-card')];
-    const io = new IntersectionObserver(
-      (entries) => {
-        const seen = entries.find((e) => e.isIntersecting);
-        if (!seen) return;
-        const n = Number(seen.target.id.split('-h').pop());
-        if (Number.isFinite(n)) setActive(n);
-      },
-      { rootMargin: '-30% 0px -55% 0px' }
-    );
-    for (const c of cards) io.observe(c);
-    return () => io.disconnect();
+    const idOf = (el: Element) => Number(el.id.split('-h').pop());
+    const sync = () => {
+      const cards = [...document.querySelectorAll<HTMLElement>('.answer-card')];
+      if (!cards.length) return;
+      // the last cards never reach the top band, so at the end of the page pick
+      // by how much of each is on screen instead
+      const atEnd =
+        window.scrollY + window.innerHeight >=
+        document.documentElement.scrollHeight - 2;
+      if (atEnd) {
+        const best = cards.reduce((a, b) => {
+          const seen = (el: HTMLElement) => {
+            const r = el.getBoundingClientRect();
+            return Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0);
+          };
+          return seen(b) > seen(a) ? b : a;
+        });
+        setActive(idOf(best));
+        return;
+      }
+      const top =
+        (document.querySelector('.pr-subnav')?.clientHeight ?? 0) + 24;
+      const above = cards.filter((c) => c.getBoundingClientRect().top <= top);
+      setActive(idOf(above.length ? above[above.length - 1]! : cards[0]!));
+    };
+    sync();
+    // capture, because scroll does not bubble and the scroller may be a
+    // container rather than the window
+    document.addEventListener('scroll', sync, {
+      passive: true,
+      capture: true,
+    });
+    window.addEventListener('resize', sync);
+    return () => {
+      document.removeEventListener('scroll', sync, { capture: true });
+      window.removeEventListener('resize', sync);
+    };
   }, [answer]);
 
   const files = new Set(placed.map((p) => p.hit.path)).size;
@@ -92,10 +118,10 @@ export function AnswerPage({ id }: { id: string }) {
       <header className="pr-subnav">
         <div className="pr-subnav-inner">
           <div className="pr-title-row">
-            <a className="back-link" href="/">
-              <ArrowLeft width={14} height={14} />
+            <LinkButton className="back-link" href="/">
+              <ArrowLeft width={12} height={12} />
               Review
-            </a>
+            </LinkButton>
             <h1 className="pr-title">{answer?.question ?? 'Answer'}</h1>
             {answer && <Counter n={answer.hits.length} />}
           </div>
@@ -110,11 +136,14 @@ export function AnswerPage({ id }: { id: string }) {
             </div>
           )}
           {answer?.summary && (
-            <div
-              className="answer-summary comment-body"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized by the server renderer
-              dangerouslySetInnerHTML={{ __html: answer.summaryHtml }}
-            />
+            <div className="answer-summary">
+              <Avatar author={answer.author} />
+              <div
+                className="comment-body"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized by the server renderer
+                dangerouslySetInnerHTML={{ __html: answer.summaryHtml }}
+              />
+            </div>
           )}
         </div>
       </header>
@@ -139,7 +168,12 @@ export function AnswerPage({ id }: { id: string }) {
           {error && <Notice tone="danger">{error}</Notice>}
           {!answer && !error && <Loading label="Reading the answer…" />}
           {shown.map(({ hit, index }) => (
-            <AnswerCard key={`${hit.path}-${index}`} hit={hit} index={index} />
+            <AnswerCard
+              key={`${hit.path}-${index}`}
+              hit={hit}
+              index={index}
+              author={answer?.author ?? 'agent'}
+            />
           ))}
         </main>
       </div>

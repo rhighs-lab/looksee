@@ -11,7 +11,7 @@ import {
   type LineSlots,
   useExpansion,
 } from '@/client/components/diff/diff-table.js';
-import { boundaries, remainingGaps } from '@/client/components/diff/rows.js';
+import { ExpandAllButton } from '@/client/components/diff/expand-all.js';
 import { EditorLink } from '@/client/components/editor-link.js';
 import { FileCommits } from '@/client/components/file-commits.js';
 import { FileInfo } from '@/client/components/file-info.js';
@@ -205,7 +205,7 @@ export const FileCard = memo(function FileCard({
         <EditorLink filePath={file.path} />
         <ForgeLink filePath={file.path} />
         {diff && !diff.binary && diff.hunks.length > 0 && (
-          <ExpandAllButton diff={diff} />
+          <FileExpandAll diff={diff} />
         )}
         <LinkButton href={viewHref}>View file</LinkButton>
         <label className="viewed-toggle">
@@ -232,36 +232,6 @@ export const FileCard = memo(function FileCard({
     </div>
   );
 });
-
-function ExpandAllButton({ diff }: { diff: FileDiff }) {
-  const { expansions, expand, collapseAll } = useExpansion(diff);
-  const bs = boundaries(diff);
-  const open = bs.flatMap((b) =>
-    remainingGaps(b, expansions?.[b.key] ?? []).map((g) => ({ b, g }))
-  );
-  const loaded = Boolean(expansions && Object.keys(expansions).length);
-  if (!open.length && !loaded) return null;
-  const onClick = () => {
-    if (!open.length) return collapseAll();
-    for (const { b, g } of open)
-      void expand(
-        {
-          boundary: b.key,
-          start: g.start,
-          end: g.end,
-          offset: b.offset,
-          dirs: [],
-          header: '',
-        },
-        'all'
-      );
-  };
-  return (
-    <Button small onClick={onClick}>
-      {open.length ? 'Expand all' : 'Collapse'}
-    </Button>
-  );
-}
 
 function FileBody({
   file,
@@ -351,6 +321,18 @@ function ExpandableTable({
       loading={loading}
       onExpand={(gap, dir) => void expand(gap, dir)}
       arrived={arrived}
+    />
+  );
+}
+
+function FileExpandAll({ diff }: { diff: FileDiff }) {
+  const { expansions, expand, collapseAll } = useExpansion(diff);
+  return (
+    <ExpandAllButton
+      diff={diff}
+      expansions={expansions}
+      expand={(gap, dir) => void expand(gap, dir)}
+      collapseAll={collapseAll}
     />
   );
 }
