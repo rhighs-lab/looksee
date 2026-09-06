@@ -106,6 +106,9 @@ const CO_AUTHOR = /^\s*co-authored-by:\s*(.+?)\s*<([^>]+)>\s*$/gim;
 const loginOf = (email: string): string | null =>
   GH_NOREPLY.exec(email)?.[1] ?? null;
 
+const isBot = (email: string): boolean =>
+  /^no-?reply@/i.test(email) && !/@users\.noreply\.github\.com$/i.test(email);
+
 export function contributorsOf(
   author: string,
   email: string,
@@ -117,6 +120,7 @@ export function contributorsOf(
       email,
       login: loginOf(email),
       avatarUrl: null,
+      bot: isBot(email),
       role: 'author',
     },
   ];
@@ -130,6 +134,7 @@ export function contributorsOf(
       email: m[2]!,
       login: loginOf(m[2]!),
       avatarUrl: null,
+      bot: isBot(m[2]!),
       role: 'co-author',
     });
   }

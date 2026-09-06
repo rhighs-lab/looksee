@@ -27,7 +27,7 @@ export function PersonAvatar({ person }: { person: CommitContributor }) {
         loading="lazy"
       />
     );
-  return <Avatar author={person.name || 'user'} agent={false} />;
+  return <Avatar author={person.name || 'user'} agent={person.bot} />;
 }
 
 /** "rhighs and claude", the way GitHub names a commit's people. */

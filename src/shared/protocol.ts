@@ -136,6 +136,8 @@ export interface CommitContributor {
   email: string;
   login: string | null;
   avatarUrl: string | null;
+  /** A noreply address outside github.com: an agent or service, not a person. */
+  bot: boolean;
   role: 'author' | 'co-author';
 }
 

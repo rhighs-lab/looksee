@@ -143,11 +143,12 @@ function LastCommit({ filePath }: { filePath: string }) {
       {head ? (
         <>
           <People people={head.contributors} />
-          <a className="file-crumb-subject" href={`/commit/${head.sha}`}>
-            {head.subject}
+          <span className="file-crumb-subject">{head.subject}</span>
+          <a className="file-crumb-sha ui-mono" href={`/commit/${head.sha}`}>
+            {head.short}
           </a>
-          <span className="ui-muted ui-mono">
-            {head.short} · {relativeTime(head.date)}
+          <span className="file-crumb-when ui-muted">
+            {relativeTime(head.date)}
           </span>
         </>
       ) : (
