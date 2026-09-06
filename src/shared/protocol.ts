@@ -173,6 +173,8 @@ export interface FileHistoryResponse {
 export interface RepoState {
   version: number;
   repoRoot: string | null;
+  /** repoRoot with the home directory as `~`, for display. */
+  repoLabel: string | null;
   title: string | null;
   refs: RepoRefs | null;
   comparison: ResolvedComparison | null;

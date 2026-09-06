@@ -80,6 +80,7 @@ export function sampleState(): RepoState {
   return {
     version: 1,
     repoRoot: null,
+    repoLabel: null,
     title: null,
     refs: {
       head: {

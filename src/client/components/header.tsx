@@ -172,7 +172,7 @@ export function Header({
               className="repo-path ui-muted ui-mono"
               title={state?.repoRoot ?? 'sample'}
             >
-              {state?.repoRoot ?? 'sample diff'}
+              {state?.repoLabel ?? state?.repoRoot ?? 'sample diff'}
             </span>
           </span>
         </div>

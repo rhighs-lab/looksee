@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import {
   driftOf,
@@ -26,6 +27,7 @@ import {
   parseStatus,
   type StatusEntry,
 } from '@/server/git/status.js';
+import { tildify } from '@/shared/home.js';
 import type {
   ChangedFile,
   ChangeKind,
@@ -404,6 +406,7 @@ export async function computeRepoState(
   return {
     version,
     repoRoot,
+    repoLabel: tildify(repoRoot, os.homedir()),
     title: null,
     refs,
     comparison,

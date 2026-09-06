@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {
   computeRepoState,
@@ -8,6 +9,7 @@ import {
 } from '@/server/git/state.js';
 import { getSession } from '@/server/review/store.js';
 import type { EventHub } from '@/server/watch/events.js';
+import { tildify } from '@/shared/home.js';
 import type {
   Comparison,
   RepoState,
@@ -54,6 +56,7 @@ export const emptyState = (
 ): RepoState => ({
   version: 0,
   repoRoot,
+  repoLabel: tildify(repoRoot, os.homedir()),
   title: null,
   refs: null,
   comparison: null,
