@@ -490,8 +490,10 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const format = b['format'] === 'json' ? 'json' : 'md';
     const all = await listComments(repoRoot, branch, actorOf(c));
     const decorate = decorator(repoRoot);
+    // a resolved thread is finished work: exporting it hands the agent a task
+    // that is already done, and disagrees with the count on the button
     const comments = await Promise.all(
-      all.filter((x) => !x.parentId).map(decorate)
+      all.filter((x) => !x.parentId && x.status !== 'resolved').map(decorate)
     );
     if (!comments.length) return c.json({ count: 0, content: '', path: null });
     const content =

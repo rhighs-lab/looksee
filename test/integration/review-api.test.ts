@@ -301,22 +301,33 @@ describe('review API', () => {
     );
     expect(md.body.count).toBeGreaterThan(0);
     expect(md.body.content).toMatch(/Question for the agent/);
-    expect(md.body.content).toMatch(/Already applied\./);
     expect(md.body.content).toMatch(/Outdated: the lines changed/);
     expect(md.body.content).toContain(`<!-- looksee:id ${q.id} -->`);
     expect(md.body.content).toMatch(/^# Review/);
     expect(md.body.content).toMatch(/## Working through this review/);
     expect(md.body.content).toContain(`looksee reply ${q.id}`);
     expect(md.body.content).toMatch(/## Contents/);
+
+    // a resolved thread is done work and must not be handed to the agent again
+    await patch(q.id, { status: 'resolved' });
+    const after = await srv.json<{ count: number; content: string }>(
+      'POST',
+      '/api/export',
+      { format: 'md' }
+    );
+    expect(after.body.count).toBe(md.body.count - 1);
+    expect(after.body.content).not.toContain(`<!-- looksee:id ${q.id} -->`);
+    await patch(q.id, { status: 'open' });
     await fs.access(path.join(repo.dir, md.body.path));
     const json = await srv.json<{ content: string }>('POST', '/api/export', {
       format: 'json',
     });
     const parsed = JSON.parse(json.body.content) as Array<{
       kind: string;
-      applied: boolean;
+      status: string;
     }>;
-    expect(parsed.some((c) => c.kind === 'suggestion' && c.applied)).toBe(true);
+    expect(parsed.some((c) => c.kind === 'suggestion')).toBe(true);
+    expect(parsed.every((c) => c.status !== 'resolved')).toBe(true);
     expect(
       await fs.readFile(path.join(repo.dir, '.git', 'info', 'exclude'), 'utf8')
     ).toMatch(/\.looksee\//);
