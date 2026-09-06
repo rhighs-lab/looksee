@@ -1,3 +1,4 @@
+import posix from 'node:path/posix';
 import { marked } from 'marked';
 import { inferLanguage } from '@/server/git/diff-parser.js';
 import { escapeHtml } from '@/server/render/escape.js';
@@ -121,7 +122,18 @@ const slug = (text: string): string =>
  * highlighted server-side by the same shiki pass the diff uses, and a mermaid
  * fence is left for the browser to draw.
  */
-export async function renderDoc(body: string): Promise<string> {
+/** A repo-relative target of `docPath`, or null when it points outside. */
+const resolveRel = (docPath: string, href: string): string | null => {
+  if (!href || href.startsWith('#') || href.startsWith('/')) return null;
+  if (SCHEME.test(href)) return null;
+  const dir = posix.dirname(docPath);
+  const target = href.split(/[?#]/)[0] ?? '';
+  if (!target) return null;
+  const p = posix.normalize(posix.join(dir === '.' ? '' : dir, target));
+  return p.startsWith('..') || p.startsWith('/') ? null : p;
+};
+
+export async function renderDoc(body: string, docPath = ''): Promise<string> {
   const code: Array<{ token: string; text: string; lang: string | null }> = [];
   const r = new marked.Renderer();
   const heading = r.heading.bind(r);
@@ -138,7 +150,11 @@ export async function renderDoc(body: string): Promise<string> {
     const ext = /^[a-z]+:/i.test(href)
       ? ' target="_blank" rel="noreferrer noopener"'
       : '';
-    return `<a href="${escapeHtml(href)}"${t}${ext}>${text}</a>`;
+    const rel = resolveRel(docPath, href);
+    const to = rel
+      ? `/file/${rel.split('/').map(encodeURIComponent).join('/')}`
+      : href;
+    return `<a href="${escapeHtml(to)}"${t}${ext}>${text}</a>`;
   };
   r.code = (text: string, lang?: string) => {
     const info = (lang ?? '').trim().split(/\s+/)[0] ?? '';
@@ -155,6 +171,15 @@ export async function renderDoc(body: string): Promise<string> {
     gfm: true,
     breaks: false,
   }) as string;
+
+  html = html.replace(
+    /(<img\b[^>]*?\bsrc=")([^"]*)(")/gi,
+    (m, head: string, src: string, tail: string) => {
+      const rel = resolveRel(docPath, src);
+      if (rel) return `${head}/api/raw?path=${encodeURIComponent(rel)}${tail}`;
+      return safeHref(src) ? m : `${head}${tail}`;
+    }
+  );
 
   for (const block of code) {
     const lang = block.lang

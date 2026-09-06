@@ -482,7 +482,7 @@ export function repoRoutes(ctx: AppContext): Hono {
       maxHighlight: MAX_HIGHLIGHT_LINES,
       markdownHtml:
         !binary && !deleted && isMarkdownPath(filePath)
-          ? await renderDoc(lines.join('\n')).catch(() => null)
+          ? await renderDoc(lines.join('\n'), filePath).catch(() => null)
           : null,
       tree,
     });
@@ -713,6 +713,8 @@ export function repoRoutes(ctx: AppContext): Hono {
     c.header('Content-Type', type ?? 'application/octet-stream');
     c.header('Cache-Control', 'no-store');
     c.header('X-Content-Type-Options', 'nosniff');
+    if (type === 'image/svg+xml')
+      c.header('Content-Security-Policy', "default-src 'none'; sandbox");
     if (!type)
       c.header(
         'Content-Disposition',

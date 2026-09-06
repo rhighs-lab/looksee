@@ -7,6 +7,7 @@ export const IMAGE_TYPES: Record<string, string> = {
   '.bmp': 'image/bmp',
   '.ico': 'image/x-icon',
   '.avif': 'image/avif',
+  '.svg': 'image/svg+xml',
 };
 
 export function imageTypeOf(filePath: string): string | null {
