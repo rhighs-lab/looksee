@@ -2614,9 +2614,12 @@ a.commit-row:hover {
   position: relative;
 }
 
+/* the gap between groups is padding, not margin: a margin collapses out of the
+   section and the rail drawn from its box would stop short of the next node */
 .history-day {
   position: relative;
   padding-left: 25px;
+  padding-bottom: 22px;
 }
 
 .history-day::before {
@@ -2631,6 +2634,10 @@ a.commit-row:hover {
     var(--borderColor-default, #d1d9e0) 70%,
     transparent
   );
+}
+
+.history-day:last-child {
+  padding-bottom: 0;
 }
 
 .history-day:last-child::before {
@@ -2659,7 +2666,6 @@ a.commit-row:hover {
 }
 
 .history-group {
-  margin-bottom: 22px;
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
   overflow: hidden;
