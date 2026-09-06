@@ -2,7 +2,13 @@ import path from 'node:path';
 import process from 'node:process';
 import { serve } from '@hono/node-server';
 import type { RunCtx } from '@/cli/commands.js';
-import { findFreePort, releaseRecord, repoRootOf } from '@/cli/daemon.js';
+import {
+  claimRecord,
+  discover,
+  findFreePort,
+  releaseRecord,
+  repoRootOf,
+} from '@/cli/daemon.js';
 import { createApp } from '@/server/app.js';
 import { packageRoot } from '@/server/pkg-root.js';
 
@@ -26,6 +32,10 @@ export const runServe = async ({ flags, io }: RunCtx): Promise<number> => {
   const looksee = createApp({ repoRoot, defaultBase, title, clientDir });
   await looksee.start();
   serve({ fetch: looksee.app.fetch, hostname: '127.0.0.1', port }, () => {
+    void discover(repoRoot).then((running) => {
+      if (!running)
+        return claimRecord(repoRoot, { pid: process.pid, port, title });
+    });
     io.out(`looksee serving ${repoRoot} at http://127.0.0.1:${port}\n`);
   });
   const shutdown = (): void => {

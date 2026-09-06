@@ -132,6 +132,17 @@ export const discover = async (root: string): Promise<Running | null> => {
   return null;
 };
 
+export const claimRecord = async (
+  root: string,
+  rec: Omit<ServerRecord, 'repoRoot' | 'startedAt'>
+): Promise<void> => {
+  await writeJsonAtomic(recordPath(root), {
+    ...rec,
+    repoRoot: root,
+    startedAt: new Date().toISOString(),
+  });
+};
+
 export const releaseRecord = async (
   root: string,
   pid: number

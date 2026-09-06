@@ -303,6 +303,41 @@ describe('daemon lifecycle', () => {
     process.chdir(cwd);
   });
 
+  it('serve registers itself so ensureServer reuses it', async () => {
+    const solo = await makeRepo();
+    await seedRepo(solo);
+    const soloRoot = await repoRootOf(solo.dir);
+    const port = await findFreePort(4900);
+    const child = spawn(
+      process.execPath,
+      [entry, 'serve', '--repo', soloRoot, '--port', String(port)],
+      { env: { ...process.env, LOOKSEE_HOME: home }, stdio: 'ignore' }
+    );
+    pids.add(child.pid!);
+    try {
+      const url = `http://127.0.0.1:${port}`;
+      const deadline = Date.now() + 15_000;
+      while (Date.now() < deadline) {
+        if (await fetch(`${url}/healthz`).catch(() => null)) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      expect(await discover(soloRoot)).toEqual({
+        port,
+        pid: child.pid,
+        url,
+      });
+      expect(await ensureServer(soloRoot)).toEqual({
+        port,
+        pid: child.pid,
+        url,
+      });
+    } finally {
+      child.kill('SIGKILL');
+      await fs.rm(recordPath(soloRoot), { force: true });
+      await solo.cleanup();
+    }
+  });
+
   it('treats a record for another repo root as stale', async () => {
     await fs.writeFile(
       recordPath(otherRoot),
