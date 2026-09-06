@@ -12,8 +12,10 @@ const gutterOf = (t: EventTarget | null): HTMLElement | null =>
   t instanceof Element ? t.closest<HTMLElement>('.blob-num.commentable') : null;
 
 export function clearRangeHighlight(): void {
-  for (const el of document.querySelectorAll('.mq-range-line'))
-    el.classList.remove('mq-range-line');
+  for (const el of document.querySelectorAll(
+    '.mq-range-line, .mq-range-first, .mq-range-last'
+  ))
+    el.classList.remove('mq-range-line', 'mq-range-first', 'mq-range-last');
 }
 
 export function highlightRange(
@@ -28,6 +30,7 @@ export function highlightRange(
     `.file[data-path="${CSS.escape(filePath)}"]`
   );
   if (!file) return;
+  const rows: HTMLElement[] = [];
   for (let n = lo; n <= hi; n++) {
     const g = file.querySelector<HTMLElement>(
       `.blob-num.commentable[data-side="${side}"][data-comment-line="${n}"]`
@@ -39,7 +42,11 @@ export function highlightRange(
       .slice(cells.indexOf(g) + 1)
       .find((c) => c.classList.contains('blob-code'));
     code?.classList.add('mq-range-line');
+    if (code) rows.push(code as HTMLElement);
   }
+  // the box around the block is drawn from its ends, the way GitHub does it
+  rows[0]?.classList.add('mq-range-first');
+  rows.at(-1)?.classList.add('mq-range-last');
 }
 
 /* The dragged range reads as one control: a bar that runs from the anchor line

@@ -143,7 +143,29 @@ export interface CommitDetailResponse {
   commit: ReviewCommit;
   body: string;
   contributors: CommitContributor[];
+  /** Neighbours on the first-parent chain, for stepping through history. */
+  prev: string | null;
+  next: string | null;
   files: FileDiff[];
+}
+
+export interface FileHistoryEntry {
+  sha: string;
+  short: string;
+  subject: string;
+  date: string;
+  contributors: CommitContributor[];
+}
+
+export interface TreeAtCommitResponse {
+  sha: string;
+  short: string;
+  paths: string[];
+}
+
+export interface FileHistoryResponse {
+  path: string;
+  commits: FileHistoryEntry[];
 }
 
 export interface RepoState {

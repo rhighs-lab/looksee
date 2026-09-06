@@ -51,6 +51,8 @@ import type {
   Comparison,
   ContextResponse,
   DiffResponse,
+  FileHistoryEntry,
+  FileHistoryResponse,
   FileInfoResponse,
   FileViewResponse,
   HealthResponse,
@@ -59,6 +61,7 @@ import type {
   Scope,
   ScopePreset,
   ServerEvent,
+  TreeAtCommitResponse,
   TreeEntry,
 } from '@/shared/protocol.js';
 import {
@@ -531,6 +534,19 @@ export function repoRoutes(ctx: AppContext): Hono {
       body = '',
     ] = meta.trim().split(SEP);
     if (!full) return c.json({ error: 'not found' }, 404);
+    const [prev, next] = await Promise.all([
+      git(ctx.repoRoot, ['rev-parse', '--verify', `${full}^`])
+        .then((o) => o.trim() || null)
+        .catch(() => null),
+      git(ctx.repoRoot, [
+        'rev-list',
+        '--first-parent',
+        '--reverse',
+        `${full}..HEAD`,
+      ])
+        .then((o) => o.trim().split('\n')[0] || null)
+        .catch(() => null),
+    ]);
     try {
       const files = await buildCommitDiffs(
         ctx.repoRoot,
@@ -547,6 +563,8 @@ export function repoRoutes(ctx: AppContext): Hono {
           files: files.map((f) => f.path),
         },
         body: body.trim(),
+        prev,
+        next,
         contributors: await resolveAvatars(
           ctx.state().refs?.remoteUrl ?? null,
           full,
@@ -557,6 +575,61 @@ export function repoRoutes(ctx: AppContext): Hono {
     } catch (err) {
       return c.json({ error: (err as Error).message }, 500);
     }
+  });
+
+  app.get('/api/tree/:sha', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repo' }, 400);
+    const sha = c.req.param('sha');
+    if (!isSafeRef(sha)) return c.json({ error: 'invalid sha' }, 400);
+    try {
+      const paths = await getRepoFiles(ctx.repoRoot, sha);
+      return c.json<TreeAtCommitResponse>({
+        sha,
+        short: sha.slice(0, 7),
+        paths,
+      });
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 404);
+    }
+  });
+
+  app.get('/api/file-history', async (c) => {
+    if (!ctx.repoRoot) return c.json({ error: 'no repo' }, 400);
+    const filePath = safeRelPath(c.req.query('path'));
+    if (!filePath) return c.json({ error: 'bad path' }, 400);
+    const SEP = '\u001f';
+    const out = await git(ctx.repoRoot, [
+      'log',
+      '--follow',
+      '--no-merges',
+      '-n',
+      '50',
+      `--format=%H${SEP}%s${SEP}%aI${SEP}%an${SEP}%ae${SEP}%b${SEP}%x1e`,
+      '--',
+      filePath,
+    ]).catch(() => '');
+    const commits: FileHistoryEntry[] = [];
+    for (const rec of out.split('\u001e')) {
+      const [sha, subject, date, author, email, body] = rec
+        .replace(/^\n/, '')
+        .split(SEP);
+      if (!sha) continue;
+      commits.push({
+        sha,
+        short: sha.slice(0, 7),
+        subject: subject ?? '',
+        date: date ?? '',
+        contributors: contributorsOf(author ?? '', email ?? '', body ?? ''),
+      });
+    }
+    const remoteUrl = ctx.state().refs?.remoteUrl ?? null;
+    const resolved = await Promise.all(
+      commits.map(async (x) => ({
+        ...x,
+        contributors: await resolveAvatars(remoteUrl, x.sha, x.contributors),
+      }))
+    );
+    return c.json<FileHistoryResponse>({ path: filePath, commits: resolved });
   });
 
   app.get('/api/file-info', async (c) => {

@@ -8,6 +8,7 @@ import type {
   DecoratedAnswer,
   DecoratedComment,
   DiffResponse,
+  FileHistoryResponse,
   FileInfoResponse,
   FileViewResponse,
   RepoState,
@@ -18,6 +19,7 @@ import type {
   Scope,
   ScopePreset,
   Session,
+  TreeAtCommitResponse,
   UiPrefs,
   Verdict,
 } from '@/shared/protocol.js';
@@ -120,6 +122,13 @@ export const api = {
       'GET',
       `/api/commit/${encodeURIComponent(sha)}`
     ),
+  treeAt: (sha: string) =>
+    request<TreeAtCommitResponse>(
+      'GET',
+      `/api/tree/${encodeURIComponent(sha)}`
+    ),
+  fileHistory: (path: string) =>
+    request<FileHistoryResponse>('GET', `/api/file-history${q({ path })}`),
   session: () => request<Session | null>('GET', '/api/session'),
   pin: () => request<RepoState>('POST', '/api/session/pin'),
   endSession: () => request<RepoState>('POST', '/api/session/end'),

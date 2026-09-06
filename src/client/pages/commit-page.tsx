@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
-import { Avatar } from '@/client/components/comments/avatar.js';
 import { FileCard } from '@/client/components/file-card.js';
-import { ArrowLeft } from '@/client/components/icons.js';
+import {
+  ArrowLeft,
+  Copy,
+  File as FileIcon,
+} from '@/client/components/icons.js';
 import { KindIcon } from '@/client/components/layer-badges.js';
 import { Loading } from '@/client/components/loading.js';
+import { People } from '@/client/components/people.js';
 import {
   TreeDirNode,
   TreePane,
@@ -13,7 +17,7 @@ import {
 import { fileAnchor } from '@/client/lib/anchors.js';
 import { relativeTime } from '@/client/lib/format.js';
 import { buildTree } from '@/client/lib/tree.js';
-import { LinkButton, Notice } from '@/client/ui/index.js';
+import { Button, LinkButton, Notice } from '@/client/ui/index.js';
 import type {
   ChangedFile,
   CommitContributor,
@@ -32,34 +36,6 @@ const asChanged = (f: CommitDetailResponse['files'][number]): ChangedFile => ({
   generated: false,
   large: f.truncated,
 });
-
-function Contributors({ people }: { people: CommitContributor[] }) {
-  return (
-    <span className="commit-people">
-      {people.map((p) => (
-        <span
-          className="commit-person"
-          key={p.email}
-          title={`${p.name} <${p.email}>${p.role === 'co-author' ? ' · co-author' : ''}`}
-        >
-          {p.avatarUrl ? (
-            <img
-              className="avatar"
-              src={`${p.avatarUrl}${p.avatarUrl.includes('?') ? '&' : '?'}s=40`}
-              alt=""
-              width={20}
-              height={20}
-              loading="lazy"
-            />
-          ) : (
-            <Avatar author={p.name} agent={false} />
-          )}
-          <span>{p.name}</span>
-        </span>
-      ))}
-    </span>
-  );
-}
 
 export function CommitPage({ sha }: { sha: string }) {
   useSubnavHeight();
@@ -117,15 +93,6 @@ export function CommitPage({ sha }: { sha: string }) {
               <span className="commit-title">{data.commit.subject}</span>
             )}
           </div>
-          {data && (
-            <div className="pr-meta-row">
-              <Contributors people={data.contributors} />
-              <span className="ui-muted">
-                {relativeTime(data.commit.date)} · {data.files.length}{' '}
-                {data.files.length === 1 ? 'file' : 'files'}
-              </span>
-            </div>
-          )}
         </div>
       </header>
       <div className="review-layout">
@@ -137,7 +104,58 @@ export function CommitPage({ sha }: { sha: string }) {
         <main className="diff-container">
           {error && <Notice tone="danger">{error}</Notice>}
           {!data && !error && <Loading label="Reading the commit…" />}
-          {data?.body && <pre className="commit-body">{data.body}</pre>}
+          {data && (
+            <section className="commit-detail">
+              <h2 className="commit-detail-subject">{data.commit.subject}</h2>
+              {data.body && <pre className="commit-body">{data.body}</pre>}
+              <div className="commit-detail-nav">
+                <span className="commit-steps">
+                  <LinkButton
+                    href={data.prev ? `/commit/${data.prev}` : '#'}
+                    className={data.prev ? '' : 'is-disabled'}
+                    aria-disabled={!data.prev}
+                  >
+                    <ArrowLeft width={12} height={12} />
+                    Prev
+                  </LinkButton>
+                  <LinkButton
+                    href={data.next ? `/commit/${data.next}` : '#'}
+                    className={data.next ? '' : 'is-disabled'}
+                    aria-disabled={!data.next}
+                  >
+                    Next
+                  </LinkButton>
+                </span>
+                <LinkButton href={`/tree/${data.commit.sha}`}>
+                  <FileIcon width={14} height={14} />
+                  Browse files
+                </LinkButton>
+              </div>
+              <footer className="commit-detail-foot">
+                <People people={data.contributors} />
+                <span className="ui-muted">
+                  committed {relativeTime(data.commit.date)} ·{' '}
+                  {data.files.length}{' '}
+                  {data.files.length === 1 ? 'file' : 'files'}
+                </span>
+                <span className="commit-sha ui-mono">
+                  commit {data.commit.short}
+                  <Button
+                    variant="invisible"
+                    icon
+                    small
+                    title="Copy the full sha"
+                    aria-label="Copy the full sha"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(data.commit.sha);
+                    }}
+                  >
+                    <Copy />
+                  </Button>
+                </span>
+              </footer>
+            </section>
+          )}
           {data?.files.map((f) => (
             <FileCard
               key={f.path}

@@ -32,11 +32,13 @@ import {
   Copy,
   Download,
   File,
+  HistoryIcon,
   Search,
   WrapText,
 } from '@/client/components/icons.js';
 import { isImage, rawHref } from '@/client/components/image-blob.js';
 import { Loading } from '@/client/components/loading.js';
+import { People } from '@/client/components/people.js';
 import {
   TreeCheck,
   TreeDirNode,
@@ -45,7 +47,7 @@ import {
 } from '@/client/components/tree-pane.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
 import type { ArrivedLine } from '@/client/lib/arrivals.js';
-import { bytes, plural } from '@/client/lib/format.js';
+import { bytes, plural, relativeTime } from '@/client/lib/format.js';
 import {
   type LineRange,
   lineHash,
@@ -61,6 +63,7 @@ import type {
   CommentSide,
   DiffLine,
   FileDiff,
+  FileHistoryResponse,
   FileViewResponse,
   Scope,
   TreeEntry,
@@ -119,6 +122,43 @@ function toDiff(view: FileViewResponse): FileDiff {
     digest: 'file',
     truncated: false,
   };
+}
+
+function LastCommit({ filePath }: { filePath: string }) {
+  const [head, setHead] = useState<FileHistoryResponse['commits'][0] | null>(
+    null
+  );
+  useEffect(() => {
+    let alive = true;
+    api
+      .fileHistory(filePath)
+      .then((r) => alive && setHead(r.commits[0] ?? null))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [filePath]);
+  return (
+    <div className="file-crumb">
+      {head ? (
+        <>
+          <People people={head.contributors} />
+          <a className="file-crumb-subject" href={`/commit/${head.sha}`}>
+            {head.subject}
+          </a>
+          <span className="ui-muted ui-mono">
+            {head.short} · {relativeTime(head.date)}
+          </span>
+        </>
+      ) : (
+        <span className="ui-muted">No commit history for this file yet</span>
+      )}
+      <LinkButton href={`/history/${filePath}`}>
+        <HistoryIcon width={14} height={14} />
+        History
+      </LinkButton>
+    </div>
+  );
 }
 
 export function FilePage({ pathname }: { pathname: string }) {
@@ -420,6 +460,7 @@ export function FilePage({ pathname }: { pathname: string }) {
         <main className="diff-container">
           {error && <Notice tone="danger">{error}</Notice>}
           {!view && !error && <Loading label="Opening the file…" />}
+          {view && <LastCommit filePath={filePath} />}
           {view && diff && (
             <div className="file file-view" data-path={filePath}>
               <BlobToolbar

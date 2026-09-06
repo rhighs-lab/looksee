@@ -1002,12 +1002,32 @@ body {
 /* selected line range while composing / dragging */
 /* the selection wash follows the active theme's accent instead of a fixed
    GitHub blue, which read as foreign under Solarized and Atom */
+/* GitHub washes the picked block in attention yellow and boxes it in blue */
 .mq-range-line {
-  background-color: color-mix(
-    in srgb,
-    var(--bgColor-accent-emphasis, #0969da) 22%,
-    transparent
-  ) !important;
+  background-color: var(--bgColor-attention-muted, #fff8c5) !important;
+}
+
+.blob-code.mq-range-line {
+  box-shadow: inset 2px 0 0 var(--bgColor-accent-emphasis, #0969da);
+}
+
+.blob-code.mq-range-first {
+  box-shadow:
+    inset 2px 0 0 var(--bgColor-accent-emphasis, #0969da),
+    inset 0 2px 0 var(--bgColor-accent-emphasis, #0969da);
+}
+
+.blob-code.mq-range-last {
+  box-shadow:
+    inset 2px 0 0 var(--bgColor-accent-emphasis, #0969da),
+    inset 0 -2px 0 var(--bgColor-accent-emphasis, #0969da);
+}
+
+.blob-code.mq-range-first.mq-range-last {
+  box-shadow:
+    inset 2px 0 0 var(--bgColor-accent-emphasis, #0969da),
+    inset 0 2px 0 var(--bgColor-accent-emphasis, #0969da),
+    inset 0 -2px 0 var(--bgColor-accent-emphasis, #0969da);
 }
 
 .comment-body {
@@ -2505,4 +2525,187 @@ a.commit-row:hover {
 
 .commit-person img.avatar {
   border-radius: 50%;
+}
+
+/* ---- commit detail and history ------------------------------------------ */
+.commit-detail {
+  margin-bottom: var(--file-gap, 2em);
+  padding: 16px;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+}
+
+.commit-detail-subject {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.commit-detail .commit-body {
+  margin: 0 0 14px;
+}
+
+.commit-detail-nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.commit-steps {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.commit-detail-nav .ui-btn:last-child {
+  margin-left: auto;
+}
+
+.ui-btn.is-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.commit-detail-foot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  font-size: 12.5px;
+  border-top: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.commit-sha {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.people {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.people-faces {
+  display: inline-flex;
+}
+
+.people-faces > * {
+  margin-right: -6px;
+  border-radius: 50%;
+  outline: 2px solid var(--bgColor-muted, #f6f8fa);
+}
+
+.people-faces > *:last-child {
+  margin-right: 2px;
+}
+
+.people-names {
+  font-weight: 600;
+}
+
+.history-day {
+  margin-bottom: 22px;
+}
+
+.history-day-label {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.history-group {
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.history-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.history-row:last-child {
+  border-bottom: 0;
+}
+
+.history-main {
+  min-width: 0;
+}
+
+.history-subject {
+  display: block;
+  font-weight: 600;
+  color: var(--fgColor-default, #1f2328);
+  text-decoration: none;
+}
+
+.history-subject:hover {
+  color: var(--fgColor-accent, #0969da);
+}
+
+.history-by {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.history-by .people-faces > * {
+  outline-color: var(--bgColor-default, #fff);
+}
+
+.history-sha {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.file-crumb {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+}
+
+.file-crumb-subject {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fgColor-muted, #59636e);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-crumb .ui-btn {
+  margin-left: auto;
+}
+
+.history-sha a,
+.commit-sha a {
+  color: var(--fgColor-muted, #59636e);
+  text-decoration: none;
+}
+
+.history-sha a:hover,
+.commit-sha a:hover {
+  color: var(--fgColor-accent, #0969da);
 }
