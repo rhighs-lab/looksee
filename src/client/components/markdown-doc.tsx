@@ -20,6 +20,7 @@ export function MarkdownDoc({ html }: { html: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const appearance = useReview((s) => s.appearance);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: html and appearance are the triggers, not values the body reads
   useEffect(() => {
     const root = ref.current;
     if (!root) return;

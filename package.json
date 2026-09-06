@@ -12,6 +12,7 @@
   "bugs": {
     "url": "https://github.com/rhighs-lab/looksee/issues"
   },
+  "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=20"
   },

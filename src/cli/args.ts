@@ -85,7 +85,9 @@ export const parseArgv = (argv: string[], specs: Resolvable[]): Parsed => {
     const val = inline ?? argv[++i];
     if (val === undefined) throw new Error(`--${spec.name} needs a value`);
     out.flags[spec.name] = val;
-    (out.repeated[spec.name] ??= []).push(val);
+    const seen = out.repeated[spec.name] ?? [];
+    seen.push(val);
+    out.repeated[spec.name] = seen;
   }
   return out;
 };
