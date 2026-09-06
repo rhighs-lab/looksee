@@ -131,9 +131,18 @@ export interface CommitsResponse {
   commits: ReviewCommit[];
 }
 
+export interface CommitContributor {
+  name: string;
+  email: string;
+  login: string | null;
+  avatarUrl: string | null;
+  role: 'author' | 'co-author';
+}
+
 export interface CommitDetailResponse {
   commit: ReviewCommit;
   body: string;
+  contributors: CommitContributor[];
   files: FileDiff[];
 }
 

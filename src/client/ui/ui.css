@@ -232,16 +232,18 @@ th {
 }
 
 /* ---- Counter ------------------------------------------------------------- */
+/* Primer CounterLabel: 12px/600, 2px 6px, neutral-muted fill, no visible border */
 .ui-counter {
   display: inline-block;
   min-width: 20px;
-  padding: 0 6px;
+  padding: 2px 6px;
   font-size: 12px;
-  line-height: 18px;
+  font-weight: 600;
+  line-height: 12px;
   text-align: center;
   color: var(--ui-fg);
-  background-color: var(--bgColor-neutral-muted, rgba(175, 184, 193, 0.2));
-  border-radius: 2em;
+  background-color: var(--bgColor-neutral-muted, rgba(129, 139, 152, 0.12));
+  border-radius: 20px;
 }
 
 .ui-nav-item:disabled .ui-counter {
@@ -249,39 +251,62 @@ th {
 }
 
 /* ---- Label --------------------------------------------------------------- */
+/* Primer Label: 12px/500, 0 6px, 20px tall, outlined with a 70%-alpha border */
 .ui-label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0 7px;
+  height: 20px;
+  padding: 0 6px;
   font-size: 12px;
-  line-height: 18px;
+  font-weight: 500;
+  line-height: 12px;
   white-space: nowrap;
   color: var(--ui-fg-muted);
-  border: 1px solid var(--ui-border);
-  border-radius: 2em;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 70%, transparent);
+  border-radius: 9999px;
   background: transparent;
 }
 
 .ui-label-success {
   color: var(--fgColor-success, #1a7f37);
-  border-color: var(--borderColor-success-emphasis, #1a7f37);
+  border-color: color-mix(
+    in srgb,
+    var(--borderColor-success-emphasis, #1a7f37) 70%,
+    transparent
+  );
 }
 .ui-label-danger {
   color: var(--fgColor-danger, #d1242f);
-  border-color: var(--borderColor-danger-emphasis, #cf222e);
+  border-color: color-mix(
+    in srgb,
+    var(--borderColor-danger-emphasis, #cf222e) 70%,
+    transparent
+  );
 }
 .ui-label-accent {
   color: var(--fgColor-accent, #0969da);
-  border-color: var(--borderColor-accent-emphasis, #0969da);
+  border-color: color-mix(
+    in srgb,
+    var(--borderColor-accent-emphasis, #0969da) 70%,
+    transparent
+  );
 }
 .ui-label-attention {
   color: var(--fgColor-attention, #9a6700);
-  border-color: var(--borderColor-attention-emphasis, #bf8700);
+  border-color: color-mix(
+    in srgb,
+    var(--borderColor-attention-emphasis, #bf8700) 70%,
+    transparent
+  );
 }
 .ui-label-done {
   color: var(--fgColor-done, #8250df);
-  border-color: var(--borderColor-done-emphasis, #8250df);
+  border-color: color-mix(
+    in srgb,
+    var(--borderColor-done-emphasis, #8250df) 70%,
+    transparent
+  );
 }
 .ui-label-muted {
   color: var(--ui-fg-muted);

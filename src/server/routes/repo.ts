@@ -27,6 +27,7 @@ import { listBranches } from '@/server/git/refs.js';
 import { readStatus } from '@/server/git/state.js';
 import { packageRoot } from '@/server/pkg-root.js';
 import { highlightLines } from '@/server/render/highlighter.js';
+import { resolveAvatars } from '@/server/review/gh-avatars.js';
 import {
   endSession,
   getSession,
@@ -44,6 +45,7 @@ import type { RepoWatcher, Selection } from '@/server/watch/watcher.js';
 import { imageTypeOf } from '@/shared/media.js';
 import type {
   BranchesResponse,
+  CommitContributor,
   CommitDetailResponse,
   CommitsResponse,
   Comparison,
@@ -94,6 +96,42 @@ const jsonBody = async (c: {
     return {};
   }
 };
+
+const GH_NOREPLY = /^(?:\d+\+)?([\w-]+)@users\.noreply\.github\.com$/i;
+const CO_AUTHOR = /^\s*co-authored-by:\s*(.+?)\s*<([^>]+)>\s*$/gim;
+
+const loginOf = (email: string): string | null =>
+  GH_NOREPLY.exec(email)?.[1] ?? null;
+
+export function contributorsOf(
+  author: string,
+  email: string,
+  body: string
+): CommitContributor[] {
+  const out: CommitContributor[] = [
+    {
+      name: author,
+      email,
+      login: loginOf(email),
+      avatarUrl: null,
+      role: 'author',
+    },
+  ];
+  const seen = new Set([email.toLowerCase()]);
+  for (const m of body.matchAll(CO_AUTHOR)) {
+    const co = m[2]!.toLowerCase();
+    if (seen.has(co)) continue;
+    seen.add(co);
+    out.push({
+      name: m[1]!,
+      email: m[2]!,
+      login: loginOf(m[2]!),
+      avatarUrl: null,
+      role: 'co-author',
+    });
+  }
+  return out;
+}
 
 export function repoRoutes(ctx: AppContext): Hono {
   const app = new Hono();
@@ -481,12 +519,17 @@ export function repoRoutes(ctx: AppContext): Hono {
     const meta = await git(ctx.repoRoot, [
       'show',
       '--no-patch',
-      `--format=%H${SEP}%an${SEP}%aI${SEP}%s${SEP}%b`,
+      `--format=%H${SEP}%an${SEP}%aI${SEP}%s${SEP}%ae${SEP}%b`,
       sha,
     ]).catch(() => '');
-    const [full = '', author = '', date = '', subject = '', body = ''] = meta
-      .trim()
-      .split(SEP);
+    const [
+      full = '',
+      author = '',
+      date = '',
+      subject = '',
+      email = '',
+      body = '',
+    ] = meta.trim().split(SEP);
     if (!full) return c.json({ error: 'not found' }, 404);
     try {
       const files = await buildCommitDiffs(
@@ -504,6 +547,11 @@ export function repoRoutes(ctx: AppContext): Hono {
           files: files.map((f) => f.path),
         },
         body: body.trim(),
+        contributors: await resolveAvatars(
+          ctx.state().refs?.remoteUrl ?? null,
+          full,
+          contributorsOf(author, email, body)
+        ),
         files,
       });
     } catch (err) {

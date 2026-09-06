@@ -1939,10 +1939,6 @@ kbd {
   border-radius: 50%;
 }
 
-.avatar-agent {
-  border-radius: 5px;
-}
-
 /* ---- File info popover -------------------------------------------------- */
 .file-info-pop {
   position: relative;
@@ -2473,7 +2469,11 @@ a.commit-row:hover {
 .answer-why .avatar,
 .answer-summary .avatar {
   flex: none;
-  margin-top: 1px;
+}
+
+.answer-summary .comment-body {
+  padding: 0;
+  font-size: 13.5px;
 }
 
 /* answers show one line number, not an old/new pair: collapse the old column
@@ -2487,4 +2487,22 @@ a.commit-row:hover {
   min-width: 0;
   padding: 0;
   overflow: hidden;
+}
+
+.commit-people {
+  display: inline-flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.commit-person {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+}
+
+.commit-person img.avatar {
+  border-radius: 50%;
 }

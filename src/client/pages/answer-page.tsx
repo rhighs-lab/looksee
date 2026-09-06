@@ -11,7 +11,7 @@ import {
 } from '@/client/components/tree-pane.js';
 import { relativeTime } from '@/client/lib/format.js';
 import { buildTree } from '@/client/lib/tree.js';
-import { Counter, LinkButton, Notice } from '@/client/ui/index.js';
+import { LinkButton, Notice } from '@/client/ui/index.js';
 import type { AnswerHit, DecoratedAnswer } from '@/shared/protocol.js';
 
 interface Placed {
@@ -123,7 +123,6 @@ export function AnswerPage({ id }: { id: string }) {
               Review
             </LinkButton>
             <h1 className="pr-title">{answer?.question ?? 'Answer'}</h1>
-            {answer && <Counter n={answer.hits.length} />}
           </div>
           {answer && (
             <div className="pr-meta-row">
