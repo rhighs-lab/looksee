@@ -1341,8 +1341,11 @@ body {
     transparent
   );
   color: var(--fgColor-accent, #0969da);
+  display: inline-block;
   border-radius: 10px;
   padding: 0 6px;
+  line-height: inherit;
+  vertical-align: baseline;
 }
 .composer-saved-menu {
   position: absolute;
