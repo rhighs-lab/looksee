@@ -38,6 +38,7 @@ import {
 } from '@/client/components/icons.js';
 import { isImage, rawHref } from '@/client/components/image-blob.js';
 import { Loading } from '@/client/components/loading.js';
+import { MarkdownDoc } from '@/client/components/markdown-doc.js';
 import { People } from '@/client/components/people.js';
 import {
   TreeCheck,
@@ -57,7 +58,14 @@ import {
 import { buildTree } from '@/client/lib/tree.js';
 import { useComments } from '@/client/store/comments.js';
 import { useReview } from '@/client/store/review.js';
-import { Button, Label, LinkButton, Notice, Toast } from '@/client/ui/index.js';
+import {
+  Button,
+  Label,
+  LinkButton,
+  Notice,
+  SegmentedControl,
+  Toast,
+} from '@/client/ui/index.js';
 
 import type {
   CommentSide,
@@ -178,6 +186,7 @@ export function FilePage({ pathname }: { pathname: string }) {
   const [filter, setFilter] = useState('');
   const [finder, setFinder] = useState(false);
   const [wrap, setWrap] = useState(false);
+  const [rendered, setRendered] = useState(true);
   const openFinder = useCallback(() => setFinder(true), []);
   useFileFinderHotkey(openFinder);
   const threads = useComments((s) => s.threads);
@@ -472,10 +481,15 @@ export function FilePage({ pathname }: { pathname: string }) {
                 wrap={wrap}
                 onWrap={() => setWrap(!wrap)}
                 onCopied={showToast}
+                doc={Boolean(view.markdownHtml)}
+                rendered={rendered}
+                onRendered={() => setRendered(!rendered)}
               />
               <div className="file-body">
                 <div className="file-comments" />
-                {view.binary ? (
+                {view.markdownHtml && rendered ? (
+                  <MarkdownDoc html={view.markdownHtml} />
+                ) : view.binary ? (
                   isImage(filePath) ? (
                     <div className="blob-image">
                       <img src={rawHref(filePath, scope)} alt={filePath} />
@@ -521,12 +535,18 @@ function BlobToolbar({
   wrap,
   onWrap,
   onCopied,
+  doc,
+  rendered,
+  onRendered,
 }: {
   view: FileViewResponse;
   scope: Scope;
   wrap: boolean;
   onWrap: () => void;
   onCopied: (msg: string) => void;
+  doc: boolean;
+  rendered: boolean;
+  onRendered: () => void;
 }) {
   const text = view.lines.join('\n');
   const name = view.path.split('/').pop() ?? view.path;
@@ -565,6 +585,17 @@ function BlobToolbar({
         )}
       </span>
       <span className="blob-actions">
+        {doc && (
+          <SegmentedControl<'preview' | 'code'>
+            label="How to show this document"
+            value={rendered ? 'preview' : 'code'}
+            onChange={onRendered}
+            items={[
+              { value: 'preview', label: 'Preview' },
+              { value: 'code', label: 'Code' },
+            ]}
+          />
+        )}
         <FileInfo path={view.path} />
         <EditorLink filePath={view.path} />
         <ForgeLink filePath={view.path} />

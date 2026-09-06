@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
 import { useCommentSlots } from '@/client/components/comments/use-comment-slots.js';
-import { FileCard } from '@/client/components/file-card.js';
+import { DiffStat, FileCard } from '@/client/components/file-card.js';
 import {
   ArrowLeft,
   Copy,
@@ -58,6 +58,8 @@ export function CommitPage({ sha }: { sha: string }) {
   }, [sha]);
 
   const files = useMemo(() => data?.files ?? [], [data]);
+  const additions = files.reduce((n, f) => n + f.additions, 0);
+  const deletions = files.reduce((n, f) => n + f.deletions, 0);
   // snapshots come from this commit's own diffs, not the review store
   const snapshotAt = useCallback(
     (path: string, side: string, lo: number, hi: number) =>
@@ -153,6 +155,11 @@ export function CommitPage({ sha }: { sha: string }) {
                   committed {relativeTime(data.commit.date)} ·{' '}
                   {data.files.length}{' '}
                   {data.files.length === 1 ? 'file' : 'files'}
+                </span>
+                <span className="commit-detail-stat">
+                  <span className="file-additions">+{additions}</span>
+                  <span className="file-deletions">−{deletions}</span>
+                  <DiffStat additions={additions} deletions={deletions} />
                 </span>
                 <span className="commit-sha ui-mono">
                   commit {data.commit.short}

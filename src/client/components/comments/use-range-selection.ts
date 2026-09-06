@@ -56,29 +56,39 @@ export function highlightRange(
 function castBar(anchor: HTMLElement, target: HTMLElement): void {
   const file = anchor.closest<HTMLElement>('.file');
   if (!file) return;
-  let bar = file.querySelector<HTMLElement>(':scope > .cast-bar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.className = 'cast-bar';
-    bar.setAttribute('aria-hidden', 'true');
-    bar.textContent = '+';
-    file.appendChild(bar);
-  }
   const f = file.getBoundingClientRect();
-  const a = anchor.getBoundingClientRect();
-  const t = target.getBoundingClientRect();
-  const top = Math.min(a.top, t.top);
-  const bottom = Math.max(a.bottom, t.bottom);
-  bar.style.left = `${a.right - f.left - 20}px`;
-  bar.style.top = `${top - f.top + 1}px`;
-  bar.style.height = `${Math.max(bottom - top - 2, 18)}px`;
-  bar.dataset['cast'] = t.top >= a.top ? 'down' : 'up';
+  const rects = [anchor, target].map((el) => el.getBoundingClientRect());
+  const ends = rects[0]!.top <= rects[1]!.top ? rects : [rects[1]!, rects[0]!];
+  const seen = new Set<string>();
+  let n = 0;
+  // GitHub marks the two ends of the block with a small +, not a tall bar
+  for (const r of ends) {
+    const key = `${Math.round(r.top)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    let chip = file.querySelector<HTMLElement>(
+      `:scope > .cast-plus[data-n="${n}"]`
+    );
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'cast-plus';
+      chip.dataset['n'] = String(n);
+      chip.setAttribute('aria-hidden', 'true');
+      chip.textContent = '+';
+      file.appendChild(chip);
+    }
+    chip.style.left = `${rects[0]!.right - f.left - 21}px`;
+    chip.style.top = `${r.top - f.top + (r.height - 18) / 2}px`;
+    n++;
+  }
+  for (const extra of file.querySelectorAll<HTMLElement>(':scope > .cast-plus'))
+    if (Number(extra.dataset['n']) >= n) extra.remove();
   document.documentElement.dataset['casting'] = '1';
 }
 
 function clearCast(): void {
   delete document.documentElement.dataset['casting'];
-  for (const el of document.querySelectorAll('.cast-bar')) el.remove();
+  for (const el of document.querySelectorAll('.cast-plus')) el.remove();
 }
 
 export function useRangeSelection(

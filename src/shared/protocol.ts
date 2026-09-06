@@ -323,6 +323,8 @@ export interface FileViewResponse {
   changedLines: number[];
   plain: boolean;
   maxHighlight: number;
+  /** Rendered markdown when the file is a document, else null. */
+  markdownHtml: string | null;
   tree: TreeEntry[];
 }
 

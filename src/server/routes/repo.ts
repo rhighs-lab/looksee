@@ -28,6 +28,7 @@ import { readStatus } from '@/server/git/state.js';
 import { packageRoot } from '@/server/pkg-root.js';
 import { highlightLines } from '@/server/render/highlighter.js';
 import { resolveAvatars } from '@/server/review/gh-avatars.js';
+import { isMarkdownPath, renderDoc } from '@/server/review/markdown.js';
 import {
   endSession,
   getSession,
@@ -479,6 +480,10 @@ export function repoRoutes(ctx: AppContext): Hono {
       changedLines,
       plain,
       maxHighlight: MAX_HIGHLIGHT_LINES,
+      markdownHtml:
+        !binary && !deleted && isMarkdownPath(filePath)
+          ? await renderDoc(lines.join('\n')).catch(() => null)
+          : null,
       tree,
     });
   });

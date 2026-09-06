@@ -861,26 +861,20 @@ body {
 /* the dragged range is drawn as an overlay on the file, so it can span rows
    without touching table layout; pointer-events stay off so the drag keeps
    tracking the row under the cursor */
-.cast-bar {
+.cast-plus {
   position: absolute;
-  width: 18px;
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 1px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
   background-color: var(--bgColor-accent-emphasis, #0969da);
   color: var(--fgColor-onEmphasis, #fff);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   pointer-events: none;
   z-index: 4;
-}
-
-.cast-bar[data-cast="up"] {
-  align-items: flex-end;
-  padding-top: 0;
-  padding-bottom: 1px;
 }
 
 /* has to out-specify the hover rule above, or the row under the cursor keeps
@@ -2770,4 +2764,162 @@ a.commit-row:hover {
 .history-sha a:hover,
 .commit-sha a:hover {
   color: var(--fgColor-accent, #0969da);
+}
+
+/* ---- rendered markdown --------------------------------------------------- */
+.markdown-doc {
+  padding: 24px 32px 32px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.markdown-doc > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-doc h1,
+.markdown-doc h2,
+.markdown-doc h3,
+.markdown-doc h4 {
+  margin: 24px 0 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-doc h1 {
+  padding-bottom: 8px;
+  font-size: 30px;
+  border-bottom: 1px solid var(--borderColor-muted, #d1d9e0b3);
+}
+
+.markdown-doc h2 {
+  padding-bottom: 7px;
+  font-size: 22px;
+  border-bottom: 1px solid var(--borderColor-muted, #d1d9e0b3);
+}
+
+.markdown-doc h3 {
+  font-size: 18px;
+}
+
+.markdown-doc h4 {
+  font-size: 15px;
+}
+
+.markdown-doc p,
+.markdown-doc ul,
+.markdown-doc ol,
+.markdown-doc blockquote,
+.markdown-doc table {
+  margin: 0 0 16px;
+}
+
+.markdown-doc ul,
+.markdown-doc ol {
+  padding-left: 2em;
+}
+
+.markdown-doc li + li {
+  margin-top: 4px;
+}
+
+.markdown-doc blockquote {
+  padding: 0 1em;
+  color: var(--fgColor-muted, #59636e);
+  border-left: 4px solid var(--borderColor-default, #d1d9e0);
+}
+
+.markdown-doc a {
+  color: var(--fgColor-accent, #0969da);
+  text-decoration: none;
+}
+
+.markdown-doc a:hover {
+  text-decoration: underline;
+}
+
+.markdown-doc code {
+  padding: 2px 6px;
+  font-family: var(--ui-mono);
+  font-size: 85%;
+  background-color: var(--bgColor-neutral-muted, rgba(129, 139, 152, 0.12));
+  border-radius: 6px;
+}
+
+.markdown-doc pre.doc-code {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--ui-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  border-radius: 6px;
+}
+
+.markdown-doc pre.doc-code code {
+  padding: 0;
+  font-size: inherit;
+  background: none;
+}
+
+.markdown-doc .doc-line {
+  display: block;
+  white-space: pre;
+}
+
+.markdown-doc table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.markdown-doc th,
+.markdown-doc td {
+  padding: 6px 13px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.markdown-doc th {
+  font-weight: 600;
+  background-color: var(--bgColor-muted, #f6f8fa);
+}
+
+.markdown-doc img {
+  max-width: 100%;
+}
+
+.markdown-doc hr {
+  height: 1px;
+  margin: 24px 0;
+  background-color: var(--borderColor-default, #d1d9e0);
+  border: 0;
+}
+
+.markdown-doc input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+.markdown-doc pre.mermaid {
+  margin: 0 0 16px;
+  padding: 16px;
+  overflow-x: auto;
+  text-align: center;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  border-radius: 6px;
+}
+
+.markdown-doc pre.mermaid.mermaid-failed {
+  font-family: var(--ui-mono);
+  font-size: 12px;
+  color: var(--fgColor-danger, #d1242f);
+  text-align: left;
+}
+
+.commit-detail-stat {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-family: var(--ui-mono);
+  font-size: 12px;
 }
