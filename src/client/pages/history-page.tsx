@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/client/api/client.js';
-import { ArrowLeft, Copy } from '@/client/components/icons.js';
+import { ArrowLeft, CommitIcon, Copy } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import { People } from '@/client/components/people.js';
 import { useSubnavHeight } from '@/client/components/tree-pane.js';
@@ -59,43 +59,51 @@ export function HistoryPage({ pathname }: { pathname: string }) {
           {data && !data.commits.length && (
             <Notice>No commits touch this file yet.</Notice>
           )}
-          {[...days].map(([day, list]) => (
-            <section className="history-day" key={day}>
-              <h2 className="history-day-label">Commits on {day}</h2>
-              <div className="history-group">
-                {list.map((c) => (
-                  <article className="history-row" key={c.sha}>
-                    <div className="history-main">
-                      <a className="history-subject" href={`/commit/${c.sha}`}>
-                        {c.subject}
-                      </a>
-                      <span className="history-by">
-                        <People people={c.contributors} />
-                        <span className="ui-muted">
-                          committed {relativeTime(c.date)}
+          <div className="history-timeline">
+            {[...days].map(([day, list]) => (
+              <section className="history-day" key={day}>
+                <div className="history-node">
+                  <CommitIcon width={16} height={16} />
+                </div>
+                <h2 className="history-day-label">Commits on {day}</h2>
+                <div className="history-group">
+                  {list.map((c) => (
+                    <article className="history-row" key={c.sha}>
+                      <div className="history-main">
+                        <a
+                          className="history-subject"
+                          href={`/commit/${c.sha}`}
+                        >
+                          {c.subject}
+                        </a>
+                        <span className="history-by">
+                          <People people={c.contributors} />
+                          <span className="ui-muted">
+                            committed {relativeTime(c.date)}
+                          </span>
                         </span>
+                      </div>
+                      <span className="history-sha ui-mono">
+                        <a href={`/commit/${c.sha}`}>{c.short}</a>
+                        <Button
+                          variant="invisible"
+                          icon
+                          small
+                          title="Copy the full sha"
+                          aria-label="Copy the full sha"
+                          onClick={() => {
+                            void navigator.clipboard?.writeText(c.sha);
+                          }}
+                        >
+                          <Copy />
+                        </Button>
                       </span>
-                    </div>
-                    <span className="history-sha ui-mono">
-                      <a href={`/commit/${c.sha}`}>{c.short}</a>
-                      <Button
-                        variant="invisible"
-                        icon
-                        small
-                        title="Copy the full sha"
-                        aria-label="Copy the full sha"
-                        onClick={() => {
-                          void navigator.clipboard?.writeText(c.sha);
-                        }}
-                      >
-                        <Copy />
-                      </Button>
-                    </span>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         </main>
       </div>
     </>

@@ -2610,18 +2610,57 @@ a.commit-row:hover {
   font-weight: 600;
 }
 
+/* GitHub's commit timeline: a 2px rail with a node per day, content at +25px */
+.history-timeline {
+  position: relative;
+}
+
 .history-day {
-  margin-bottom: 22px;
+  position: relative;
+  padding-left: 25px;
+}
+
+.history-day::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: color-mix(
+    in srgb,
+    var(--borderColor-default, #d1d9e0) 70%,
+    transparent
+  );
+}
+
+.history-day:last-child::before {
+  bottom: auto;
+  height: 34px;
+}
+
+.history-node {
+  position: absolute;
+  left: 4px;
+  top: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 22px;
+  color: var(--fgColor-muted, #59636e);
+  background-color: var(--bgColor-default, #fff);
 }
 
 .history-day-label {
   margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--fgColor-muted, #59636e);
 }
 
 .history-group {
+  margin-bottom: 22px;
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
   overflow: hidden;
@@ -2645,7 +2684,8 @@ a.commit-row:hover {
 
 .history-subject {
   display: block;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--fgColor-default, #1f2328);
   text-decoration: none;
 }
@@ -2701,7 +2741,7 @@ a.commit-row:hover {
 
 .history-sha a,
 .commit-sha a {
-  color: var(--fgColor-muted, #59636e);
+  color: var(--fgColor-default, #1f2328);
   text-decoration: none;
 }
 
