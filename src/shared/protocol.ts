@@ -385,6 +385,18 @@ export interface AnswersResponse {
 
 export type CommentSide = 'new' | 'old' | 'file';
 export type CommentAuthor = string;
+export interface Identity {
+  actor: string;
+  /** GitHub login when one was resolved, else null. */
+  login: string | null;
+  name: string;
+  avatarUrl: string | null;
+}
+
+export interface IdentitiesResponse {
+  identities: Identity[];
+}
+
 export const USER_ACTOR = 'user';
 export type CommentStatus = 'open' | 'resolved';
 export type CommentKind = 'suggestion' | 'question' | 'comment';

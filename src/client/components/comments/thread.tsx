@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type MouseEvent, memo, useState } from 'react';
 import { Avatar } from '@/client/components/comments/avatar.js';
 import { Composer } from '@/client/components/comments/composer.js';
+import { AuthorName } from '@/client/components/people.js';
 import {
   isDraft,
   reviewOf,
@@ -131,7 +132,9 @@ function CommentCard({ c, isRoot }: { c: DecoratedComment; isRoot: boolean }) {
     >
       <div className="comment-header">
         <Avatar author={c.author} />
-        <span className="comment-author">{c.author}</span>
+        <span className="comment-author">
+          <AuthorName actor={c.author} />
+        </span>
         <span className="ui-muted">commented {timeLabel(c.createdAt)}</span>
         {isRoot && c.side !== 'file' && c.endLine > c.startLine && (
           <span className="ui-muted">

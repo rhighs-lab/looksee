@@ -1,4 +1,5 @@
 import { Avatar } from '@/client/components/comments/avatar.js';
+import { useIdentities } from '@/client/store/identities.js';
 import type { CommitContributor } from '@/shared/protocol.js';
 
 const AGENT_LABEL: Record<string, string> = {
@@ -12,8 +13,11 @@ const AGENT_LABEL: Record<string, string> = {
   agent: 'agent',
 };
 
-export const actorLabel = (actor: string): string =>
-  AGENT_LABEL[actor] ?? actor;
+/** The name to print for an actor, live: re-renders once identities land. */
+export function AuthorName({ actor }: { actor: string }) {
+  const name = useIdentities((s) => s.byActor[actor]?.name);
+  return <>{name ?? AGENT_LABEL[actor] ?? actor}</>;
+}
 
 export function PersonAvatar({ person }: { person: CommitContributor }) {
   if (person.avatarUrl)

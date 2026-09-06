@@ -26,6 +26,7 @@ import {
   decorator,
 } from '@/server/review/decorate.js';
 import { buildJson, buildMarkdown } from '@/server/review/export.js';
+import { resolveIdentities } from '@/server/review/identities.js';
 import {
   isSuggestionRoot,
   renderCommentHtml,
@@ -60,6 +61,7 @@ import {
   type CommentSide,
   type Comparison,
   type DecoratedComment,
+  type IdentitiesResponse,
   type Review,
   type ServerEvent,
   USER_ACTOR,
@@ -299,6 +301,19 @@ export function reviewRoutes(ctx: AppContext): Hono {
     if (rootsOnly) comments = comments.filter((x) => !x.parentId);
     const decorate = decorator(repoRoot);
     return c.json({ comments: await Promise.all(comments.map(decorate)) });
+  });
+
+  app.get('/api/identities', async (c) => {
+    const seen = repoRoot
+      ? (await listComments(repoRoot, null, actorOf(c))).map((x) => x.author)
+      : [];
+    const extra = (c.req.query('actors') ?? '').split(',').filter(Boolean);
+    const identities = await resolveIdentities(repoRoot, [
+      USER_ACTOR,
+      ...seen,
+      ...extra,
+    ]).catch(() => []);
+    return c.json<IdentitiesResponse>({ identities });
   });
 
   app.post('/api/comments', async (c) => {

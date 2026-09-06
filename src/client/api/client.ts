@@ -11,6 +11,7 @@ import type {
   FileHistoryResponse,
   FileInfoResponse,
   FileViewResponse,
+  IdentitiesResponse,
   RepoState,
   Rev,
   Review,
@@ -181,6 +182,7 @@ export const api = {
     ),
   openEditor: (path: string, line?: number) =>
     request<{ ok: boolean }>('POST', '/api/open-editor', { path, line }),
+  identities: () => request<IdentitiesResponse>('GET', '/api/identities'),
   uiPrefs: () => request<UiPrefs>('GET', '/api/ui-prefs'),
   setUiPrefs: (patch: Partial<UiPrefs>) =>
     request<UiPrefs>('POST', '/api/ui-prefs', patch),

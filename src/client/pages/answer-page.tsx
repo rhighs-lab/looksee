@@ -5,6 +5,7 @@ import { Avatar } from '@/client/components/comments/avatar.js';
 import { PageError } from '@/client/components/empty-state.js';
 import { ArrowLeft, File as FileIcon } from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
+import { AuthorName } from '@/client/components/people.js';
 import {
   TreeDirNode,
   TreePane,
@@ -130,7 +131,8 @@ export function AnswerPage({ id }: { id: string }) {
               <span className="ui-muted">
                 {answer.hits.length}{' '}
                 {answer.hits.length === 1 ? 'place' : 'places'} in {files}{' '}
-                {files === 1 ? 'file' : 'files'} · answered by {answer.author} ·{' '}
+                {files === 1 ? 'file' : 'files'} · answered by{' '}
+                <AuthorName actor={answer.author} /> ·{' '}
                 {relativeTime(answer.createdAt)}
               </span>
             </div>

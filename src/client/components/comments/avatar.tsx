@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { identicon } from '@/client/lib/identicon.js';
+import { useIdentities, useIdentity } from '@/client/store/identities.js';
 import { USER_ACTOR } from '@/shared/protocol.js';
 
 const SIZE = 20;
@@ -34,14 +36,34 @@ export function Avatar({
    *  identity, where the name says nothing about who typed the commit. */
   agent?: boolean;
 }) {
+  const load = useIdentities((s) => s.load);
+  const who = useIdentity(author);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const isUser = !(agent ?? author !== USER_ACTOR);
+  const label = who?.name ?? author;
+  if (who?.avatarUrl)
+    return (
+      <img
+        className={`avatar${isUser ? ' avatar-user' : ' avatar-agent'}`}
+        src={`${who.avatarUrl}${who.avatarUrl.includes('?') ? '&' : '?'}s=40`}
+        alt=""
+        width={SIZE}
+        height={SIZE}
+        title={isUser ? label : `Agent: ${label}`}
+        loading="lazy"
+      />
+    );
+
   const { hue, cells } = identicon(author);
   const bg = isUser ? `oklch(0.32 0.09 ${hue})` : `oklch(0.62 0.19 ${hue})`;
   const fg = isUser ? `oklch(0.86 0.13 ${hue})` : `oklch(0.97 0.03 ${hue})`;
   return (
     <span
       className={`avatar${isUser ? ' avatar-user' : ' avatar-agent'}`}
-      title={isUser ? 'You' : `Agent: ${author}`}
+      title={isUser ? label : `Agent: ${label}`}
       aria-hidden="true"
     >
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE}>

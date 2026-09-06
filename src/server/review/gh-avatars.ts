@@ -52,7 +52,7 @@ function ghToken(): Promise<string | null> {
   });
 }
 
-async function ghJson(url: string): Promise<unknown | null> {
+export async function ghJson(url: string): Promise<unknown | null> {
   const token = await ghToken();
   try {
     const res = await fetch(url, {
@@ -69,7 +69,7 @@ async function ghJson(url: string): Promise<unknown | null> {
   }
 }
 
-const pick = (v: unknown, k: string): string | null => {
+export const pick = (v: unknown, k: string): string | null => {
   const o = v as Record<string, unknown> | null;
   const s = o?.[k];
   return typeof s === 'string' ? s : null;
