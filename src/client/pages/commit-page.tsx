@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/client/api/client.js';
+import { useCommentSlots } from '@/client/components/comments/use-comment-slots.js';
 import { FileCard } from '@/client/components/file-card.js';
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
 } from '@/client/components/tree-pane.js';
 import { fileAnchor } from '@/client/lib/anchors.js';
 import { relativeTime } from '@/client/lib/format.js';
+import { snapshotForRange } from '@/client/lib/snapshot.js';
 import { buildTree } from '@/client/lib/tree.js';
 import { Button, LinkButton, Notice } from '@/client/ui/index.js';
 import type {
@@ -56,6 +58,20 @@ export function CommitPage({ sha }: { sha: string }) {
   }, [sha]);
 
   const files = useMemo(() => data?.files ?? [], [data]);
+  // snapshots come from this commit's own diffs, not the review store
+  const snapshotAt = useCallback(
+    (path: string, side: string, lo: number, hi: number) =>
+      snapshotForRange(
+        files.find((f) => f.path === path),
+        undefined,
+        side === 'old' ? 'old' : 'new',
+        lo,
+        hi
+      ),
+    [files]
+  );
+  const { enabled, slotsFor, fileCommentsFor, onFileComment } =
+    useCommentSlots(snapshotAt);
   const tree = useMemo(() => buildTree(files, (f) => f.path), [files]);
 
   const renderFile = (
@@ -162,6 +178,9 @@ export function CommitPage({ sha }: { sha: string }) {
               file={asChanged(f)}
               diff={f}
               pending={false}
+              slots={enabled ? slotsFor(f.path) : undefined}
+              fileComments={enabled ? fileCommentsFor(f.path) : undefined}
+              onFileComment={enabled ? onFileComment : undefined}
               viewHref={`/file/${f.path}`}
             />
           ))}

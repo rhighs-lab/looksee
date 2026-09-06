@@ -2530,19 +2530,24 @@ a.commit-row:hover {
 /* ---- commit detail and history ------------------------------------------ */
 .commit-detail {
   margin-bottom: var(--file-gap, 2em);
-  padding: 16px;
   background-color: var(--bgColor-muted, #f6f8fa);
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
 }
 
 .commit-detail-subject {
-  margin: 0 0 8px;
+  margin: 0;
+  padding: 14px 16px 8px;
   font-size: 16px;
 }
 
+/* the message is the card's own text, not a panel inside it */
 .commit-detail .commit-body {
-  margin: 0 0 14px;
+  margin: 0;
+  padding: 0 16px 14px;
+  background: none;
+  border: 0;
+  border-radius: 0;
 }
 
 .commit-detail-nav {
@@ -2550,6 +2555,7 @@ a.commit-row:hover {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  padding: 0 16px 14px;
 }
 
 .commit-steps {
@@ -2571,8 +2577,7 @@ a.commit-row:hover {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 14px;
-  padding-top: 12px;
+  padding: 12px 16px;
   font-size: 12.5px;
   border-top: 1px solid var(--borderColor-default, #d1d9e0);
 }

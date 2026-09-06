@@ -193,8 +193,8 @@ export function FilePage({ pathname }: { pathname: string }) {
 
   useEffect(() => {
     document.documentElement.dataset['commentsEnabled'] =
-      enabled && view?.inDiff ? '1' : '0';
-  }, [enabled, view?.inDiff]);
+      enabled && view ? '1' : '0';
+  }, [enabled, view]);
 
   const version = state?.version ?? 0;
   // biome-ignore lint/correctness/useExhaustiveDependencies: version re-fetches the file after every repository change
@@ -211,7 +211,9 @@ export function FilePage({ pathname }: { pathname: string }) {
 
   const diff = useMemo(() => (view ? toDiff(view) : null), [view]);
   const changed = useMemo(() => new Set(view?.changedLines ?? []), [view]);
-  const commentable = Boolean(enabled && view?.inDiff);
+  // any line of any file can be commented on, not only lines the current
+  // comparison happens to touch
+  const commentable = Boolean(enabled && view);
   const fileThreads = useMemo(
     () =>
       Object.values(threads).filter(
@@ -559,7 +561,7 @@ function BlobToolbar({
           </Label>
         )}
         {!view.inDiff && !view.deleted && !view.binary && (
-          <Label>Not in this diff, read-only</Label>
+          <Label>Not in this diff</Label>
         )}
       </span>
       <span className="blob-actions">
