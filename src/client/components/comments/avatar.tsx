@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { identicon } from '@/client/lib/identicon.js';
 import { useIdentities, useIdentity } from '@/client/store/identities.js';
 import { AGENT_LOGIN } from '@/shared/harnesses.js';
@@ -39,6 +39,7 @@ export function Avatar({
 }) {
   const load = useIdentities((s) => s.load);
   const who = useIdentity(author);
+  const [failed, setFailed] = useState<string | null>(null);
   useEffect(() => {
     void load(author);
   }, [author, load]);
@@ -50,7 +51,9 @@ export function Avatar({
     (AGENT_LOGIN[author]
       ? `https://github.com/${AGENT_LOGIN[author]}.png`
       : null);
-  if (avatarUrl)
+  // Reviews run offline as often as not; a github.com avatar that cannot load
+  // must fall through to the identicon rather than leave a broken image.
+  if (avatarUrl && failed !== avatarUrl)
     return (
       <img
         className={`avatar${isUser ? ' avatar-user' : ' avatar-agent'}`}
@@ -60,6 +63,7 @@ export function Avatar({
         height={SIZE}
         title={isUser ? label : `Agent: ${label}`}
         loading="lazy"
+        onError={() => setFailed(avatarUrl)}
       />
     );
 
