@@ -194,24 +194,36 @@ function TreeDirRow<T>({
   );
 }
 
+const syncSubnavHeight = (): void => {
+  const el = document.querySelector<HTMLElement>('.pr-subnav');
+  if (el)
+    document.documentElement.style.setProperty(
+      '--subnav-h',
+      `${el.getBoundingClientRect().height}px`
+    );
+};
+
 export function useSubnavHeight(): void {
+  const watched = useRef<HTMLElement | null>(null);
+  const observer = useRef<ResizeObserver | null>(null);
+  // A page swapping its loading state for content remounts the subnav, so the
+  // observer has to follow the new node or every sticky offset keeps the
+  // height the placeholder happened to have.
   useEffect(() => {
-    const sync = () => {
-      const el = document.querySelector<HTMLElement>('.pr-subnav');
-      if (el)
-        document.documentElement.style.setProperty(
-          '--subnav-h',
-          `${el.getBoundingClientRect().height}px`
-        );
-    };
-    sync();
-    const ro = new ResizeObserver(sync);
-    const el = document.querySelector('.pr-subnav');
-    if (el) ro.observe(el);
-    window.addEventListener('resize', sync);
+    const el = document.querySelector<HTMLElement>('.pr-subnav');
+    if (el && el !== watched.current) {
+      observer.current?.disconnect();
+      observer.current = new ResizeObserver(syncSubnavHeight);
+      observer.current.observe(el);
+      watched.current = el;
+    }
+    syncSubnavHeight();
+  });
+  useEffect(() => {
+    window.addEventListener('resize', syncSubnavHeight);
     return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', sync);
+      window.removeEventListener('resize', syncSubnavHeight);
+      observer.current?.disconnect();
     };
   }, []);
 }
