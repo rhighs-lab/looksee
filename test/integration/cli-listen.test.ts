@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -374,6 +375,45 @@ describe('cli listen', () => {
     expect(
       ls.some((x) => (x['comment'] as DecoratedComment)?.id === root.id)
     ).toBe(true);
+  });
+
+  it('--wait lets the real process exit once an event arrives', async () => {
+    const child = spawn(
+      process.execPath,
+      [
+        '--import',
+        'tsx',
+        'src/cli/main.ts',
+        'listen',
+        '--quiet',
+        '--as',
+        'exiter',
+        '--not-me',
+        '--wait',
+        '25',
+      ],
+      {
+        cwd: process.cwd(),
+        env: { ...process.env, LOOKSEE_URL: srv.base, LOOKSEE_HOME: home },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    );
+    let out = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (c: string) => {
+      out += c;
+    });
+    const exited = new Promise<number>((res) =>
+      child.on('exit', (code) => res(code ?? -1))
+    );
+    const started = Date.now();
+    while (!out.includes('"hello"') && Date.now() - started < 20_000)
+      await new Promise((r) => setTimeout(r, 100));
+    expect(out).toContain('"hello"');
+    await single('wake the poller', 10, 'reviewer');
+    const code = await exited;
+    expect(code).toBe(0);
+    expect(out).toContain('comment.created');
   });
 
   it('exits 1 with one stderr line when the server goes away', async () => {

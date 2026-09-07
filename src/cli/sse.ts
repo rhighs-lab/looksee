@@ -30,21 +30,27 @@ export async function* events(
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = '';
-  for (;;) {
-    let chunk: Awaited<ReturnType<typeof reader.read>>;
-    try {
-      chunk = await reader.read();
-    } catch (e) {
-      if (signal?.aborted) return;
-      throw e;
+  // A caller that stops reading closes the generator; without releasing the
+  // body the socket stays open and keeps the process alive.
+  try {
+    for (;;) {
+      let chunk: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        chunk = await reader.read();
+      } catch (e) {
+        if (signal?.aborted) return;
+        throw e;
+      }
+      if (chunk.done) {
+        if (signal?.aborted) return;
+        throw new Error('connection closed');
+      }
+      buf += dec.decode(chunk.value, { stream: true });
+      const { done, rest } = frames(buf);
+      buf = rest;
+      for (const ev of done) yield ev;
     }
-    if (chunk.done) {
-      if (signal?.aborted) return;
-      throw new Error('connection closed');
-    }
-    buf += dec.decode(chunk.value, { stream: true });
-    const { done, rest } = frames(buf);
-    buf = rest;
-    for (const ev of done) yield ev;
+  } finally {
+    await reader.cancel().catch(() => {});
   }
 }
