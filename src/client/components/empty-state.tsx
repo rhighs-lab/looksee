@@ -89,10 +89,6 @@ export function CleanEmpty({ base }: { base: string }) {
 
 const GONE = /^(not found|no repo|bad path|invalid sha|bad params)$/i;
 
-/**
- * A failed page, said in words. Server strings like "not found" are for the
- * API's callers, not for someone who opened a link that no longer resolves.
- */
 export function PageError({
   error,
   what,
