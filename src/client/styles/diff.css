@@ -400,6 +400,19 @@ body {
   font-size: 12px;
 }
 
+/* The pane floats clear of the subnav; without this the diff would show
+   through that gap as it scrolls under. */
+.file-header::before,
+.blob-toolbar::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: 100%;
+  height: var(--floating-pane-gap);
+  background-color: var(--bgColor-default, #fff);
+}
+
 /* The card draws the outline; the header only rules itself off from the diff. */
 .file .file-header {
   border-width: 0 0 1px;
