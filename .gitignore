@@ -4,3 +4,6 @@ node_modules/
 .looksee/
 dist/
 docs/
+.npmrc
+.env
+.env.*
