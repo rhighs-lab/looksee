@@ -36,6 +36,8 @@
     "cli"
   ],
   "scripts": {
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm install --lockfile-only --ignore-scripts",
     "start": "node dist/server/cli/main.js",
     "looksee": "node dist/server/cli/main.js",
     "dev": "pnpm run --parallel \"/^dev:/\"",
@@ -56,6 +58,7 @@
   "dependencies": {
     "@hono/node-server": "^2.1.1",
     "@primer/primitives": "^10.5.0",
+    "@vscode/tree-sitter-wasm": "0.3.1",
     "hono": "^4.13.5",
     "marked": "^12.0.2",
     "mermaid": "^11.17.2",
@@ -64,6 +67,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
+    "@changesets/cli": "^3.0.2",
     "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

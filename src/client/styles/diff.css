@@ -11,6 +11,8 @@
      pane, and scroll anchors. Kept in sync with the subnav's rendered height. */
   --subnav-h: 62px;
   --file-gap: 2em;
+  --floating-pane-gap: 24px;
+  --floating-pane-top: calc(var(--subnav-h) + var(--floating-pane-gap));
 }
 
 html,
@@ -178,7 +180,7 @@ body {
 
 /* anchor targets scroll clear of the sticky subnav */
 .file {
-  scroll-margin-top: calc(var(--subnav-h, 62px) + 8px);
+  scroll-margin-top: calc(var(--floating-pane-top) + 8px);
 }
 
 /* ---- file tree sidebar ------------------------------------------------- */
@@ -343,7 +345,7 @@ body {
   display: inline-flex;
 }
 
-.tree-file-row.is-active {
+.tree-row.is-active {
   background-color: var(--bgColor-accent-muted, #ddf4ff);
 }
 
@@ -377,31 +379,42 @@ body {
   background-color: var(--bgColor-default, #fff);
 }
 
-.file-header {
+/* File headers and the symbols pane keep the same breathing room on scroll. */
+.file-header,
+.blob-toolbar {
   position: sticky;
-  top: calc(var(--subnav-h, 62px) - 1px);
+  top: var(--floating-pane-top);
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: var(--ui-radius, 6px);
+}
+
+.file-header {
   z-index: 10;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 8px;
+  row-gap: 6px;
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
-  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
   font-size: 12px;
+}
+
+/* The card draws the outline; the header only rules itself off from the diff. */
+.file .file-header {
+  border-width: 0 0 1px;
+  border-radius: var(--ui-radius, 6px) var(--ui-radius, 6px) 0 0;
+}
+
+.file.is-collapsed .file-header {
+  border-bottom-width: 0;
+  border-radius: var(--ui-radius, 6px);
 }
 
 .file-header:has(.menu),
 .file-header:has([data-tooltip]:hover),
 .file-header:has([data-tooltip]:focus-visible) {
   z-index: 19;
-}
-
-.file.is-collapsed .file-header {
-  border-bottom: none;
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
 }
 
 .file.is-collapsed .file-body {
@@ -462,12 +475,24 @@ body {
   background-color: var(--borderColor-default, #d1d9e0);
 }
 
+.file-header > * {
+  flex: 0 0 auto;
+}
+
 .file-info {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.file-info > * {
+  flex: 0 0 auto;
+}
+
+.file-info > .file-path {
+  flex: 0 1 auto;
 }
 
 .file-path {
@@ -854,7 +879,7 @@ body {
   background-color: var(--button-primary-bgColor-hover, #0860ca);
 }
 
-[data-comments-enabled="1"] .diff-table tr:hover .commentable .add-comment {
+[data-comments-enabled="1"] .diff-table .commentable:hover .add-comment {
   display: inline-flex;
 }
 
@@ -879,11 +904,11 @@ body {
 
 /* has to out-specify the hover rule above, or the row under the cursor keeps
    showing its own button next to the bar */
-[data-casting="1"] .diff-table tr:hover .commentable .add-comment {
+[data-casting="1"] .diff-table .commentable:hover .add-comment {
   display: none;
 }
 
-[data-comments-enabled="1"] .diff-table tr:hover .commentable::before {
+[data-comments-enabled="1"] .diff-table .commentable:hover::before {
   visibility: hidden; /* hide the number while the + overlays the gutter */
 }
 
@@ -943,15 +968,21 @@ body {
 .comment-thread-footer {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  row-gap: 6px;
   padding: 8px 12px;
   border-top: 1px solid var(--borderColor-default, #d1d9e0);
   background-color: var(--bgColor-muted, #f6f8fa);
   border-radius: 0 0 6px 6px;
 }
 
+.comment-thread-footer > * {
+  flex: 0 0 auto;
+}
+
 .comment-reply-field {
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
   text-align: left;
   font: inherit;
@@ -969,21 +1000,21 @@ body {
   min-width: 0;
 }
 
-.comment-thread.is-resolved .comment-body {
+.comment-thread.is-collapsed .comment-body {
   display: none;
 }
-.comment-thread.is-resolved .comment + .comment,
-.comment-thread.is-resolved .comment-header {
+.comment-thread.is-collapsed .comment + .comment,
+.comment-thread.is-collapsed .comment-header {
   display: none;
 }
-.comment-thread.is-resolved .comment:first-child .comment-header {
+.comment-thread.is-collapsed .comment:first-child .comment-header {
   display: flex;
   padding-bottom: 8px;
 }
-.comment-thread.is-resolved .comment-header-tools {
+.comment-thread.is-collapsed .comment-header-tools {
   display: none;
 }
-.comment-thread.is-resolved .comment-thread-footer {
+.comment-thread.is-collapsed .comment-thread-footer {
   border-top: 0;
 }
 
@@ -1548,8 +1579,6 @@ body {
 
 /* ---- Blob toolbar ------------------------------------------------------- */
 .blob-toolbar {
-  position: sticky;
-  top: var(--subnav-h, 62px);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -1557,9 +1586,6 @@ body {
   gap: 12px;
   padding: 8px 12px;
   background-color: var(--bgColor-muted, #f6f8fa);
-  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
   font-size: 12px;
 }
 
@@ -2931,4 +2957,34 @@ a.commit-row:hover {
   align-items: center;
   font-family: var(--ui-mono);
   font-size: 12px;
+}
+
+.header-actions {
+  position: relative;
+  flex: none;
+}
+.header-action-items {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-action-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 240px;
+  padding: 12px;
+}
+.header-actions [hidden] {
+  display: none;
+}
+.file-header .file-info {
+  flex: 1 1 0;
+  overflow: hidden;
+}
+.file-header .file-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -4,26 +4,34 @@ import type { Identity } from '@/shared/protocol.js';
 
 interface IdentityState {
   byActor: Record<string, Identity>;
-  load: () => Promise<void>;
+  load: (actor?: string) => Promise<void>;
 }
 
-let inFlight: Promise<void> | null = null;
+const inFlight = new Map<string, Promise<void>>();
 
-export const useIdentities = create<IdentityState>((set) => ({
+export const useIdentities = create<IdentityState>((set, get) => ({
   byActor: {},
-  load: () => {
-    inFlight ??= api
-      .identities()
+  load: (actor) => {
+    if (actor && get().byActor[actor]) return Promise.resolve();
+    const key = actor ?? '';
+    const pending = inFlight.get(key);
+    if (pending) return pending;
+    const request = api
+      .identities(actor)
       .then(({ identities }) => {
-        set({
-          byActor: Object.fromEntries(identities.map((i) => [i.actor, i])),
-        });
+        set((state) => ({
+          byActor: {
+            ...state.byActor,
+            ...Object.fromEntries(identities.map((i) => [i.actor, i])),
+          },
+        }));
       })
       .catch(() => undefined)
       .finally(() => {
-        inFlight = null;
+        inFlight.delete(key);
       });
-    return inFlight;
+    inFlight.set(key, request);
+    return request;
   },
 }));
 

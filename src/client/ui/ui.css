@@ -9,6 +9,7 @@
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
   --ui-radius: 6px;
+  --ui-list-gap: 2px;
   --ui-border: var(--borderColor-default, #d1d9e0);
   --ui-border-muted: var(--borderColor-muted, #d8dee4);
   --ui-fg: var(--fgColor-default, #1f2328);
@@ -661,4 +662,14 @@ textarea.ui-input,
   [data-tooltip]::after {
     transition: none;
   }
+}
+
+/* Shared spacing for selectable vertical lists, including nested tree rows. */
+.tree-row,
+.finder-row,
+.menu-item,
+.composer-saved-item,
+.commit-row,
+.history-row {
+  margin-block-end: var(--ui-list-gap);
 }

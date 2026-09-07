@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Looksee · Symbols and sticky scope</title>
+<style>
+  :root { color-scheme:light dark; --bg:light-dark(#fff,#0d1117); --muted:light-dark(#f6f8fa,#161b22); --fg:light-dark(#1f2328,#e6edf3); --sub:light-dark(#656d76,#9198a1); --border:light-dark(#d0d7de,#30363d); --accent:light-dark(#0969da,#79c0ff); --active:light-dark(#ddf4ff,#152b40); --row:26px; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .intro { padding:22px 28px 18px; border-bottom:1px solid var(--border); }
+  h1 { margin:0; font-size:18px; font-weight:600; letter-spacing:-.3px; }
+  .intro p { margin:5px 0 0; color:var(--sub); font-size:13px; }
+  .app { margin:24px auto; width:calc(100% - 56px); max-width:1320px; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:11px 14px; background:var(--muted); border-bottom:1px solid var(--border); }
+  .path { font:13px ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
+  .toolbar .revision { color:var(--sub); margin-left:auto; font-size:12px; }
+  button,input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  button:focus-visible,input:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+  .toggle { padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); font-size:12px; }
+  .toggle:hover { background:var(--active); }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 260px; }
+  .layout.hide-outline { grid-template-columns:minmax(0,1fr); }
+  .viewport { height: min(66vh,690px); min-height:350px; overflow:auto; position:relative; scrollbar-gutter:stable; }
+  .code { padding-bottom:220px; min-width:0; }
+  .line { display:flex; align-items:center; min-height:var(--row); width:100%; font:12px/26px ui-monospace,SFMono-Regular,Consolas,monospace; }
+  .num { width:54px; flex:0 0 54px; padding-right:16px; text-align:right; color:var(--sub); user-select:none; }
+  .line code { font:inherit; white-space:pre-wrap; overflow-wrap:anywhere; padding-right:18px; }
+  .signature { position:sticky; top:calc(var(--depth) * var(--row)); z-index:calc(10 - var(--depth)); border:0; padding:0; background:var(--bg); color:var(--fg); text-align:left; }
+  .signature[data-pinned="true"] { background:var(--muted); box-shadow:0 1px 0 var(--border); }
+  .signature:hover { background:var(--active); }
+  .signature .pin-hint { margin-left:auto; margin-right:12px; font:11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--sub); opacity:0; white-space:nowrap; }
+  .signature[data-pinned="true"] .pin-hint { opacity:1; }
+  .comment { color:var(--sub); }
+  .outline { padding:14px; border-left:1px solid var(--border); height:min(66vh,690px); min-height:350px; overflow:auto; }
+  .outline h2 { font-size:13px; margin:0 0 11px; font-weight:600; }
+  .outline input { border:1px solid var(--border); border-radius:6px; background:var(--bg); width:100%; padding:7px 9px; font-size:12px; margin-bottom:12px; }
+  .symbol { display:flex; gap:8px; align-items:center; width:100%; padding:7px 8px; border:0; border-radius:5px; background:transparent; text-align:left; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+  .symbol:hover { background:var(--muted); }
+  .symbol[aria-current="location"] { color:var(--accent); background:var(--active); }
+  .symbol .kind { color:var(--sub); font-size:10px; min-width:13px; }
+  .symbol .symbol-line { margin-left:auto; color:var(--sub); font-size:11px; }
+  .status { padding:8px 14px; border-top:1px solid var(--border); color:var(--sub); font-size:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .notes { max-width:1320px; width:calc(100% - 56px); margin:0 auto 24px; color:var(--sub); font-size:12px; }
+  .notes a { color:var(--accent); }
+  [hidden] { display:none!important; }
+  @media(max-width:700px) { .intro { padding:16px; } .app,.notes { width:calc(100% - 24px); } .layout { grid-template-columns:minmax(0,1fr) 180px; } .outline { padding:9px; } .num { width:38px; flex-basis:38px; padding-right:10px; } .signature .pin-hint { display:none; } }
+  @media(max-width:480px) { .layout { grid-template-columns:minmax(0,1fr); } .outline { border-left:0; border-top:1px solid var(--border); height:auto; min-height:0; max-height:240px; } .viewport { min-height:320px; } }
+</style>
+</head>
+<body>
+<header class="intro">
+  <h1>File symbols + sticky scope</h1>
+  <p>Scroll the code. Class and function headers stay until their scope ends. Click a header to return to its declaration.</p>
+</header>
+<main class="app">
+  <div class="toolbar"><span class="path">src / review / session.ts</span><span class="revision">Working tree</span><button class="toggle" id="toggle" aria-expanded="true" aria-controls="outline">Hide symbols</button></div>
+  <div class="layout" id="layout">
+    <div class="viewport" id="viewport" tabindex="0" role="region" aria-label="Scrollable source code"><div class="code" id="code"></div></div>
+    <aside class="outline" id="outline" aria-label="File symbols"><h2>Symbols</h2><input type="search" id="filter" placeholder="Filter symbols" aria-label="Filter symbols"><div id="symbol-list"></div><p id="empty" hidden>No matching symbols</p></aside>
+  </div>
+  <footer class="status"><span id="location">File scope</span><span id="line-count"></span></footer>
+</main>
+<p class="notes">Behavior sketch · illustrative code and predeclared scopes. The Looksee implementation will derive scopes with Tree-sitter. Pattern: <a href="https://www.jetbrains.com/help/idea/sticky-lines.html" target="_blank" rel="noreferrer">Sticky lines</a>.</p>
+<script>
+(() => {
+  const viewport = document.getElementById('viewport');
+  const code = document.getElementById('code');
+  const outline = document.getElementById('outline');
+  const list = document.getElementById('symbol-list');
+  const scopes = [];
+  let lineNumber = 0;
+  function line(parent, text, signature = false) {
+    const row = document.createElement(signature ? 'button' : 'div');
+    row.className = 'line' + (signature ? ' signature' : '') + (text.trim().startsWith('//') ? ' comment' : '');
+    if (signature) row.type = 'button';
+    const number = document.createElement('span'); number.className = 'num'; number.textContent = ++lineNumber;
+    const content = document.createElement('code'); content.textContent = text || ' ';
+    row.append(number,content); parent.append(row);
+    return row;
+  }
+  function lines(parent, text) { text.split('\n').forEach(text => line(parent,text)); }
+  function scope(parent, name, signature, depth, kind, populate) {
+    const section = document.createElement('section');
+    section.className = 'scope'; section.style.setProperty('--depth',depth);
+    parent.append(section);
+    const start = lineNumber + 1;
+    const header = line(section,signature,true);
+    header.setAttribute('aria-label','Go to ' + name + ' declaration, line ' + start);
+    const hint = document.createElement('span'); hint.className = 'pin-hint'; hint.textContent = 'Go to declaration'; header.append(hint);
+    const button = document.createElement('button'); button.className = 'symbol'; button.type = 'button'; button.style.paddingLeft = (8 + depth * 14) + 'px';
+    const badge = document.createElement('span'); badge.className = 'kind'; badge.textContent = kind;
+    const title = document.createElement('span'); title.textContent = name;
+    const number = document.createElement('span'); number.className = 'symbol-line'; number.textContent = start;
+    button.append(badge,title,number); list.append(button);
+    const entry = { section,header,button,name,depth,start };
+    scopes.push(entry);
+    const jump = () => {
+      viewport.scrollTo({top:section.offsetTop - depth * 26,behavior:'instant'});
+      header.focus({preventScroll:true});
+      update();
+    };
+    button.addEventListener('click',jump); header.addEventListener('click',jump);
+    populate(section);
+    line(section,'  '.repeat(depth) + '}');
+    return section;
+  }
+  lines(code,`import { watch } from 'node:fs';
+import { readSnapshot } from './snapshot.js';
+
+// Keep a local review in sync with the working tree.
+// This is sample code for the interaction sketch.
+`);
+  scope(code,'ReviewSession','export class ReviewSession {',0,'C',parent => {
+    lines(parent,`  private snapshot = null;
+  private listeners = new Set();
+  private watcher;
+  private closed = false;
+`);
+    scope(parent,'constructor','  constructor(private repo: string) {',1,'m',method => {
+      lines(method,`    this.watcher = watch(repo, { recursive: true });
+    this.watcher.on('change', () => {
+      if (this.closed) return;
+      void this.refresh();
+    });
+
+    this.watcher.on('error', (error) => {
+      console.error('Unable to watch repository', error);
+      this.close();
+    });
+
+    void this.refresh();`);
+    });
+    lines(parent,'');
+    scope(parent,'refresh','  async refresh() {',1,'m',method => {
+      lines(method,`    if (this.closed) return;
+
+    const previous = this.snapshot;
+    const next = await readSnapshot(this.repo);
+    if (!next || this.closed) return;
+
+    const changed = next.digest !== previous?.digest;
+    if (!changed) return;
+
+    this.snapshot = next;
+    const event = {
+      type: 'snapshot',
+      previous,
+      current: next,
+      at: Date.now(),
+    };
+`);
+      scope(method,'notify','    const notify = (listener) => {',2,'ƒ',nested => {
+        lines(nested,`      try {
+        listener(event);
+      } catch (error) {
+        // One listener must not interrupt the others.
+        console.error('Review listener failed', error);
+      }
+
+      // Remove listeners that opted out during delivery.
+      if (listener.closed) {
+        this.listeners.delete(listener);
+      }`);
+      });
+      lines(method,`    ;
+
+    for (const listener of this.listeners) {
+      notify(listener);
+    }
+
+    // The nested notify header leaves here.
+    // The refresh header remains until its closing brace.
+    return next;`);
+    });
+    lines(parent,'');
+    scope(parent,'subscribe','  subscribe(listener) {',1,'m',method => {
+      lines(method,`    if (this.closed) {
+      throw new Error('Review session is closed');
+    }
+
+    this.listeners.add(listener);
+
+    if (this.snapshot) {
+      listener({ type: 'snapshot', current: this.snapshot });
+    }
+
+    return () => {
+      this.listeners.delete(listener);
+    };`);
+    });
+    lines(parent,'');
+    scope(parent,'close','  close() {',1,'m',method => {
+      lines(method,`    if (this.closed) return;
+    this.closed = true;
+
+    this.watcher.close();
+    this.listeners.clear();
+    this.snapshot = null;
+
+    // Scroll past this method to leave the class.
+    // Both pinned headers leave at their own boundaries.`);
+    });
+  });
+  lines(code,`\n// Outside the class: no ReviewSession header should remain.
+// The next function has its own independent scope.
+`);
+  scope(code,'parseRepo','export function parseRepo(input: string) {',0,'ƒ',parent => {
+    lines(parent,`  const root = input.trim();
+  if (!root) return null;
+
+  const normalized = root.endsWith('/') ? root.slice(0, -1) : root;
+  const name = normalized.split('/').pop();
+  if (!name) return null;
+
+  return {
+    root: normalized,
+    name,
+    label: name.replaceAll('-', ' '),
+  };`);
+  });
+  lines(code,`\n// File scope again. No function name stays pinned here.
+export const DEFAULT_POLL_INTERVAL = 500;
+export const DEFAULT_CONTEXT_LINES = 20;
+`);
+  document.getElementById('line-count').textContent = lineNumber + ' lines · TypeScript';
+  function update() {
+    const top = viewport.getBoundingClientRect().top;
+    let active = null;
+    for (const entry of scopes) {
+      const rect = entry.section.getBoundingClientRect();
+      const threshold = top + entry.depth * 26;
+      const pinned = rect.top < threshold - 0.5 && rect.bottom > threshold;
+      entry.header.dataset.pinned = String(pinned);
+      const inside = rect.top <= threshold + 1 && rect.bottom > threshold + 26;
+      if (inside && (!active || entry.depth >= active.depth)) active = entry;
+    }
+    scopes.forEach(entry => {
+      if (entry === active) entry.button.setAttribute('aria-current','location');
+      else entry.button.removeAttribute('aria-current');
+    });
+    document.getElementById('location').textContent = active ? active.name + ' · declaration at line ' + active.start : 'File scope';
+  }
+  let frame;
+  viewport.addEventListener('scroll',() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); },{passive:true});
+  window.addEventListener('resize',update);
+  document.getElementById('filter').addEventListener('input',event => {
+    const query = event.target.value.toLowerCase().trim();
+    let visible = 0;
+    scopes.forEach(entry => { entry.button.hidden = !entry.name.toLowerCase().includes(query); if (!entry.button.hidden) visible++; });
+    document.getElementById('empty').hidden = visible !== 0;
+  });
+  document.getElementById('toggle').addEventListener('click',event => {
+    outline.hidden = !outline.hidden;
+    document.getElementById('layout').classList.toggle('hide-outline',outline.hidden);
+    event.target.textContent = outline.hidden ? 'Show symbols' : 'Hide symbols';
+    event.target.setAttribute('aria-expanded',String(!outline.hidden));
+    update();
+  });
+  update();
+})();
+</script>
+</body>
+</html>

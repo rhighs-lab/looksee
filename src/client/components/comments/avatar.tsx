@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { identicon } from '@/client/lib/identicon.js';
 import { useIdentities, useIdentity } from '@/client/store/identities.js';
+import { AGENT_LOGIN } from '@/shared/harnesses.js';
 import { USER_ACTOR } from '@/shared/protocol.js';
 
 const SIZE = 20;
@@ -39,16 +40,21 @@ export function Avatar({
   const load = useIdentities((s) => s.load);
   const who = useIdentity(author);
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(author);
+  }, [author, load]);
 
   const isUser = !(agent ?? author !== USER_ACTOR);
   const label = who?.name ?? author;
-  if (who?.avatarUrl)
+  const avatarUrl =
+    who?.avatarUrl ??
+    (AGENT_LOGIN[author]
+      ? `https://github.com/${AGENT_LOGIN[author]}.png`
+      : null);
+  if (avatarUrl)
     return (
       <img
         className={`avatar${isUser ? ' avatar-user' : ' avatar-agent'}`}
-        src={`${who.avatarUrl}${who.avatarUrl.includes('?') ? '&' : '?'}s=40`}
+        src={`${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}s=40`}
         alt=""
         width={SIZE}
         height={SIZE}

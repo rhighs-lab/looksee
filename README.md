@@ -113,7 +113,7 @@ echo '{"question":"...","summary":"markdown","hits":[
 | `looksee status` | Server, pending reviews, open threads and session pins |
 | `looksee stop` | Shut down the server for this repo |
 | `looksee ps` | List the looksee servers running on this machine |
-| `looksee listen` | Stream review events as JSON lines until killed |
+| `looksee listen` | Print review events as JSON lines; `--wait <s>` returns after the first one |
 | `looksee comments` | List threads with replies and an `expects` hint |
 | `looksee reply <id> [body]` | Reply to a thread, body from the argument or stdin |
 | `looksee resolve <id>` | Mark a thread resolved |

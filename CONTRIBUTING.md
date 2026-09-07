@@ -5,7 +5,8 @@ change so we can agree on the shape of it first.
 
 ## Setup
 
-Node 20 or newer, and [pnpm](https://pnpm.io).
+Node 24, and [pnpm](https://pnpm.io). The published CLI supports Node 20 or newer;
+the development and release tools require Node 24.
 
 ```bash
 git clone https://github.com/rhighs-lab/looksee && cd looksee
@@ -52,3 +53,43 @@ Beyond that:
 
 One logical change per commit. Write the subject in the imperative and use the
 body to say why the change exists, not what the diff already shows.
+
+## Releases
+
+Packages are published to npm, the registry used by pnpm.
+
+1. Run `pnpm changeset` alongside each user-facing change. Select `patch` for
+   fixes, `minor` for features, or `major` for breaking changes, and write the
+   changelog entry. Commit the generated `.changeset/*.md` file with the code.
+   Documentation, tests, and CI-only changes do not need a release entry.
+2. Merge the change into `main`. The release workflow opens or updates a
+   version PR, combining pending changesets into the next semver version and
+   `CHANGELOG.md`. Do not edit the version manually during normal development.
+3. Merge the version PR. CI checks, builds, and publishes the unpublished
+   version, then creates a Git tag and GitHub release. Already-published
+   versions are skipped. Publishing is triggered by commits on `main`, not tags.
+
+For a local preview, `pnpm run version-packages` applies pending changesets and
+updates the lockfile. This consumes the entries; normally let the release PR
+perform this step. Changesets chooses version numbers from the bump types you
+select, not from commit messages.
+
+### One-time setup
+
+- In GitHub **Settings → Actions → General**, enable **Allow GitHub Actions to
+  create and approve pull requests**. If organization policy disables it, an
+  organization owner must enable it in the organization's Actions settings first.
+- In npm's settings for `@rhighs-lab/looksee`, add a **GitHub Actions trusted
+  publisher**: organization/user `rhighs-lab`, repository `looksee`, workflow
+  filename `release.yml`, and no environment name. Allow publishing. No
+  `NPM_TOKEN` secret is needed. See the [npm trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
+- The package must already exist on npm before configuring its trusted publisher
+  (the current `0.1.0` release does). For a new package, publish its first version
+  manually, then configure trust.
+
+The workflow follows the [Changesets automation guide](https://changesets.dev/guide/automating).
+Only the publish job can request npm credentials; it publishes the archive
+produced by the successful checks and build. If publishing fails, fix the
+reported cause and rerun the workflow on `main` from GitHub Actions. Do not bump
+the version just to retry. Check the workflow logs and npm version after the
+first release; a successful local build does not verify registry authentication.

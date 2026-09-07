@@ -8,6 +8,7 @@ import { EditorLink } from '@/client/components/editor-link.js';
 import { FileCommits } from '@/client/components/file-commits.js';
 import { FileInfo } from '@/client/components/file-info.js';
 import { ForgeLink } from '@/client/components/forge-link.js';
+import { HeaderActions } from '@/client/components/header-actions.js';
 import { ChevronDown, Copy } from '@/client/components/icons.js';
 import { fileAnchor } from '@/client/lib/anchors.js';
 import type { Expansions } from '@/client/store/review.js';
@@ -204,18 +205,20 @@ export function AnswerCard({
             {hit.endLine !== hit.startLine ? `-${hit.endLine}` : ''}
           </span>
         </span>
-        <FileCommits path={hit.path} oldPath={null} />
-        <FileInfo path={hit.path} />
-        <EditorLink filePath={hit.path} line={hit.startLine} />
-        <ForgeLink filePath={hit.path} line={hit.startLine} />
-        {diff && (
-          <ExpandAllButton
-            diff={diff}
-            expansions={expansions}
-            expand={(gap, dir) => void expand(gap, dir)}
-            collapseAll={collapseAll}
-          />
-        )}
+        <HeaderActions>
+          <FileCommits path={hit.path} oldPath={null} />
+          <FileInfo path={hit.path} />
+          <EditorLink filePath={hit.path} line={hit.startLine} />
+          <ForgeLink filePath={hit.path} line={hit.startLine} />
+          {diff && (
+            <ExpandAllButton
+              diff={diff}
+              expansions={expansions}
+              expand={(gap, dir) => void expand(gap, dir)}
+              collapseAll={collapseAll}
+            />
+          )}
+        </HeaderActions>
         <LinkButton href={`/file/${hit.path}#L${hit.startLine}`}>
           View file
         </LinkButton>

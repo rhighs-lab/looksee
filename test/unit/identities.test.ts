@@ -26,6 +26,12 @@ describe('resolveIdentities', () => {
           avatarUrl: 'https://avatars.githubusercontent.com/u/37136851?v=4',
           at: Date.now(),
         },
+        codex: {
+          login: null,
+          name: 'Codex',
+          avatarUrl: null,
+          at: Date.now(),
+        },
       })
     );
   });
@@ -61,5 +67,10 @@ describe('resolveIdentities', () => {
   it('de-duplicates the actors it was asked for', async () => {
     const out = await resolveIdentities(null, ['user', 'user', 'claude-code']);
     expect(out.map((i) => i.actor)).toEqual(['user', 'claude-code']);
+  });
+
+  it('uses the known harness avatar even when a cached GitHub lookup failed', async () => {
+    const [codex] = await resolveIdentities(null, ['codex']);
+    expect(codex?.avatarUrl).toBe('https://github.com/openai.png');
   });
 });

@@ -187,8 +187,8 @@ const COMMANDS: CommandSpec[] = [
   placeholder(
     {
       name: 'listen',
-      example: 'looksee listen --not-me --pending',
-      summary: 'Stream review events as JSON lines until killed',
+      example: 'looksee listen --not-me --pending --wait 60',
+      summary: 'Print review events as JSON lines, streaming or one wait',
       args: '',
       flags: [
         AS,
@@ -198,12 +198,17 @@ const COMMANDS: CommandSpec[] = [
           takesValue: false,
           help: 'Replay unanswered items on connect, marked replay: true',
         },
+        {
+          name: 'wait',
+          takesValue: true,
+          help: 'Exit after the first event, or after N seconds with none',
+        },
         { name: 'quiet', takesValue: false, help: 'Skip the guide in hello' },
       ],
       output:
         'One JSON event per line: { type: "hello", actor, guide } first, then review.submitted { review, comments, expects }, comment.created { comment }, comment.replied { comment }, thread.resolved { id, actor }, thread.reopened { id, actor }; every comment carries expects',
       notes:
-        'Exits 1 with one stderr line when the server stays unreachable for ten seconds',
+        'Without --wait it streams until killed, which only suits a host that can wake an idle agent; with --wait it blocks in the foreground and exits after the first event or the timeout, so a turn-based agent can poll it. Exits 1 with one stderr line when the server stays unreachable for ten seconds',
     },
     runListen
   ),

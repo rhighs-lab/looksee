@@ -60,7 +60,7 @@ describe('looksee skill', () => {
     const listen = all().find((c) => c.name === 'listen')!;
     const flags = new Set(listen.flags.map((f) => f.name));
     const src = await read();
-    for (const f of ['not-me', 'pending']) {
+    for (const f of ['not-me', 'pending', 'wait']) {
       expect(flags).toContain(f);
       expect(src).toContain(`--${f}`);
     }

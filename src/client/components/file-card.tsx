@@ -16,6 +16,7 @@ import { EditorLink } from '@/client/components/editor-link.js';
 import { FileCommits } from '@/client/components/file-commits.js';
 import { FileInfo } from '@/client/components/file-info.js';
 import { ForgeLink } from '@/client/components/forge-link.js';
+import { HeaderActions } from '@/client/components/header-actions.js';
 import { ChevronDown, CommentIcon, Copy } from '@/client/components/icons.js';
 import { ImageDiff, isImage } from '@/client/components/image-blob.js';
 import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
@@ -188,25 +189,27 @@ export const FileCard = memo(function FileCard({
           )}
           <LayerLetters file={file} />
         </span>
-        {onFileComment && (
-          <Button
-            variant="invisible"
-            icon
-            small
-            title="Comment on this file"
-            aria-label="Comment on this file"
-            onClick={() => onFileComment(file.path)}
-          >
-            <CommentIcon />
-          </Button>
-        )}
-        <FileCommits path={file.path} oldPath={file.oldPath} />
-        <FileInfo path={file.path} />
-        <EditorLink filePath={file.path} />
-        <ForgeLink filePath={file.path} />
-        {diff && !diff.binary && diff.hunks.length > 0 && (
-          <FileExpandAll diff={diff} />
-        )}
+        <HeaderActions>
+          {onFileComment && (
+            <Button
+              variant="invisible"
+              icon
+              small
+              title="Comment on this file"
+              aria-label="Comment on this file"
+              onClick={() => onFileComment(file.path)}
+            >
+              <CommentIcon />
+            </Button>
+          )}
+          <FileCommits path={file.path} oldPath={file.oldPath} />
+          <FileInfo path={file.path} />
+          <EditorLink filePath={file.path} />
+          <ForgeLink filePath={file.path} />
+          {diff && !diff.binary && diff.hunks.length > 0 && (
+            <FileExpandAll diff={diff} />
+          )}
+        </HeaderActions>
         <LinkButton href={viewHref}>View file</LinkButton>
         <label className="viewed-toggle">
           <input

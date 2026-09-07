@@ -1,5 +1,6 @@
 import { Avatar } from '@/client/components/comments/avatar.js';
 import { useIdentities } from '@/client/store/identities.js';
+import { contributorActor } from '@/shared/harnesses.js';
 import type { CommitContributor } from '@/shared/protocol.js';
 
 const AGENT_LABEL: Record<string, string> = {
@@ -31,7 +32,12 @@ export function PersonAvatar({ person }: { person: CommitContributor }) {
         loading="lazy"
       />
     );
-  return <Avatar author={person.name || 'user'} agent={person.bot} />;
+  return (
+    <Avatar
+      author={contributorActor(person.email) ?? (person.name || 'user')}
+      agent={person.bot}
+    />
+  );
 }
 
 /** "rhighs and claude", the way GitHub names a commit's people. */

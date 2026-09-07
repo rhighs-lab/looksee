@@ -347,6 +347,35 @@ describe('cli listen', () => {
     expect(r.out.endsWith('\n')).toBe(true);
   });
 
+  it('--wait returns after the first event and stops on its own', async () => {
+    const l = listen(['--wait', '5', '--as', 'poller']);
+    await l.until(has('hello'));
+    const c = await single('waited for', 8, 'reviewer');
+    expect(await l.done).toBe(0);
+    const ls = l.lines();
+    expect(ls.map((x) => x.type)).toEqual(['hello', 'comment.created']);
+    expect((ls[1]?.['comment'] as DecoratedComment | undefined)?.id).toBe(c.id);
+  });
+
+  it('--wait gives up after the timeout with nothing but hello', async () => {
+    const l = listen(['--wait', '1', '--as', 'poller']);
+    const t0 = Date.now();
+    expect(await l.done).toBe(0);
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(900);
+    expect(l.lines().map((x) => x.type)).toEqual(['hello']);
+  });
+
+  it('--wait with --pending returns the replay without waiting', async () => {
+    const root = await single('still open', 9, 'reviewer');
+    const l = listen(['--wait', '30', '--pending', '--not-me', '--as', 'bot']);
+    expect(await l.done).toBe(0);
+    const ls = l.lines();
+    expect(ls[0]?.type).toBe('hello');
+    expect(
+      ls.some((x) => (x['comment'] as DecoratedComment)?.id === root.id)
+    ).toBe(true);
+  });
+
   it('exits 1 with one stderr line when the server goes away', async () => {
     const other = await startTestServer({ repoRoot: repo.dir });
     const l = listen([], { LOOKSEE_URL: other.base, LOOKSEE_RETRY_MS: '300' });

@@ -104,10 +104,14 @@ export const runListen = async ({ flags, io }: RunCtx): Promise<number> => {
   const { url, actor, http } = await connect(flags, io.env);
   const signal = io.signal;
   const notMe = flags['not-me'] === true;
+  const waitSec = Number(flags['wait']);
+  const waitMs = Number.isFinite(waitSec) && waitSec > 0 ? waitSec * 1000 : 0;
   const write = (l: Line): void => void io.out(`${JSON.stringify(l)}\n`);
+  let printed = false;
   const print = (l: Line): void => {
     if (notMe && authorOf(l) === actor) return;
     write(l);
+    printed = true;
   };
   write({
     type: 'hello',
@@ -116,29 +120,41 @@ export const runListen = async ({ flags, io }: RunCtx): Promise<number> => {
   });
   if (flags['pending'] === true)
     for (const l of await pending(http, actor)) print(l);
+  if (waitMs && printed) return 0;
   const headers = {
     'x-looksee-actor': actor,
     'x-looksee-client': `cli-${process.pid}`,
   };
+  const ctl = new AbortController();
+  const stop = () => ctl.abort();
+  signal?.addEventListener('abort', stop);
+  const timer = waitMs ? setTimeout(stop, waitMs) : null;
+  const until = ctl.signal;
   const window = Number(io.env['LOOKSEE_RETRY_MS']) || 10_000;
   const step = Math.min(1000, window);
   let lost: number | null = null;
-  while (!signal?.aborted) {
-    try {
-      for await (const ev of events(url, headers, signal)) {
-        lost = null;
-        const l = shape(ev);
-        if (l) print(l);
+  try {
+    while (!until.aborted) {
+      try {
+        for await (const ev of events(url, headers, until)) {
+          lost = null;
+          const l = shape(ev);
+          if (l) print(l);
+          if (waitMs && printed) return 0;
+        }
+        return 0;
+      } catch {
+        lost ??= Date.now();
+        if (Date.now() - lost >= window) {
+          io.err(`lost connection to ${url}\n`);
+          return 1;
+        }
+        await sleep(step, until);
       }
-      return 0;
-    } catch {
-      lost ??= Date.now();
-      if (Date.now() - lost >= window) {
-        io.err(`lost connection to ${url}\n`);
-        return 1;
-      }
-      await sleep(step, signal);
     }
+    return 0;
+  } finally {
+    if (timer) clearTimeout(timer);
+    signal?.removeEventListener('abort', stop);
   }
-  return 0;
 };

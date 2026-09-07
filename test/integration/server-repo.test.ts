@@ -122,6 +122,36 @@ describe('repo API', () => {
     ).toBe(404);
   });
 
+  it('uses the displayed revision for symbols', async () => {
+    const isolated = await makeRepo();
+    await isolated.write('scope.ts', 'export function committed() {}\n');
+    await isolated.commitAll('initial scope');
+    await isolated.write('scope.ts', 'export function staged() {}\n');
+    await isolated.git(['add', 'scope.ts']);
+    await isolated.write('scope.ts', 'export function working() {}\n');
+    const server = await startTestServer({ repoRoot: isolated.dir });
+    try {
+      const staged = await server.json<FileViewResponse>(
+        'GET',
+        '/api/file?path=scope.ts&scope=staged'
+      );
+      const working = await server.json<FileViewResponse>(
+        'GET',
+        '/api/file?path=scope.ts'
+      );
+      expect(staged.body.rev).toBe('INDEX');
+      expect(staged.body.symbols.symbols.map((s) => s.name)).toEqual([
+        'staged',
+      ]);
+      expect(working.body.symbols.symbols.map((s) => s.name)).toEqual([
+        'working',
+      ]);
+    } finally {
+      await server.close();
+      await isolated.cleanup();
+    }
+  });
+
   it('names the review through /api/title and keeps it across rebuilds', async () => {
     const before = await srv.json<RepoState>('GET', '/api/state');
     expect(before.body.title).toBe(null);

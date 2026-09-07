@@ -7,18 +7,8 @@ import {
   withLock,
   writeJsonAtomic,
 } from '@/server/review/store.js';
+import { AGENT_LOGIN } from '@/shared/harnesses.js';
 import { type Identity, USER_ACTOR } from '@/shared/protocol.js';
-
-/** The account each harness publishes under on GitHub, so its real mark shows
- *  instead of a generated robot. */
-const AGENT_LOGIN: Record<string, string> = {
-  'claude-code': 'claude',
-  codex: 'openai',
-  opencode: 'sst',
-  cursor: 'cursor',
-  aider: 'Aider-AI',
-  'gemini-cli': 'google-gemini',
-};
 
 const FALLBACK_NAME: Record<string, string> = {
   'claude-code': 'Claude Code',
@@ -120,7 +110,7 @@ const miss = (actor: string): Omit<Entry, 'at'> => ({
 
 /**
  * Names and faces for the actors a page is about to render. Cached on disk;
- * every lookup failure degrades to the generated avatar rather than blocking.
+ * Known harnesses keep their public avatar URL even when the API lookup fails.
  */
 export async function resolveIdentities(
   repoRoot: string | null,
@@ -155,7 +145,11 @@ export async function resolveIdentities(
       actor,
       login: e?.login ?? null,
       name: e?.name ?? FALLBACK_NAME[actor] ?? actor,
-      avatarUrl: e?.avatarUrl ?? null,
+      avatarUrl:
+        e?.avatarUrl ??
+        (AGENT_LOGIN[actor]
+          ? `https://github.com/${AGENT_LOGIN[actor]}.png`
+          : null),
     };
   });
 }

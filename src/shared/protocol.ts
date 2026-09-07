@@ -314,7 +314,23 @@ export interface FileInfoResponse {
   last: { sha: string; author: string; date: string; subject: string } | null;
 }
 
+export interface CodeSymbol {
+  id: string;
+  parentId: string | null;
+  name: string;
+  kind: 'class' | 'interface' | 'type' | 'function' | 'method';
+  startLine: number;
+  endLine: number;
+  signature: string;
+}
+
+export interface FileSymbols {
+  status: 'ready' | 'unsupported' | 'too-large' | 'unavailable';
+  symbols: CodeSymbol[];
+}
+
 export interface FileViewResponse {
+  symbols: FileSymbols;
   path: string;
   rev: Rev;
   lines: string[];

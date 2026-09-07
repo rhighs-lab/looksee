@@ -3,7 +3,11 @@ import { api } from '@/client/api/client.js';
 import { AnswerCard, hitAnchor } from '@/client/components/answer-card.js';
 import { Avatar } from '@/client/components/comments/avatar.js';
 import { PageError } from '@/client/components/empty-state.js';
-import { ArrowLeft, File as FileIcon } from '@/client/components/icons.js';
+import {
+  ArrowLeft,
+  File as FileIcon,
+  Sidebar,
+} from '@/client/components/icons.js';
 import { Loading } from '@/client/components/loading.js';
 import { AuthorName } from '@/client/components/people.js';
 import {
@@ -13,7 +17,8 @@ import {
 } from '@/client/components/tree-pane.js';
 import { relativeTime } from '@/client/lib/format.js';
 import { buildTree } from '@/client/lib/tree.js';
-import { LinkButton, Notice } from '@/client/ui/index.js';
+import { useReview } from '@/client/store/review.js';
+import { Button, LinkButton } from '@/client/ui/index.js';
 import type { AnswerHit, DecoratedAnswer } from '@/shared/protocol.js';
 
 interface Placed {
@@ -27,6 +32,8 @@ export function AnswerPage({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [active, setActive] = useState<number | null>(null);
+  const treeHidden = useReview((s) => s.treeHidden);
+  const setTreeHidden = useReview((s) => s.setTreeHidden);
 
   useEffect(() => {
     let alive = true;
@@ -120,6 +127,19 @@ export function AnswerPage({ id }: { id: string }) {
       <header className="pr-subnav">
         <div className="pr-subnav-inner">
           <div className="pr-title-row">
+            {placed.length > 0 && (
+              <Button
+                variant="invisible"
+                icon
+                small
+                title={treeHidden ? 'Show file tree' : 'Hide file tree'}
+                aria-label={treeHidden ? 'Show file tree' : 'Hide file tree'}
+                aria-expanded={!treeHidden}
+                onClick={() => setTreeHidden(!treeHidden)}
+              >
+                <Sidebar />
+              </Button>
+            )}
             <LinkButton className="back-link" href="/">
               <ArrowLeft width={12} height={12} />
               Review

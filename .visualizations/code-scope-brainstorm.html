@@ -1,0 +1,128 @@
+<div id="looksee-scope-sketch" aria-label="Directional sketches for code scope and file symbols">
+  <style>
+    #looksee-scope-sketch { --ls-bg:light-dark(#fff,#0d1117); --ls-muted:light-dark(#f6f8fa,#161b22); --ls-fg:light-dark(#1f2328,#e6edf3); --ls-sub:light-dark(#656d76,#9198a1); --ls-border:light-dark(#d0d7de,#30363d); --ls-blue:light-dark(#0969da,#79c0ff); --ls-tint:light-dark(#ddf4ff,#152b40); --ls-add:light-dark(#dafbe1,#143824); --ls-del:light-dark(#ffebe9,#3e1b20); color:var(--ls-fg); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    #looksee-scope-sketch * { box-sizing:border-box; }
+    #looksee-scope-sketch .ls-heading { display:flex; align-items:baseline; gap:12px; margin:0 0 9px; flex-wrap:wrap; }
+    #looksee-scope-sketch h3 { font-size:16px; margin:0; font-weight:600; letter-spacing:-.2px; }
+    #looksee-scope-sketch .ls-muted { color:var(--ls-sub); }
+    #looksee-scope-sketch .ls-window { border:1px solid var(--ls-border); border-radius:8px; background:var(--ls-bg); overflow:hidden; margin-bottom:24px; }
+    #looksee-scope-sketch .ls-bar { background:var(--ls-muted); padding:10px 12px; display:flex; gap:12px; align-items:center; justify-content:space-between; border-bottom:1px solid var(--ls-border); flex-wrap:wrap; }
+    #looksee-scope-sketch .ls-path { font:12px ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
+    #looksee-scope-sketch button { font:inherit; color:var(--ls-fg); border:1px solid var(--ls-border); border-radius:6px; background:var(--ls-bg); padding:5px 9px; cursor:pointer; }
+    #looksee-scope-sketch button:hover { background:var(--ls-tint); }
+    #looksee-scope-sketch button:focus-visible,#looksee-scope-sketch input:focus-visible { outline:2px solid var(--ls-blue); outline-offset:2px; }
+    #looksee-scope-sketch .ls-scope { padding:8px 12px; background:var(--ls-tint); display:flex; align-items:center; gap:12px; flex-wrap:wrap; border-bottom:1px solid var(--ls-border); }
+    #looksee-scope-sketch .ls-scope code { font:12px ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
+    #looksee-scope-sketch .ls-scope button { font-size:12px; }
+    #looksee-scope-sketch .ls-scope .ls-muted { margin-left:auto; font-size:12px; }
+    #looksee-scope-sketch .ls-line { display:grid; grid-template-columns:42px 18px minmax(0,1fr); padding:2px 12px 2px 0; min-height:23px; font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    #looksee-scope-sketch .ls-line code { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; }
+    #looksee-scope-sketch .ls-num { text-align:right; padding-right:10px; color:var(--ls-sub); user-select:none; }
+    #looksee-scope-sketch .ls-added { background:var(--ls-add); }
+    #looksee-scope-sketch .ls-removed { background:var(--ls-del); }
+    #looksee-scope-sketch .ls-file-layout { display:grid; grid-template-columns:minmax(0,1fr) 215px; }
+    #looksee-scope-sketch .ls-outline { border-left:1px solid var(--ls-border); padding:12px; background:var(--ls-bg); }
+    #looksee-scope-sketch .ls-outline h4 { font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0 0 10px; }
+    #looksee-scope-sketch input { width:100%; font:inherit; color:var(--ls-fg); background:var(--ls-bg); border:1px solid var(--ls-border); border-radius:6px; padding:6px 8px; margin-bottom:8px; }
+    #looksee-scope-sketch .ls-symbol { width:100%; border:0; display:flex; align-items:center; text-align:left; gap:8px; margin:1px 0; padding:6px; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+    #looksee-scope-sketch .ls-symbol[aria-pressed="true"] { background:var(--ls-tint); color:var(--ls-blue); }
+    #looksee-scope-sketch .ls-child { padding-left:21px; }
+    #looksee-scope-sketch .ls-kind { color:var(--ls-sub); font-size:10px; min-width:15px; }
+    #looksee-scope-sketch .ls-symbol .ls-muted { margin-left:auto; font-size:11px; }
+    #looksee-scope-sketch .ls-source { padding:8px 0; min-width:0; }
+    #looksee-scope-sketch .ls-location { padding:8px 12px; color:var(--ls-sub); border-top:1px solid var(--ls-border); font-size:12px; }
+    #looksee-scope-sketch [hidden] { display:none !important; }
+    @media(max-width:540px) { #looksee-scope-sketch .ls-file-layout { grid-template-columns:minmax(0,1fr); } #looksee-scope-sketch .ls-outline { border-left:0; border-top:1px solid var(--ls-border); } }
+  </style>
+  <div class="ls-heading"><h3>A · Scope in the diff</h3><span class="ls-muted">Directional sketch · sample code</span></div>
+  <section class="ls-window" aria-label="Diff with a named enclosing scope">
+    <div class="ls-bar"><span class="ls-path">src/review/session.ts</span><span class="ls-muted">Working changes</span></div>
+    <div class="ls-scope">
+      <button type="button" id="ls-expand" aria-expanded="false" aria-controls="ls-hidden-code">Expand context</button>
+      <code id="ls-scope-label">ReviewSession › refresh()</code>
+      <span class="ls-muted" id="ls-hidden-count">18 hidden lines</span>
+    </div>
+    <div id="ls-hidden-code" hidden>
+      <div class="ls-line"><span class="ls-num">39</span><span></span><code>async refresh() {</code></div>
+      <div class="ls-line"><span class="ls-num">40</span><span></span><code>  const changes = await this.readChanges();</code></div>
+      <div class="ls-line"><span class="ls-num">41</span><span></span><code>  const next = this.buildSnapshot(changes);</code></div>
+    </div>
+    <div class="ls-line"><span class="ls-num">42</span><span></span><code>  if (!next) return;</code></div>
+    <div class="ls-line ls-removed"><span class="ls-num">43</span><span>−</span><code>  this.notify(next);</code></div>
+    <div class="ls-line ls-added"><span class="ls-num">43</span><span>+</span><code>  if (this.hasChanges(next)) this.notify(next);</code></div>
+    <div class="ls-line"><span class="ls-num">44</span><span></span><code>  this.snapshot = next;</code></div>
+    <div class="ls-line"><span class="ls-num">45</span><span></span><code>}</code></div>
+  </section>
+  <div class="ls-heading"><h3>B · Symbols beside the file</h3><span class="ls-muted">Click a name to jump</span></div>
+  <section class="ls-window" aria-label="File view with interactive symbols outline">
+    <div class="ls-bar"><span class="ls-path">src/review/session.ts</span><button type="button" id="ls-toggle-symbols" aria-expanded="true" aria-controls="ls-symbols">Hide symbols</button></div>
+    <div class="ls-file-layout" id="ls-file-layout">
+      <div class="ls-source" id="ls-source" aria-label="Selected source code"></div>
+      <aside class="ls-outline" id="ls-symbols" aria-label="Symbols in this file">
+        <h4>Symbols</h4>
+        <input type="search" id="ls-filter" placeholder="Filter symbols" aria-label="Filter symbols">
+        <button type="button" class="ls-symbol" data-symbol="class" aria-pressed="false"><span class="ls-kind">C</span>ReviewSession<span class="ls-muted">12</span></button>
+        <button type="button" class="ls-symbol ls-child" data-symbol="constructor" aria-pressed="false"><span class="ls-kind">m</span>constructor<span class="ls-muted">15</span></button>
+        <button type="button" class="ls-symbol ls-child" data-symbol="refresh" aria-pressed="true"><span class="ls-kind">m</span>refresh<span class="ls-muted">39</span></button>
+        <button type="button" class="ls-symbol ls-child" data-symbol="close" aria-pressed="false"><span class="ls-kind">m</span>close<span class="ls-muted">74</span></button>
+        <button type="button" class="ls-symbol" data-symbol="parse" aria-pressed="false"><span class="ls-kind">ƒ</span>parseRepo<span class="ls-muted">91</span></button>
+        <span id="ls-no-symbols" class="ls-muted" hidden>No matching symbols</span>
+      </aside>
+    </div>
+    <div class="ls-location" id="ls-location" aria-live="polite">ReviewSession › refresh · line 39</div>
+  </section>
+  <script>
+    (() => {
+      const root = document.getElementById('looksee-scope-sketch');
+      const get = id => root.querySelector('#' + id);
+      const state = { scope: 'nested' };
+      function scopeLabel() { get('ls-scope-label').textContent = state.scope === 'nested' ? 'ReviewSession › refresh()' : 'async refresh()'; }
+      scopeLabel();
+      if (globalThis.Tweak) {
+        const tweak = new Tweak({ container: root, onChange: scopeLabel });
+        tweak.addSelect(state, 'scope', { label:'Diff scope label', options:[{label:'Class + method',value:'nested'},{label:'Signature only',value:'signature'}] });
+      }
+      get('ls-expand').addEventListener('click', () => {
+        const opened = get('ls-hidden-code').hidden;
+        get('ls-hidden-code').hidden = !opened;
+        get('ls-expand').setAttribute('aria-expanded',String(opened));
+        get('ls-expand').textContent = opened ? 'Collapse context' : 'Expand context';
+        get('ls-hidden-count').textContent = opened ? 'Context preview' : '18 hidden lines';
+      });
+      const examples = {
+        class:{line:12,name:'ReviewSession',code:['export class ReviewSession {','  private snapshot = null;','  private watcher;','','  constructor(repo) {','    this.repo = repo;','  }']},
+        constructor:{line:15,name:'ReviewSession › constructor',code:['constructor(repo) {','  this.repo = repo;','  this.watcher = watch(repo);','  this.watcher.on("change", () => {','    void this.refresh();','  });','}']},
+        refresh:{line:39,name:'ReviewSession › refresh',code:['async refresh() {','  const changes = await this.readChanges();','  const next = this.buildSnapshot(changes);','  if (!next) return;','  if (this.hasChanges(next)) this.notify(next);','  this.snapshot = next;','}']},
+        close:{line:74,name:'ReviewSession › close',code:['close() {','  this.watcher.close();','  this.listeners.clear();','  this.snapshot = null;','}']},
+        parse:{line:91,name:'parseRepo',code:['export function parseRepo(input) {','  const root = input.trim();','  if (!root) return null;','  return { root };','}']}
+      };
+      function show(key) {
+        const selected = examples[key];
+        get('ls-source').replaceChildren();
+        selected.code.forEach((text,index) => {
+          const row = document.createElement('div'); row.className = 'ls-line';
+          const number = document.createElement('span'); number.className = 'ls-num'; number.textContent = selected.line + index;
+          const marker = document.createElement('span');
+          const code = document.createElement('code'); code.textContent = text;
+          row.append(number,marker,code); get('ls-source').append(row);
+        });
+        root.querySelectorAll('[data-symbol]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.symbol === key)));
+        get('ls-location').textContent = selected.name + ' · line ' + selected.line;
+      }
+      root.querySelectorAll('[data-symbol]').forEach(button => button.addEventListener('click',() => show(button.dataset.symbol)));
+      get('ls-filter').addEventListener('input',event => {
+        const query = event.target.value.toLowerCase().trim(); let matches = 0;
+        root.querySelectorAll('[data-symbol]').forEach(button => { button.hidden = !button.textContent.toLowerCase().includes(query); if (!button.hidden) matches++; });
+        get('ls-no-symbols').hidden = matches !== 0;
+      });
+      get('ls-toggle-symbols').addEventListener('click',() => {
+        const showSymbols = get('ls-symbols').hidden;
+        get('ls-symbols').hidden = !showSymbols;
+        get('ls-file-layout').style.gridTemplateColumns = showSymbols ? '' : 'minmax(0,1fr)';
+        get('ls-toggle-symbols').textContent = showSymbols ? 'Hide symbols' : 'Show symbols';
+        get('ls-toggle-symbols').setAttribute('aria-expanded',String(showSymbols));
+      });
+      show('refresh');
+    })();
+  </script>
+</div>

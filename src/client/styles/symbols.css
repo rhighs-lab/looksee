@@ -1,0 +1,195 @@
+/* File metadata stays outside the only vertically scrolling region. */
+.file-review-layout > .diff-container {
+  position: sticky;
+  top: var(--subnav-h);
+  height: calc(100dvh - var(--subnav-h));
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--floating-pane-gap);
+  padding-bottom: 16px;
+  margin-bottom: 0;
+}
+.file-review-layout .file-crumb {
+  flex: none;
+}
+.file-review-layout .file-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+.file-review-layout .blob-toolbar {
+  position: relative;
+  top: auto;
+  flex: none;
+}
+.file-review-layout .file-view > .file-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.file-code-layout {
+  --scope-top: 0px;
+}
+.file-symbols-pane {
+  position: sticky;
+  top: var(--floating-pane-top);
+  align-self: flex-start;
+  flex: 0 0 258px;
+  /* The left divider contributes 3px beyond the main column's 16px padding. */
+  margin: var(--floating-pane-gap) 16px 16px 3px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: var(--ui-radius);
+  background: var(--bgColor-default);
+  overflow: hidden;
+}
+.symbols-count {
+  margin-left: 8px;
+  color: var(--fgColor-muted);
+}
+.symbols-filename {
+  padding: 0 12px 12px;
+  color: var(--fgColor-muted);
+  font: 12px / 20px var(--ui-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-code-column {
+  min-width: 0;
+}
+.scope-sticky {
+  position: sticky;
+  top: var(--scope-top);
+  height: 0;
+  z-index: 9;
+  clip-path: inset(0 -1px -100vh);
+}
+
+.scope-stack button {
+  position: relative;
+  box-shadow: 0 1px 0 var(--borderColor-default);
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 26px;
+  padding: 0 12px 0 0;
+  border: 0;
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  cursor: pointer;
+  text-align: left;
+}
+.scope-stack code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 12px / 20px var(--ui-mono);
+}
+.scope-stack .scope-code span {
+  white-space: pre;
+}
+.scope-number {
+  flex: 0 0 54px;
+  padding-right: 12px;
+  text-align: right;
+  color: var(--fgColor-muted);
+  font: 12px / 20px var(--ui-mono);
+}
+.file-symbols {
+  max-height: calc(100vh - var(--floating-pane-top) - 16px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.symbols-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  min-height: 44px;
+  gap: 8px;
+  color: var(--fgColor-muted);
+  font-size: 12px;
+}
+.symbols-search {
+  margin: 0 8px 8px;
+  width: calc(100% - 16px);
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font: inherit;
+  font-size: 12px;
+}
+.symbols-list {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 8px 8px;
+}
+.symbol-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: 400 12px / 20px var(--ui-mono);
+}
+.scope-stack button:hover {
+  background: var(--bgColor-muted);
+}
+.symbol-kind {
+  flex: 0 0 16px;
+  color: var(--fgColor-muted);
+  font-family: var(--ui-mono);
+  text-align: center;
+}
+.symbol-function,
+.symbol-method {
+  color: var(--fgColor-done, #8250df);
+}
+.symbol-class {
+  color: var(--fgColor-attention, #9a6700);
+}
+.symbol-interface,
+.symbol-type {
+  color: var(--fgColor-success, #1a7f37);
+}
+.symbol-line {
+  margin-left: auto;
+  color: var(--fgColor-muted);
+  font-variant-numeric: tabular-nums;
+}
+.symbols-empty {
+  padding: 8px 12px;
+  color: var(--fgColor-muted);
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .file-symbols-pane {
+    flex-basis: 220px;
+  }
+}
+@media (max-width: 760px) {
+  .file-review-layout {
+    flex-wrap: wrap;
+  }
+  .file-review-layout .file-symbols-pane {
+    order: -1;
+    position: relative;
+    top: auto;
+    flex: 0 0 calc(100% - 32px);
+    margin: 8px 16px;
+    height: auto;
+    max-height: 240px;
+    padding-left: 0;
+    border-bottom: 1px solid var(--borderColor-default);
+  }
+  .file-review-layout .file-symbols {
+    max-height: 240px;
+  }
+}

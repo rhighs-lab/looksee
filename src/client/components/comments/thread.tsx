@@ -197,10 +197,12 @@ export const Thread = memo(function Thread({
   const reply = useComments((s) => s.reply);
   const draft = useComments((s) => isDraft(s, root));
   const [replying, setReplying] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const resolved = root.status === 'resolved';
+  const collapsed = resolved && !expanded;
   return (
     <div
-      className={`comment-thread${resolved ? ' is-resolved' : ''}`}
+      className={`comment-thread${resolved ? ' is-resolved' : ''}${collapsed ? ' is-collapsed' : ''}`}
       data-root-id={root.id}
     >
       <CommentCard c={root} isRoot />
@@ -230,6 +232,15 @@ export const Thread = memo(function Thread({
                 Reply
               </button>
               {resolved && <Label tone="done">Resolved</Label>}
+              {resolved && (
+                <Button small onClick={() => setExpanded(!expanded)}>
+                  {collapsed
+                    ? replies.length
+                      ? `Show ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`
+                      : 'Show thread'
+                    : 'Hide thread'}
+                </Button>
+              )}
               <Button
                 small
                 onClick={() =>

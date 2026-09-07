@@ -26,10 +26,12 @@ import {
 } from '@/client/components/file-finder.js';
 import { FileGlyph } from '@/client/components/file-glyph.js';
 import { FileInfo } from '@/client/components/file-info.js';
+import { FileSymbolsView } from '@/client/components/file-symbols.js';
 import { ForgeLink } from '@/client/components/forge-link.js';
 import { Header } from '@/client/components/header.js';
 import {
   ArrowLeft,
+  CodeSquare,
   Copy,
   Download,
   File,
@@ -182,6 +184,8 @@ export function FilePage({ pathname }: { pathname: string }) {
   const state = useReview((s) => s.state);
   const showToast = useReview((s) => s.showToast);
   const [view, setView] = useState<FileViewResponse | null>(null);
+  const [symbolsOpen, setSymbolsOpen] = useState(true);
+  const [symbolsHost, setSymbolsHost] = useState<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const arrived = useReview((s) => s.arrivals[filePath]);
   const [filter, setFilter] = useState('');
@@ -455,7 +459,7 @@ export function FilePage({ pathname }: { pathname: string }) {
           </Button>
         }
       />
-      <div className="review-layout">
+      <div className="review-layout file-review-layout">
         <TreePane
           header="Repository"
           search={{
@@ -487,6 +491,8 @@ export function FilePage({ pathname }: { pathname: string }) {
                 scope={scope}
                 wrap={wrap}
                 onWrap={() => setWrap(!wrap)}
+                symbolsOpen={symbolsOpen}
+                onSymbols={() => setSymbolsOpen(!symbolsOpen)}
                 onCopied={showToast}
                 doc={Boolean(view.markdownHtml)}
                 rendered={rendered}
@@ -507,22 +513,43 @@ export function FilePage({ pathname }: { pathname: string }) {
                     </div>
                   )
                 ) : (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: line numbers are permalinks, reachable through the URL hash
-                  // biome-ignore lint/a11y/noStaticElementInteractions: delegated gutter click over the blob table
-                  <div onClick={onBlobClick}>
-                    <BlobTable
-                      diff={diff}
-                      changed={changed}
-                      slots={slots}
-                      wrap={wrap}
-                      arrived={arrived}
-                    />
-                  </div>
+                  <FileSymbolsView
+                    key={`${view.path}:${view.rev}`}
+                    data={view.symbols}
+                    lineHtml={view.html}
+                    host={symbolsHost}
+                    open={symbolsOpen}
+                    onToggle={() => setSymbolsOpen(!symbolsOpen)}
+                    path={view.path}
+                    onJump={(line) => {
+                      const next = { lo: line, hi: line };
+                      history.replaceState(null, '', lineHash(next));
+                      setAnchor(next);
+                    }}
+                  >
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: line numbers are permalinks, reachable through the URL hash */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated gutter click over the blob table */}
+                    <div onClick={onBlobClick}>
+                      <BlobTable
+                        diff={diff}
+                        changed={changed}
+                        slots={slots}
+                        wrap={wrap}
+                        arrived={arrived}
+                      />
+                    </div>
+                  </FileSymbolsView>
                 )}
               </div>
             </div>
           )}
         </main>
+        {symbolsOpen &&
+          view &&
+          !view.binary &&
+          !(view.markdownHtml && rendered) && (
+            <div className="file-symbols-pane" ref={setSymbolsHost} />
+          )}
       </div>
       {finder && (
         <FileFinder
@@ -545,6 +572,8 @@ function BlobToolbar({
   doc,
   rendered,
   onRendered,
+  symbolsOpen,
+  onSymbols,
 }: {
   view: FileViewResponse;
   scope: Scope;
@@ -554,6 +583,8 @@ function BlobToolbar({
   doc: boolean;
   rendered: boolean;
   onRendered: () => void;
+  symbolsOpen: boolean;
+  onSymbols: () => void;
 }) {
   const text = view.lines.join('\n');
   const name = view.path.split('/').pop() ?? view.path;
@@ -647,6 +678,18 @@ function BlobToolbar({
         >
           <Download width={14} height={14} />
         </a>
+        {!view.binary && !(doc && rendered) && (
+          <Button
+            small
+            icon
+            aria-label="Toggle symbols"
+            title={symbolsOpen ? 'Hide symbols' : 'Show symbols'}
+            aria-expanded={symbolsOpen}
+            onClick={onSymbols}
+          >
+            <CodeSquare width={14} height={14} />
+          </Button>
+        )}
       </span>
     </div>
   );

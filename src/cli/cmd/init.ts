@@ -25,8 +25,17 @@ const BLOCK = [
   '',
   'On yes, run `looksee review . --scope <preset>` — `branch` if you made',
   'commits, `working` if you only changed the working tree, `session` on a',
-  're-review round. Then work the comment loop; `looksee agent` prints the',
-  'full guide.',
+  're-review round.',
+  '',
+  'Then work the comment loop in the foreground, one wait at a time:',
+  '`looksee listen --not-me --pending --wait 60`. It prints unanswered items,',
+  'then blocks until an event arrives or the timeout ends; act, reply, and',
+  'run it again. Do not leave a listener running in the background: its',
+  'output cannot start a new turn, so it will not make you react to a new',
+  'comment. If the round is still open when you stop, say that you are',
+  'waiting and that a message from the user resumes it.',
+  '',
+  '`looksee agent` prints the full guide.',
 ].join('\n');
 
 const exists = (p: string): Promise<boolean> =>

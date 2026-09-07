@@ -52,11 +52,24 @@ comparison, and opens the browser. Add `--title "<name>"` to label the tab.
 
 ## Work the loop
 
-Start the stream in the background and keep it up until the round closes:
+Wait for the next work item in the foreground. The command prints anything
+unanswered, then blocks until an event arrives or the timeout runs out:
 
 ```bash
-looksee listen --not-me --pending
+looksee listen --not-me --pending --wait 60
 ```
+
+Run it again after each round of replies to pick up the next item.
+
+Do not park `looksee listen` in the background instead. Output from a
+background process does not start a new turn, so a listener running there
+does not make you react to a new comment: you would only see it the next
+time the user writes to you. Drop `--wait` only when the host can wake you
+on process output.
+
+When the review is still open and you are about to stop, say so: tell the
+user that nothing has arrived yet and that they should send a message when
+they have commented, or poll once more with `--wait`.
 
 Each line is one JSON event and one work item. Every comment and every
 `review.submitted` carries an `expects` hint telling you what to do:
@@ -90,8 +103,8 @@ The user reads your reply in a review pane next to the code, not in a chat.
 - Never hide a problem, a guess, or a risk to stay short. Say it plainly and
   be short everywhere else.
 
-Stop the listener once the round is done. Reconnecting with `--pending`
-replays anything unanswered, so nothing is lost by dropping it.
+Each poll with `--pending` replays anything still unanswered, so nothing is
+lost between waits.
 
 ## More
 

@@ -70,6 +70,7 @@ import {
   SCOPE_PRESETS,
   SCOPES,
 } from '@/shared/protocol.js';
+import { extractSymbols } from '../code/symbols.js';
 
 const PKG_VERSION = (
   JSON.parse(
@@ -470,6 +471,9 @@ export function repoRoutes(ctx: AppContext): Hono {
       .sort()
       .map((p) => ({ path: p, kind: kinds.get(p) ?? 'unchanged' }));
     return c.json<FileViewResponse>({
+      symbols: binary
+        ? { status: 'unsupported', symbols: [] }
+        : await extractSymbols(filePath, text),
       path: filePath,
       rev,
       lines,
