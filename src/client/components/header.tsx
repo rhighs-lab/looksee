@@ -188,7 +188,7 @@ export function Header({
                   label: 'All changes',
                   count: summary.files,
                   title:
-                    'Everything between the base branch and the working tree',
+                    'Every file changed between the base branch and the working tree. A layer tab lists only the files that layer touches, so its count can match this one.',
                 },
                 ...LAYERS.filter(
                   (l) => summary.byLayer[l] > 0 || scope === l

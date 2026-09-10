@@ -10,7 +10,7 @@ export type Layer = (typeof LAYERS)[number];
 
 export const LAYER_LABEL: Record<Layer, string> = {
   pushed: 'Pushed',
-  local: 'Local commits',
+  local: 'Unpushed commits',
   staged: 'Staged',
   unstaged: 'Unstaged',
   untracked: 'Untracked',
@@ -18,12 +18,12 @@ export const LAYER_LABEL: Record<Layer, string> = {
 };
 
 export const LAYER_HINT: Record<Layer, string> = {
-  pushed: 'On the remote branch, ahead of the base',
-  local: 'Committed locally, not yet pushed',
-  staged: 'In the index, not yet committed',
-  unstaged: 'Edited in the working tree, not staged',
-  untracked: 'New file git does not know about',
-  conflicted: 'Merge conflict, needs resolution',
+  pushed: 'Commits already on the upstream branch, ahead of the base',
+  local: 'Commits made locally that are not on the upstream branch yet',
+  staged: 'Changes in the index, not yet committed',
+  unstaged: 'Edits in the working tree, not staged',
+  untracked: 'New files git does not know about yet',
+  conflicted: 'Merge conflicts that need resolution',
 };
 
 export type ChangeKind =
