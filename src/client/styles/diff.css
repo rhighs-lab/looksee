@@ -431,14 +431,19 @@ body {
   position: absolute;
   left: -1px;
   right: -1px;
-  bottom: 100%;
+  bottom: calc(100% + 1px);
   height: var(--floating-pane-gap);
   background-color: var(--bgColor-default, #fff);
 }
 
-/* The card draws the outline; the header only rules itself off from the diff. */
+/* The header owns the card's top edge and overlaps its side borders, so the
+   outline stays whole whether the header is stuck or in flow. */
+.file {
+  border-top: 0;
+}
+
 .file .file-header {
-  border-width: 0 0 1px;
+  margin: 0 -1px;
   border-radius: var(--ui-radius, 6px) var(--ui-radius, 6px) 0 0;
 }
 
