@@ -61,3 +61,30 @@ describe('segments', () => {
     assert.deepEqual(segments('abc', []), [{ text: 'abc', hit: false }]);
   });
 });
+
+describe('multi-term queries', () => {
+  const files = [
+    'src/client/styles/diff.css',
+    'src/client/pages/review-page.tsx',
+    'src/server/routes/repo.ts',
+  ].map((path) => ({ path }));
+
+  it('requires every space-separated term to match', () => {
+    const out = fuzzyFilter('client css', files, (f) => f.path, 10);
+    assert.equal(out[0]?.item.path, 'src/client/styles/diff.css');
+    assert.ok(!out.some((m) => m.item.path === 'src/server/routes/repo.ts'));
+  });
+
+  it('merges the hits of all terms', () => {
+    const m = fuzzyScore('diff css', 'src/client/styles/diff.css');
+    assert.ok(m);
+    assert.ok(m.hits.includes('src/client/styles/'.length));
+    assert.ok(m.hits.includes('src/client/styles/diff.'.length));
+  });
+
+  it('prefers a basename match over an earlier scattered one', () => {
+    const m = fuzzyScore('repo', 'src/server/routes/repo.ts');
+    assert.ok(m);
+    assert.deepEqual(m.hits, [18, 19, 20, 21]);
+  });
+});

@@ -23,6 +23,7 @@ export interface TreeSearch {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  onSubmit?: () => void;
 }
 
 export function TreePane({
@@ -93,7 +94,10 @@ export function TreePane({
               aria-label={search.placeholder}
               value={search.value}
               onChange={(e) => search.onChange(e.target.value)}
-              onKeyDown={(e) => e.key === 'Escape' && search.onChange('')}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') search.onChange('');
+                if (e.key === 'Enter') search.onSubmit?.();
+              }}
             />
             {search.value && (
               <button

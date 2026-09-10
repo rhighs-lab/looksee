@@ -322,6 +322,15 @@ body {
   color: var(--fgColor-danger, #d1242f);
 }
 
+.tree-hit {
+  color: var(--fgColor-accent, #0969da);
+}
+
+.tree-match-count {
+  font-size: 11px;
+  padding: 0 8px 6px;
+}
+
 .tree-comments {
   display: inline-flex;
   align-items: center;
@@ -1790,7 +1799,10 @@ body {
 
 .finder-hit {
   color: var(--fgColor-accent, #0969da);
-  font-weight: 600;
+}
+
+.finder-path-other {
+  color: var(--fgColor-muted, #59636e);
 }
 
 .finder-empty {
