@@ -2472,6 +2472,31 @@ kbd {
   text-decoration: underline;
 }
 
+.comments-panel-item {
+  border-radius: 6px;
+  cursor: pointer;
+}
+.comments-panel-item:focus-visible {
+  outline: 2px solid var(--fgColor-accent, #0969da);
+  outline-offset: 2px;
+}
+.comments-panel-item .comment-thread {
+  cursor: auto;
+}
+
+.comment-thread.is-target {
+  animation: thread-target 1.6s ease-out;
+}
+@keyframes thread-target {
+  0%,
+  40% {
+    box-shadow: 0 0 0 2px var(--fgColor-accent, #0969da);
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-scrim,
   .comments-panel {

@@ -1,15 +1,31 @@
-import { useEffect } from 'react';
-import { Thread } from '@/client/components/comments/thread.js';
+import { type KeyboardEvent, type MouseEvent, useEffect } from 'react';
+import { Thread as ThreadView } from '@/client/components/comments/thread.js';
 import { ArrowLeft, Close, CommentIcon } from '@/client/components/icons.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
 import { lineHash } from '@/client/lib/line-anchor.js';
-import { useComments } from '@/client/store/comments.js';
+import { type Thread, useComments } from '@/client/store/comments.js';
 import { useReview } from '@/client/store/review.js';
 import { Button, Counter } from '@/client/ui/index.js';
 import type { DecoratedComment } from '@/shared/protocol.js';
 
 const inDiff = (rootId: string): HTMLElement | null =>
-  document.querySelector<HTMLElement>(`[data-root-id="${rootId}"]`);
+  document.querySelector<HTMLElement>(
+    `.diff-container [data-root-id="${CSS.escape(rootId)}"]`
+  );
+
+const flash = (el: HTMLElement): void => {
+  const thread = el.querySelector<HTMLElement>('.comment-thread') ?? el;
+  thread.classList.remove('is-target');
+  void thread.offsetWidth;
+  thread.classList.add('is-target');
+  thread.addEventListener(
+    'animationend',
+    () => thread.classList.remove('is-target'),
+    { once: true }
+  );
+};
+
+const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
 
 export function CommentsPanelToggle() {
   const open = useReview((s) => s.commentsPanel);
@@ -35,30 +51,33 @@ export function CommentsPanelToggle() {
   );
 }
 
-function Jump({ root }: { root: DecoratedComment }) {
+function useJump(root: DecoratedComment): () => void {
   const setOpen = useReview((s) => s.setCommentsPanel);
   const scope = useReview((s) => s.scope);
   const line = root.startLine || null;
-  const where = `${root.filePath}${line ? `:${line}` : ''}`;
-
-  const go = () => {
+  return () => {
     const el = inDiff(root.id);
     if (el) {
       setOpen(false);
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.scrollIntoView({ block: 'center' });
+      flash(el);
       return;
     }
     const card = document.getElementById(fileAnchor(root.filePath));
     if (card) {
       setOpen(false);
-      card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      card.scrollIntoView({ block: 'start' });
       return;
     }
     location.href = `${fileHref(root.filePath, scope)}${
       line ? lineHash({ lo: line, hi: root.endLine || line }) : ''
     }`;
   };
+}
 
+function Jump({ root, go }: { root: DecoratedComment; go: () => void }) {
+  const line = root.startLine || null;
+  const where = `${root.filePath}${line ? `:${line}` : ''}`;
   return (
     <button
       type="button"
@@ -72,6 +91,35 @@ function Jump({ root }: { root: DecoratedComment }) {
   );
 }
 
+function PanelItem({ thread }: { thread: Thread }) {
+  const go = useJump(thread.root);
+  const onClick = (e: MouseEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLElement;
+    if (t.closest(INTERACTIVE)) return;
+    go();
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    go();
+  };
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the card is a link-like surface wrapping a thread with its own controls
+    <div
+      className="comments-panel-item"
+      role="link"
+      tabIndex={0}
+      title="Go to this comment"
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
+      <Jump root={thread.root} go={go} />
+      <ThreadView thread={thread} />
+    </div>
+  );
+}
+
 export function CommentsPanel() {
   const open = useReview((s) => s.commentsPanel);
   const setOpen = useReview((s) => s.setCommentsPanel);
@@ -80,7 +128,8 @@ export function CommentsPanel() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: globalThis.KeyboardEvent) =>
+      e.key === 'Escape' && setOpen(false);
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, setOpen]);
@@ -132,19 +181,13 @@ export function CommentsPanel() {
             </div>
           )}
           {drafts.map((t) => (
-            <div className="comments-panel-item" key={t.root.id}>
-              <Jump root={t.root} />
-              <Thread thread={t} />
-            </div>
+            <PanelItem key={t.root.id} thread={t} />
           ))}
           {drafts.length > 0 && posted.length > 0 && (
             <div className="comments-panel-group">Submitted</div>
           )}
           {posted.map((t) => (
-            <div className="comments-panel-item" key={t.root.id}>
-              <Jump root={t.root} />
-              <Thread thread={t} />
-            </div>
+            <PanelItem key={t.root.id} thread={t} />
           ))}
         </div>
       </aside>
