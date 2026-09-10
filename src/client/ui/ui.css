@@ -680,6 +680,13 @@ textarea.ui-input,
   transform: none;
 }
 
+/* the leftmost header control would push its tooltip off screen */
+.pr-primary [data-tooltip]::after {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-tooltip]::after {
     transition: none;
