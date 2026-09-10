@@ -103,6 +103,7 @@ describe('review API', () => {
     ).toBe(400);
     const resolved = await patch(body.comment.id, { status: 'resolved' });
     expect(resolved.body.comment.status).toBe('resolved');
+    expect(resolved.body.comment.resolvedBy).toBe('user');
     const open = await srv.json<{ comments: DecoratedComment[] }>(
       'GET',
       '/api/comments?status=open&author=user&roots=1'

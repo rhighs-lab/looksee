@@ -3,10 +3,16 @@ import { Thread as ThreadView } from '@/client/components/comments/thread.js';
 import { ArrowLeft, Close, CommentIcon } from '@/client/components/icons.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
 import { lineHash } from '@/client/lib/line-anchor.js';
-import { type Thread, useComments } from '@/client/store/comments.js';
+import { lineMap } from '@/client/lib/snapshot.js';
+import {
+  awaitsUser,
+  type Thread,
+  useComments,
+} from '@/client/store/comments.js';
+import type { Expansions } from '@/client/store/review.js';
 import { useReview } from '@/client/store/review.js';
 import { Button, Counter } from '@/client/ui/index.js';
-import type { DecoratedComment } from '@/shared/protocol.js';
+import type { DecoratedComment, FileDiff } from '@/shared/protocol.js';
 
 const inDiff = (rootId: string): HTMLElement | null =>
   document.querySelector<HTMLElement>(
@@ -26,6 +32,20 @@ const flash = (el: HTMLElement): void => {
 };
 
 const INTERACTIVE = 'button, a, input, textarea, select, [contenteditable]';
+
+const placed = (
+  root: DecoratedComment,
+  diffs: Record<string, FileDiff>,
+  expansions: Record<string, Expansions>
+): boolean => {
+  const diff = diffs[root.filePath];
+  if (!diff) return false;
+  if (root.side === 'file') return true;
+  const side = root.side === 'old' ? 'old' : 'new';
+  return lineMap(diff, expansions[root.filePath], side).has(
+    root.endLine || root.startLine
+  );
+};
 
 export function CommentsPanelToggle() {
   const open = useReview((s) => s.commentsPanel);
@@ -93,6 +113,7 @@ function Jump({ root, go }: { root: DecoratedComment; go: () => void }) {
 
 function PanelItem({ thread }: { thread: Thread }) {
   const go = useJump(thread.root);
+  const shown = useReview((s) => placed(thread.root, s.diffs, s.expansions));
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     const t = e.target as HTMLElement;
     if (t.closest(INTERACTIVE)) return;
@@ -115,7 +136,12 @@ function PanelItem({ thread }: { thread: Thread }) {
       onKeyDown={onKeyDown}
     >
       <Jump root={thread.root} go={go} />
-      <ThreadView thread={thread} />
+      {!shown && (
+        <span className="comments-panel-note ui-muted">
+          not in this diff, opens the file
+        </span>
+      )}
+      <ThreadView thread={thread} expandResolved />
     </div>
   );
 }
@@ -142,6 +168,7 @@ export function CommentsPanel() {
   const drafts = all.filter((t) => t.root.reviewId === pendingId && pendingId);
   const posted = all.filter((t) => !drafts.includes(t));
   const openCount = posted.filter((t) => t.root.status !== 'resolved').length;
+  const answered = posted.filter(awaitsUser).length;
 
   return (
     <>
@@ -161,6 +188,7 @@ export function CommentsPanel() {
         <header className="comments-panel-head">
           <span>
             {openCount} open · {posted.length - openCount} resolved
+            {answered ? ` (${answered} with an agent reply to read)` : ''}
             {drafts.length ? ` · ${drafts.length} draft` : ''}
           </span>
           <Button

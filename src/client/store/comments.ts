@@ -95,13 +95,14 @@ export const useComments = create<CommentsStore>((set, get) => {
     set({ threads });
   };
 
-  const setRootStatus = (id: string, status: CommentStatus) => {
+  const setRootStatus = (id: string, status: CommentStatus, actor: string) => {
     const t = get().threads[id];
     if (!t) return;
+    const resolvedBy = status === 'resolved' ? actor : null;
     set({
       threads: {
         ...get().threads,
-        [id]: { ...t, root: { ...t.root, status } },
+        [id]: { ...t, root: { ...t.root, status, resolvedBy } },
       },
     });
   };
@@ -175,10 +176,10 @@ export const useComments = create<CommentsStore>((set, get) => {
             drop(ev.id);
             return;
           case 'thread.resolved':
-            setRootStatus(ev.id, 'resolved');
+            setRootStatus(ev.id, 'resolved', ev.actor);
             return;
           case 'thread.reopened':
-            setRootStatus(ev.id, 'open');
+            setRootStatus(ev.id, 'open', ev.actor);
             return;
           case 'review.submitted':
           case 'comments.reset':
@@ -395,6 +396,12 @@ export const reviewOf = (
 
 export const isDraft = (s: CommentsStore, c: DecoratedComment): boolean =>
   c.reviewId !== null && c.reviewId === s.pendingReview?.id;
+
+export const lastAuthor = (t: Thread): string =>
+  (t.replies.at(-1) ?? t.root).author;
+
+export const awaitsUser = (t: Thread): boolean =>
+  t.root.status === 'resolved' && lastAuthor(t) !== USER_ACTOR;
 
 export const selectDraftCount = (s: CommentsStore): number => {
   const id = s.pendingReview?.id;

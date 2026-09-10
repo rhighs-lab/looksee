@@ -98,6 +98,7 @@ function normalize(c: StoredComment): Comment {
     branch: c.branch ?? null,
     lineSnapshot: Array.isArray(c.lineSnapshot) ? c.lineSnapshot : [],
     status: c.status === 'resolved' ? 'resolved' : 'open',
+    resolvedBy: c.resolvedBy ?? null,
     reviewId: c.reviewId ?? null,
     applied: c.applied ?? null,
     createdAt: c.createdAt ?? new Date(0).toISOString(),
@@ -188,7 +189,13 @@ export async function listComments(
 
 export type NewComment = Omit<
   Comment,
-  'id' | 'repoRoot' | 'createdAt' | 'updatedAt' | 'status' | 'applied'
+  | 'id'
+  | 'repoRoot'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'status'
+  | 'resolvedBy'
+  | 'applied'
 >;
 
 export function addComment(
@@ -205,6 +212,7 @@ export function addComment(
       createdAt: now,
       updatedAt: now,
       status: 'open',
+      resolvedBy: null,
       applied: null,
     };
     store.comments.push(comment);
@@ -222,7 +230,7 @@ export async function getComment(
 }
 
 export type CommentPatch = Partial<
-  Pick<Comment, 'body' | 'status' | 'applied'>
+  Pick<Comment, 'body' | 'status' | 'resolvedBy' | 'applied'>
 >;
 
 export function updateComment(

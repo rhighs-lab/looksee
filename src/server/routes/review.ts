@@ -400,8 +400,10 @@ export function reviewRoutes(ctx: AppContext): Hono {
         return c.json({ error: 'body is immutable once published' }, 409);
       patch.body = b['body'];
     }
-    if (b['status'] === 'open' || b['status'] === 'resolved')
+    if (b['status'] === 'open' || b['status'] === 'resolved') {
       patch.status = b['status'];
+      patch.resolvedBy = b['status'] === 'resolved' ? actor : null;
+    }
     const comment = await updateComment(repoRoot, cur.id, patch);
     if (!comment) return c.json({ error: 'not found' }, 404);
     if (patch.status && patch.status !== cur.status && !draft)

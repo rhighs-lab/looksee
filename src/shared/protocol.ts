@@ -445,6 +445,7 @@ export interface Comment {
   branch: string | null;
   lineSnapshot: string[];
   status: CommentStatus;
+  resolvedBy: string | null;
   reviewId: string | null;
   applied: { at: string; lines: string[] } | null;
   createdAt: string;

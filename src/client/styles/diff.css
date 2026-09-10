@@ -2456,6 +2456,19 @@ kbd {
   flex: none;
 }
 
+.comments-panel-note {
+  display: block;
+  font-size: 11px;
+  padding: 0 0 6px;
+}
+
+.comment-resolved-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
 .comments-panel-group {
   margin: 4px 0 8px;
   font-size: 11px;

@@ -3,6 +3,7 @@ import { Avatar } from '@/client/components/comments/avatar.js';
 import { Composer } from '@/client/components/comments/composer.js';
 import { AuthorName } from '@/client/components/people.js';
 import {
+  awaitsUser,
   isDraft,
   reviewOf,
   type Thread as ThreadModel,
@@ -189,17 +190,20 @@ function CommentCard({ c, isRoot }: { c: DecoratedComment; isRoot: boolean }) {
 
 export const Thread = memo(function Thread({
   thread,
+  expandResolved = false,
 }: {
   thread: ThreadModel;
+  expandResolved?: boolean;
 }) {
   const { root, replies } = thread;
   const setStatus = useComments((s) => s.setStatus);
   const reply = useComments((s) => s.reply);
   const draft = useComments((s) => isDraft(s, root));
   const [replying, setReplying] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState<boolean | null>(null);
   const resolved = root.status === 'resolved';
-  const collapsed = resolved && !expanded;
+  const collapsed =
+    resolved && !(expanded ?? (expandResolved || awaitsUser(thread)));
   return (
     <div
       className={`comment-thread${resolved ? ' is-resolved' : ''}${collapsed ? ' is-collapsed' : ''}`}
@@ -231,9 +235,18 @@ export const Thread = memo(function Thread({
               >
                 Reply
               </button>
-              {resolved && <Label tone="done">Resolved</Label>}
               {resolved && (
-                <Button small onClick={() => setExpanded(!expanded)}>
+                <span className="comment-resolved-by">
+                  <Label tone="done">Resolved</Label>
+                  {root.resolvedBy && (
+                    <span className="ui-muted">
+                      by <AuthorName actor={root.resolvedBy} />
+                    </span>
+                  )}
+                </span>
+              )}
+              {resolved && (
+                <Button small onClick={() => setExpanded(collapsed)}>
                   {collapsed
                     ? replies.length
                       ? `Show ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}`
