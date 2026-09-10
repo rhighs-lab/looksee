@@ -44,7 +44,7 @@ export function decorator(repoRoot: string | null): Decorator {
       return {
         ...c,
         kind,
-        bodyHtml: renderCommentHtml(c),
+        bodyHtml: await renderCommentHtml(c),
         suggestion: null,
         applicable: null,
       };
@@ -53,7 +53,7 @@ export function decorator(repoRoot: string | null): Decorator {
     const applicable = snapshot.length > 0 && sameLines(cur, snapshot);
     return {
       ...c,
-      bodyHtml: renderCommentHtml(c, {
+      bodyHtml: await renderCommentHtml(c, {
         snapshot,
         applicable,
         applied: Boolean(c.applied),

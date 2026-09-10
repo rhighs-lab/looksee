@@ -102,6 +102,11 @@ The user reads your reply in a review pane next to the code, not in a chat.
 - Did not make the change? Say so and why, in one line.
 - Never hide a problem, a guess, or a risk to stay short. Say it plainly and
   be short everywhere else.
+- Bodies are GitHub-flavored markdown: lists, tables, `code spans`, links
+  and fenced blocks. A fence with a language (```ts) is syntax highlighted,
+  so paste the snippet or diff instead of describing it. Write locations as
+  `path:line`. A ```suggestion fence on a new-side line comment becomes an
+  applicable suggestion.
 
 Each poll with `--pending` replays anything still unanswered, so nothing is
 lost between waits.

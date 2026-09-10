@@ -157,7 +157,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const answer = await getAnswer(repoRoot, c.req.param('id'));
     if (!answer) return c.json({ error: 'not found' }, 404);
     return c.json({
-      answer: { ...answer, summaryHtml: renderMarkdown(answer.summary) },
+      answer: { ...answer, summaryHtml: await renderMarkdown(answer.summary) },
     });
   });
 
@@ -272,7 +272,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
     const filePath = safeRelPath(b['filePath']);
     const anchored =
       repoRoot && b['side'] === 'new' && filePath && Number.isFinite(start);
-    if (!anchored) return c.json({ html: renderMarkdown(text) });
+    if (!anchored) return c.json({ html: await renderMarkdown(text) });
     const { lines } = await getBlobLines(
       repoRoot,
       'WORKTREE',
@@ -281,7 +281,7 @@ export function reviewRoutes(ctx: AppContext): Hono {
       end
     );
     return c.json({
-      html: renderCommentHtml(
+      html: await renderCommentHtml(
         { body: text, side: 'new', parentId: null },
         { snapshot: lines, applicable: true }
       ),

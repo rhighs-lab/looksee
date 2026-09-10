@@ -48,11 +48,48 @@ function commentRenderer(): InstanceType<typeof marked.Renderer> {
   return r;
 }
 
-export function renderMarkdown(body: string): string {
-  return marked.parse(body || '', {
-    renderer: commentRenderer(),
-    async: false,
-  }) as string;
+interface Fence {
+  token: string;
+  text: string;
+  lang: string | null;
+}
+
+const fenceInfo = (lang: string | undefined): string =>
+  (lang ?? '').trim().split(/\s+/)[0] ?? '';
+
+function collectFences(r: InstanceType<typeof marked.Renderer>) {
+  const fences: Fence[] = [];
+  r.code = (text: string, lang?: string) => {
+    const info = fenceInfo(lang);
+    if (info.toLowerCase() === 'mermaid')
+      return `<pre class="mermaid">${escapeHtml(text)}</pre>`;
+    const token = `\u0000code${fences.length}\u0000`;
+    fences.push({ token, text, lang: info || null });
+    return `<p>${token}</p>`;
+  };
+  return async (html: string): Promise<string> => {
+    for (const f of fences) {
+      const lang = f.lang ? (inferLanguage(`x.${f.lang}`) ?? f.lang) : null;
+      const lines = f.text.replace(/\n$/, '').split('\n');
+      const painted = await highlightLines(lines, lang).catch(() => null);
+      const inner = (painted ?? lines.map(escapeHtml))
+        .map((l) => `<span class="doc-line">${l}</span>`)
+        .join('\n');
+      html = html.replace(
+        `<p>${f.token}</p>`,
+        `<pre class="doc-code"><code>${inner}</code></pre>`
+      );
+    }
+    return html;
+  };
+}
+
+export async function renderMarkdown(body: string): Promise<string> {
+  const renderer = commentRenderer();
+  const finish = collectFences(renderer);
+  return finish(
+    marked.parse(body || '', { renderer, async: false, gfm: true }) as string
+  );
 }
 
 export const isLineRoot = (c: Pick<Comment, 'side' | 'parentId'>): boolean =>
@@ -82,13 +119,14 @@ export interface RenderOpts {
   applied?: boolean;
 }
 
-export function renderCommentHtml(
+export async function renderCommentHtml(
   c: Pick<Comment, 'side' | 'parentId' | 'body'> & { id?: string },
   opts: RenderOpts = {}
-): string {
+): Promise<string> {
   if (!isSuggestionRoot(c)) return renderMarkdown(c.body);
   const renderer = commentRenderer();
-  const base = renderer.code.bind(renderer);
+  const finish = collectFences(renderer);
+  const fence = renderer.code.bind(renderer);
   let seen = false;
   renderer.code = (
     code: string,
@@ -96,7 +134,7 @@ export function renderCommentHtml(
     escaped: boolean
   ) => {
     if ((lang ?? '').trim() !== 'suggestion' || seen)
-      return base(code, lang, escaped);
+      return fence(code, lang, escaped);
     seen = true;
     const added = code === '' ? [] : code.split(/\r?\n/);
     return renderSuggestionBlock({
@@ -107,7 +145,9 @@ export function renderCommentHtml(
       id: c.id ?? null,
     });
   };
-  return marked.parse(c.body || '', { renderer, async: false }) as string;
+  return finish(
+    marked.parse(c.body || '', { renderer, async: false, gfm: true }) as string
+  );
 }
 
 export const isMarkdownPath = (path: string): boolean =>
@@ -134,7 +174,6 @@ const resolveRel = (docPath: string, href: string): string | null => {
 };
 
 export async function renderDoc(body: string, docPath = ''): Promise<string> {
-  const code: Array<{ token: string; text: string; lang: string | null }> = [];
   const r = new marked.Renderer();
   const heading = r.heading.bind(r);
   r.heading = (text: string, level: number, raw: string) => {
@@ -156,14 +195,7 @@ export async function renderDoc(body: string, docPath = ''): Promise<string> {
       : href;
     return `<a href="${escapeHtml(to)}"${t}${ext}>${text}</a>`;
   };
-  r.code = (text: string, lang?: string) => {
-    const info = (lang ?? '').trim().split(/\s+/)[0] ?? '';
-    if (info.toLowerCase() === 'mermaid')
-      return `<pre class="mermaid">${escapeHtml(text)}</pre>`;
-    const token = `\u0000code${code.length}\u0000`;
-    code.push({ token, text, lang: info || null });
-    return `<p>${token}</p>`;
-  };
+  const finish = collectFences(r);
 
   let html = marked.parse(body || '', {
     renderer: r,
@@ -181,19 +213,5 @@ export async function renderDoc(body: string, docPath = ''): Promise<string> {
     }
   );
 
-  for (const block of code) {
-    const lang = block.lang
-      ? (inferLanguage(`x.${block.lang}`) ?? block.lang)
-      : null;
-    const lines = block.text.replace(/\n$/, '').split('\n');
-    const painted = await highlightLines(lines, lang).catch(() => null);
-    const inner = (painted ?? lines.map(escapeHtml))
-      .map((l) => `<span class="doc-line">${l}</span>`)
-      .join('\n');
-    html = html.replace(
-      `<p>${block.token}</p>`,
-      `<pre class="doc-code"><code>${inner}</code></pre>`
-    );
-  }
-  return html;
+  return finish(html);
 }

@@ -1114,6 +1114,38 @@ body {
 .comment-body pre code {
   padding: 0;
   background: transparent;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.comment-body .doc-line {
+  display: block;
+  white-space: pre;
+}
+.comment-body ul,
+.comment-body ol {
+  margin: 0 0 8px;
+  padding-left: 24px;
+}
+.comment-body li + li {
+  margin-top: 2px;
+}
+.comment-body table {
+  display: block;
+  overflow-x: auto;
+  margin: 0 0 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.comment-body th,
+.comment-body td {
+  padding: 4px 10px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+}
+.comment-body blockquote {
+  margin: 0 0 8px;
+  padding-left: 12px;
+  border-left: 3px solid var(--borderColor-default, #d1d9e0);
+  color: var(--fgColor-muted, #59636e);
 }
 
 /* file-level comment threads sit at the top of the file body as a banner */
