@@ -82,7 +82,7 @@ export function FileFinder({
           ref={inputRef}
           className="finder-input"
           type="text"
-          placeholder="Go to file (space separates terms)"
+          placeholder="Go to file"
           spellCheck={false}
           autoComplete="off"
           value={q}

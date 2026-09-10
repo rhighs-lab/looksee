@@ -181,7 +181,7 @@ export function ReviewPage({
             search={{
               value: filter,
               onChange: setFilter,
-              placeholder: 'Filter files (space separates terms)',
+              placeholder: 'Filter changed files',
               onSubmit: () => first && jumpTo(first.path),
             }}
           >
