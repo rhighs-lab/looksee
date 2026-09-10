@@ -671,6 +671,8 @@ textarea.ui-input,
 
 /* near the right edge the tooltip would clip; anchor those to the right instead */
 .pr-meta-right [data-tooltip]::after,
+.pr-actions [data-tooltip]::after,
+.pr-title-right [data-tooltip]::after,
 .blob-actions [data-tooltip]::after,
 .file-header > :last-child [data-tooltip]::after {
   left: auto;
