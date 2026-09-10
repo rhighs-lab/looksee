@@ -203,13 +203,26 @@ function TreeDirRow<T>({
   );
 }
 
-const syncSubnavHeight = (): void => {
-  const el = document.querySelector<HTMLElement>('.pr-subnav');
-  if (el)
-    document.documentElement.style.setProperty(
-      '--subnav-h',
-      `${el.getBoundingClientRect().height}px`
-    );
+let subnavH = '';
+let subnavFrame = 0;
+
+// Every sticky offset hangs off --subnav-h, so the variable is only written
+// when the height actually moved: a resize storm then invalidates style once
+// per real change instead of once per event.
+const applySubnavHeight = (px: number): void => {
+  const h = `${px}px`;
+  if (h === subnavH) return;
+  subnavH = h;
+  document.documentElement.style.setProperty('--subnav-h', h);
+};
+
+const measureSubnav = (): void => {
+  if (subnavFrame) return;
+  subnavFrame = requestAnimationFrame(() => {
+    subnavFrame = 0;
+    const el = document.querySelector<HTMLElement>('.pr-subnav');
+    if (el) applySubnavHeight(el.getBoundingClientRect().height);
+  });
 };
 
 export function useSubnavHeight(): void {
@@ -220,21 +233,26 @@ export function useSubnavHeight(): void {
   // height the placeholder happened to have.
   useEffect(() => {
     const el = document.querySelector<HTMLElement>('.pr-subnav');
-    if (el && el !== watched.current) {
-      observer.current?.disconnect();
-      observer.current = new ResizeObserver(syncSubnavHeight);
-      observer.current.observe(el);
-      watched.current = el;
-    }
-    syncSubnavHeight();
+    if (!el || el === watched.current) return;
+    observer.current?.disconnect();
+    observer.current = new ResizeObserver((entries) => {
+      const box = entries[0]?.borderBoxSize?.[0];
+      applySubnavHeight(
+        box ? box.blockSize : el.getBoundingClientRect().height
+      );
+    });
+    observer.current.observe(el);
+    watched.current = el;
+    measureSubnav();
   });
-  useEffect(() => {
-    window.addEventListener('resize', syncSubnavHeight);
-    return () => {
-      window.removeEventListener('resize', syncSubnavHeight);
+  useEffect(
+    () => () => {
       observer.current?.disconnect();
-    };
-  }, []);
+      if (subnavFrame) cancelAnimationFrame(subnavFrame);
+      subnavFrame = 0;
+    },
+    []
+  );
 }
 
 export const TreeCheck = () => (

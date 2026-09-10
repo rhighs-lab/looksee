@@ -88,17 +88,26 @@ export function AnswerPage({ id }: { id: string }) {
       const above = cards.filter((c) => c.getBoundingClientRect().top <= top);
       setActive(idOf(above.length ? above[above.length - 1]! : cards[0]!));
     };
+    let frame = 0;
+    const schedule = () => {
+      if (!frame)
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          sync();
+        });
+    };
     sync();
     // capture, because scroll does not bubble and the scroller may be a
     // container rather than the window
-    document.addEventListener('scroll', sync, {
+    document.addEventListener('scroll', schedule, {
       passive: true,
       capture: true,
     });
-    window.addEventListener('resize', sync);
+    window.addEventListener('resize', schedule);
     return () => {
-      document.removeEventListener('scroll', sync, { capture: true });
-      window.removeEventListener('resize', sync);
+      cancelAnimationFrame(frame);
+      document.removeEventListener('scroll', schedule, { capture: true });
+      window.removeEventListener('resize', schedule);
     };
   }, [answer]);
 
