@@ -27,6 +27,12 @@ function useNow(intervalMs = 30_000): number {
   return now;
 }
 
+/**
+ * Three rows, each split into groups that read left to right as
+ * primary → passive status → controls: the title row names the page and the
+ * comparison, the meta row carries the summary and the actions, and the tab
+ * row picks the git layer.
+ */
 export function Header({
   title,
   left,
@@ -55,21 +61,27 @@ export function Header({
     <header className="pr-subnav">
       <div className="pr-subnav-inner">
         <div className="pr-title-row">
-          <Button
-            variant="invisible"
-            icon
-            small
-            title="Toggle file tree"
-            aria-label="Toggle file tree"
-            aria-pressed={!treeHidden}
-            onClick={() => setTreeHidden(!treeHidden)}
-          >
-            <Sidebar />
-          </Button>
-          {left}
-          <h1 className="pr-title">{title ?? 'Files changed'}</h1>
+          <div className="pr-group pr-primary">
+            <Button
+              variant="invisible"
+              icon
+              small
+              title="Toggle file tree"
+              aria-label="Toggle file tree"
+              aria-pressed={!treeHidden}
+              onClick={() => setTreeHidden(!treeHidden)}
+            >
+              <Sidebar />
+            </Button>
+            {left}
+            <h1 className="pr-title">{title ?? 'Files changed'}</h1>
+          </div>
           {isRepo && refs && (
-            <span className="pr-refs">
+            <div
+              className="pr-group pr-refs"
+              role="status"
+              aria-label="Repository status"
+            >
               <span className="ui-mono" title="Checked out branch">
                 {refs.head.branch ?? refs.head.sha.slice(0, 7)}
               </span>
@@ -114,20 +126,24 @@ export function Header({
                 className={`ref-fetch ${stale ? 'ui-attention' : 'ui-muted'}`}
                 title={
                   refs.lastFetchAt
-                    ? `Last git fetch: ${new Date(refs.lastFetchAt).toLocaleString()}. prequel never fetches.`
-                    : 'No fetch recorded; remote state may be stale. prequel never fetches.'
+                    ? `Last git fetch: ${new Date(refs.lastFetchAt).toLocaleString()}. looksee never fetches.`
+                    : 'No fetch recorded; remote state may be stale. looksee never fetches.'
                 }
               >
                 fetched {relativeTime(refs.lastFetchAt, now)}
               </span>
-            </span>
+            </div>
           )}
           {!isRepo && refs && (
-            <span className="pr-refs ui-muted">
+            <div className="pr-group pr-refs ui-muted" role="status">
               {refs.head.branch} into {refs.base.ref}
-            </span>
+            </div>
           )}
-          <span className="pr-title-right">
+          <div
+            className="pr-group pr-title-right"
+            role="group"
+            aria-label="Comparison"
+          >
             {connection !== 'live' && connection !== 'off' && (
               <span className="pr-conn ui-attention" role="status">
                 {connection === 'connecting' ? 'connecting…' : 'reconnecting…'}
@@ -139,33 +155,46 @@ export function Header({
               </span>
             )}
             {filters && isRepo && refs && <ScopeSwitcher />}
-          </span>
+          </div>
         </div>
         <div className="pr-meta-row">
-          {summary && (
-            <span className="diff-summary">
-              {comparison && (
-                <span
-                  className="summary-label"
-                  title={`${comparison.baseline.short} to ${comparison.endpoint.short}`}
-                >
-                  {comparison.label}
+          <div className="pr-group pr-summary">
+            {summary && (
+              <span className="diff-summary">
+                {comparison && (
+                  <span
+                    className="summary-label"
+                    title={`${comparison.baseline.short} to ${comparison.endpoint.short}`}
+                  >
+                    {comparison.label}
+                  </span>
+                )}
+                <span>
+                  {summary.files} changed{' '}
+                  {summary.files === 1 ? 'file' : 'files'}
                 </span>
-              )}
-              <span>
-                {summary.files} changed {summary.files === 1 ? 'file' : 'files'}
+                <span className="summary-additions">+{summary.additions}</span>
+                <span className="summary-deletions">−{summary.deletions}</span>
+                <DiffStat
+                  additions={summary.additions}
+                  deletions={summary.deletions}
+                />
               </span>
-              <span className="summary-additions">+{summary.additions}</span>
-              <span className="summary-deletions">−{summary.deletions}</span>
-              <DiffStat
-                additions={summary.additions}
-                deletions={summary.deletions}
-              />
-            </span>
-          )}
-          <span className="pr-meta-right">
-            <CommitsMenu />
+            )}
+          </div>
+          <div
+            className="pr-group pr-actions"
+            role="group"
+            aria-label="Review actions"
+          >
             {right}
+          </div>
+          <div
+            className="pr-group pr-meta-right"
+            role="group"
+            aria-label="View tools"
+          >
+            <CommitsMenu />
             <ArrivalJump />
             <SettingsMenu />
             <span
@@ -174,10 +203,10 @@ export function Header({
             >
               {state?.repoLabel ?? state?.repoRoot ?? 'sample diff'}
             </span>
-          </span>
+          </div>
         </div>
         {filters && isRepo && summary && (
-          <div className="pr-layer-row">
+          <nav className="pr-layer-row" aria-label="Git layer">
             <UnderlineNav<Scope>
               label="Git layer to show"
               value={scope}
@@ -209,7 +238,7 @@ export function Header({
                 })),
               ]}
             />
-          </div>
+          </nav>
         )}
       </div>
     </header>

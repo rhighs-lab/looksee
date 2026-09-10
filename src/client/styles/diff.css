@@ -53,22 +53,58 @@ body {
   border-bottom: 0;
 }
 
-.pr-title-row {
+/* Each subnav row is a run of groups: what the page is, passive status in
+   muted text, then the controls pushed to the right. A hairline separates
+   neighbouring groups so their kinds read apart. */
+.pr-title-row,
+.pr-meta-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
+.pr-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pr-group:empty {
+  display: none;
+}
+
+.pr-group:not(:empty) + .pr-group:not(:empty)::before {
+  content: "";
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin-right: 4px;
+  background-color: var(--borderColor-muted, #d8dee4);
+}
+
+.pr-primary {
+  gap: 12px;
+}
+
 .pr-title {
   font-size: 16px;
   margin: 0;
+  white-space: nowrap;
 }
 
-.pr-title-right {
-  display: inline-flex;
-  align-items: center;
+.pr-title-right,
+.pr-meta-right {
+  margin-left: auto;
   gap: 12px;
+}
+
+.pr-actions:not(:empty) + .pr-meta-right {
+  margin-left: 0;
+}
+
+.pr-actions {
   margin-left: auto;
 }
 
@@ -79,10 +115,8 @@ body {
 }
 
 .pr-refs {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
 }
 
 .ref-pill {
@@ -94,10 +128,6 @@ body {
 }
 
 .pr-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   margin-top: 6px;
   font-size: 12px;
   color: var(--fgColor-muted, #59636e);
