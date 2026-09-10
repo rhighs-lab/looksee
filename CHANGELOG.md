@@ -1,5 +1,19 @@
 # @rhighs-lab/looksee
 
+## 0.3.0
+
+### Minor Changes
+
+- a33e952: Faster file search with multi-term fuzzy matching and basename ranking, the finder covers the whole repository tree and jumps in page, and the file list follows the diff you are reading.
+- febc385: Set comment and markdown prose in a reading serif and let the prose and code fonts be picked in settings.
+
+### Patch Changes
+
+- 662de1d: Syntax highlight fenced code in comment bodies and tell agents that comments are GitHub-flavored markdown.
+- 5f44884: Load each file-info item on its own request and show a skeleton per item instead of holding the whole tooltip for the slowest fetch.
+- fa798bb: Document the polling workflow for Codex and other turn-based harnesses: a background `looksee listen` cannot wake an idle agent, so the rule and skill use a bounded foreground wait.
+- 4c7580b: Rename the "Local commits" layer to "Unpushed commits" and explain in each layer tab's tooltip which range it covers.
+
 ## 0.2.0
 
 ### Minor Changes
