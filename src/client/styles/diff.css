@@ -154,6 +154,20 @@ body {
   min-width: 0;
 }
 
+/* Narrow windows: the pickers already name the comparison and the repo is in
+   the tab title, so the passive copies go and the rows stay at two. */
+@media (max-width: 999px) {
+  .pr-title-row,
+  .pr-meta-row {
+    gap: 8px;
+  }
+  .pr-refs > :not(:first-child),
+  .summary-label,
+  .repo-path {
+    display: none;
+  }
+}
+
 .layer-colors-toggle[aria-pressed="true"] {
   color: var(--fgColor-accent, #0969da);
   background-color: var(--bgColor-accent-muted, #ddf4ff);
