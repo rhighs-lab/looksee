@@ -5,19 +5,12 @@ import { AuthorName } from '@/client/components/people.js';
 import {
   awaitsUser,
   isDraft,
-  reviewOf,
   type Thread as ThreadModel,
   useComments,
 } from '@/client/store/comments.js';
-import { Button, Label, type Tone } from '@/client/ui/index.js';
-import type { DecoratedComment, Verdict } from '@/shared/protocol.js';
+import { Button, Label } from '@/client/ui/index.js';
+import type { DecoratedComment } from '@/shared/protocol.js';
 import { USER_ACTOR } from '@/shared/protocol.js';
-
-const VERDICT: Record<Verdict, { tone: Tone; text: string }> = {
-  approve: { tone: 'success', text: 'Approved' },
-  request_changes: { tone: 'danger', text: 'Changes requested' },
-  comment: { tone: 'muted', text: 'Reviewed' },
-};
 
 function timeLabel(iso: string): string {
   try {
@@ -101,12 +94,10 @@ function DraftEditor({
 function CommentCard({ c, isRoot }: { c: DecoratedComment; isRoot: boolean }) {
   const remove = useComments((s) => s.remove);
   const apply = useComments((s) => s.apply);
-  const review = useComments((s) => reviewOf(s, c));
   const draft = useComments((s) => isDraft(s, c));
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const agent = c.author !== USER_ACTOR;
-  const verdict = review?.verdict ? VERDICT[review.verdict] : null;
 
   const onBodyClick = async (e: MouseEvent<HTMLDivElement>) => {
     const t = e.target as HTMLElement;
@@ -143,14 +134,6 @@ function CommentCard({ c, isRoot }: { c: DecoratedComment; isRoot: boolean }) {
           </span>
         )}
         {draft && <Label tone="attention">Pending</Label>}
-        {verdict && (
-          <Label
-            tone={verdict.tone}
-            {...(review?.body ? { title: review.body } : {})}
-          >
-            {verdict.text}
-          </Label>
-        )}
         <span className="comment-header-tools">
           {draft && !editing && (
             <Button

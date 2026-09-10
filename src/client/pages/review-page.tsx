@@ -42,6 +42,7 @@ export interface ReviewPageProps {
   onFileComment?: ((path: string) => void) | undefined;
   commentCounts?: Record<string, number> | undefined;
   headerRight?: ReactNode;
+  above?: ReactNode;
 }
 
 export function ReviewPage({
@@ -50,6 +51,7 @@ export function ReviewPage({
   onFileComment,
   commentCounts,
   headerRight,
+  above,
 }: ReviewPageProps) {
   useSubnavHeight();
   const status = useReview((s) => s.status);
@@ -198,6 +200,7 @@ export function ReviewPage({
           </TreePane>
         )}
         <main className="diff-container">
+          {above}
           {status === 'loading' && (
             <Loading
               label={state ? 'Rebuilding the diff…' : 'Reading the repository…'}

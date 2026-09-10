@@ -3,6 +3,7 @@ import {
   CommentsPanel,
   CommentsPanelToggle,
 } from '@/client/components/comments/comments-panel.js';
+import { ReviewBanner } from '@/client/components/comments/review-banner.js';
 import { ReviewBar } from '@/client/components/comments/review-bar.js';
 import { useCommentSlots } from '@/client/components/comments/use-comment-slots.js';
 import { ReviewPage } from '@/client/pages/review-page.js';
@@ -31,6 +32,7 @@ export function ReviewWithComments() {
         fileCommentsFor={enabled ? (f) => fileCommentsFor(f.path) : undefined}
         onFileComment={enabled ? onFileComment : undefined}
         commentCounts={enabled ? commentCounts : undefined}
+        above={enabled ? <ReviewBanner /> : null}
         headerRight={
           enabled ? (
             <>
