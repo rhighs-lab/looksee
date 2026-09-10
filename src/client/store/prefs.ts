@@ -61,6 +61,10 @@ export const prefs = {
     read<ScopePreset | null>(repoKey(repoRoot, 'scope'), null),
   setScope: (repoRoot: string | null, v: ScopePreset) =>
     write(repoKey(repoRoot, 'scope'), v),
+  commentsHidden: (repoRoot: string | null): boolean =>
+    read(repoKey(repoRoot, 'comments-hidden'), false),
+  setCommentsHidden: (repoRoot: string | null, v: boolean) =>
+    write(repoKey(repoRoot, 'comments-hidden'), v),
   collapsed: (repoRoot: string | null): Record<string, boolean> =>
     read(repoKey(repoRoot, 'collapsed'), {}),
   setCollapsed: (repoRoot: string | null, v: Record<string, boolean>) =>

@@ -1,6 +1,12 @@
 import { type KeyboardEvent, type MouseEvent, useEffect } from 'react';
 import { Thread as ThreadView } from '@/client/components/comments/thread.js';
-import { ArrowLeft, Close, CommentIcon } from '@/client/components/icons.js';
+import {
+  ArrowLeft,
+  Close,
+  CommentIcon,
+  Eye,
+  EyeClosed,
+} from '@/client/components/icons.js';
 import { fileAnchor, fileHref } from '@/client/lib/anchors.js';
 import { lineHash } from '@/client/lib/line-anchor.js';
 import { lineMap } from '@/client/lib/snapshot.js';
@@ -46,6 +52,34 @@ const placed = (
     root.endLine || root.startLine
   );
 };
+
+export function CommentsVisibilityToggle() {
+  const hidden = useReview((s) => s.commentsHidden);
+  const setHidden = useReview((s) => s.setCommentsHidden);
+  const total = useComments((s) => Object.keys(s.threads).length);
+  useEffect(() => {
+    document.documentElement.dataset['commentsHidden'] = hidden ? '1' : '0';
+  }, [hidden]);
+  if (!total) return null;
+  const title = hidden ? 'Show review comments' : 'Hide review comments';
+  return (
+    <Button
+      small
+      icon
+      variant="invisible"
+      title={title}
+      aria-label={title}
+      aria-pressed={hidden}
+      onClick={() => setHidden(!hidden)}
+    >
+      {hidden ? (
+        <EyeClosed width={14} height={14} />
+      ) : (
+        <Eye width={14} height={14} />
+      )}
+    </Button>
+  );
+}
 
 export function CommentsPanelToggle() {
   const open = useReview((s) => s.commentsPanel);

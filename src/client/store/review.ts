@@ -68,6 +68,7 @@ export interface ReviewStore {
   treeWidth: number | null;
   activePath: string | null;
   commentsPanel: boolean;
+  commentsHidden: boolean;
   toast: { message: string; action?: { label: string; fn: () => void } } | null;
   eventListeners: Set<(ev: ServerEvent) => void>;
   branches: BranchesResponse | null;
@@ -95,6 +96,7 @@ export interface ReviewStore {
   setTreeWidth(px: number | null): void;
   setActivePath(path: string | null): void;
   setCommentsPanel(open: boolean): void;
+  setCommentsHidden(val: boolean): void;
   loadBranches(): Promise<void>;
   loadCommits(): Promise<void>;
   setPreset(preset: ScopePreset, custom?: Comparison): Promise<void>;
@@ -250,6 +252,7 @@ export const useReview = create<ReviewStore>((set, get) => {
         set({
           viewed: prefs.viewed(state.repoRoot),
           collapsed: prefs.collapsed(state.repoRoot),
+          commentsHidden: prefs.commentsHidden(state.repoRoot),
         });
       }
       set({
@@ -313,6 +316,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     treeWidth: prefs.treeWidth(),
     commits: [],
     commentsPanel: false,
+    commentsHidden: false,
     activePath: null,
     toast: null,
     eventListeners: new Set(),
@@ -487,6 +491,11 @@ export const useReview = create<ReviewStore>((set, get) => {
 
     setCommentsPanel(open) {
       set({ commentsPanel: open });
+    },
+
+    setCommentsHidden(val) {
+      prefs.setCommentsHidden(get().state?.repoRoot ?? null, val);
+      set({ commentsHidden: val });
     },
 
     async loadCommits() {

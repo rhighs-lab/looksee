@@ -1157,6 +1157,13 @@ body {
   color: var(--fgColor-muted, #59636e);
 }
 
+[data-comments-hidden="1"]
+  .diff-container
+  .comment-row:not(.comment-compose-row),
+[data-comments-hidden="1"] .diff-container .file-comment {
+  display: none;
+}
+
 /* file-level comment threads sit at the top of the file body as a banner */
 .file-comment,
 .file-comment-compose {

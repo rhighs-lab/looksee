@@ -2,6 +2,7 @@ import { useShallow } from 'zustand/react/shallow';
 import {
   CommentsPanel,
   CommentsPanelToggle,
+  CommentsVisibilityToggle,
 } from '@/client/components/comments/comments-panel.js';
 import { ReviewBanner } from '@/client/components/comments/review-banner.js';
 import { ReviewBar } from '@/client/components/comments/review-bar.js';
@@ -37,6 +38,7 @@ export function ReviewWithComments() {
           enabled ? (
             <>
               <CommentsPanelToggle />
+              <CommentsVisibilityToggle />
               <ReviewActions />
               <ReviewBar />
             </>
