@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import { CommentRow } from '@/client/components/comments/comment-rows.js';
 import { Composer } from '@/client/components/comments/composer.js';
 import { Thread } from '@/client/components/comments/thread.js';
@@ -11,6 +11,7 @@ import type { LineSlots } from '@/client/components/diff/diff-table.js';
 import { snapshotForRange } from '@/client/lib/snapshot.js';
 import { useRevealHiddenLines } from '@/client/pages/use-reveal-hidden-lines.js';
 import {
+  type ComposeAnchor,
   type Thread as ThreadModel,
   useComments,
 } from '@/client/store/comments.js';
@@ -67,6 +68,7 @@ export function useCommentSlots(
     document.documentElement.dataset['commentsEnabled'] = enabled ? '1' : '0';
   }, [enabled]);
 
+  const prevByFile = useRef(new Map<string, ThreadModel[]>());
   const threadsByFile = useMemo(() => {
     const m = new Map<string, ThreadModel[]>();
     for (const t of Object.values(threads)) {
@@ -74,6 +76,16 @@ export function useCommentSlots(
       list.push(t);
       m.set(t.root.filePath, list);
     }
+    for (const [path, list] of m) {
+      const old = prevByFile.current.get(path);
+      if (
+        old &&
+        old.length === list.length &&
+        old.every((t, i) => t === list[i])
+      )
+        m.set(path, old);
+    }
+    prevByFile.current = m;
     return m;
   }, [threads]);
 
@@ -127,24 +139,27 @@ export function useCommentSlots(
   );
 
   const submitLabel = pending ? 'Add to review' : 'Add single comment';
-  const secondary = pending
-    ? undefined
-    : {
-        label: 'Start a review',
-        title: 'Hold this comment as a draft and keep reviewing',
-        run: async (body: string) => {
-          await startReviewWith(body);
-          clearRangeHighlight();
-        },
-      };
+  const secondary = useMemo(
+    () =>
+      pending
+        ? undefined
+        : {
+            label: 'Start a review',
+            title: 'Hold this comment as a draft and keep reviewing',
+            run: async (body: string) => {
+              await startReviewWith(body);
+              clearRangeHighlight();
+            },
+          },
+    [pending, startReviewWith]
+  );
 
-  const slotsFor = useCallback(
-    (filePath: string): LineSlots => {
-      const list = threadsByFile.get(filePath) ?? [];
-      const c =
-        compose && compose.filePath === filePath && compose.side !== 'file'
-          ? compose
-          : null;
+  const buildSlots = useCallback(
+    (
+      filePath: string,
+      list: ThreadModel[],
+      c: ComposeAnchor | null
+    ): LineSlots => {
       return {
         commentable: enabled,
         onGutterClick: (side, line, shift) =>
@@ -199,17 +214,40 @@ export function useCommentSlots(
         },
       };
     },
-    [
-      threadsByFile,
-      compose,
-      enabled,
-      split,
-      onGutterClick,
-      submit,
-      cancel,
-      submitLabel,
-      secondary,
-    ]
+    [enabled, split, onGutterClick, submit, cancel, submitLabel, secondary]
+  );
+
+  // A card re-renders its whole table when its slots change identity, so a
+  // file keeps the slots it had unless its threads or composer moved.
+  const cacheRef = useRef<{
+    builder: typeof buildSlots;
+    map: Map<
+      string,
+      {
+        list: ThreadModel[] | undefined;
+        c: ComposeAnchor | null;
+        slots: LineSlots;
+      }
+    >;
+  } | null>(null);
+  if (cacheRef.current?.builder !== buildSlots)
+    cacheRef.current = { builder: buildSlots, map: new Map() };
+  const slotsCache = cacheRef.current.map;
+
+  const slotsFor = useCallback(
+    (filePath: string): LineSlots => {
+      const list = threadsByFile.get(filePath);
+      const c =
+        compose && compose.filePath === filePath && compose.side !== 'file'
+          ? compose
+          : null;
+      const hit = slotsCache.get(filePath);
+      if (hit && hit.list === list && hit.c === c) return hit.slots;
+      const slots = buildSlots(filePath, list ?? [], c);
+      slotsCache.set(filePath, { list, c, slots });
+      return slots;
+    },
+    [threadsByFile, compose, slotsCache, buildSlots]
   );
 
   const fileCommentsFor = useCallback(

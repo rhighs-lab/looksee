@@ -143,6 +143,42 @@ export const customFrom = (
   return { baseline: { kind: 'head' }, endpoint: WORKTREE };
 };
 
+const sameFile = (a: ChangedFile, b: ChangedFile): boolean =>
+  a.path === b.path &&
+  a.oldPath === b.oldPath &&
+  a.kind === b.kind &&
+  a.digest === b.digest &&
+  a.binary === b.binary &&
+  a.additions === b.additions &&
+  a.deletions === b.deletions &&
+  a.generated === b.generated &&
+  a.large === b.large &&
+  a.layers.length === b.layers.length &&
+  a.layers.every(
+    (l, i) =>
+      l.layer === b.layers[i]!.layer &&
+      l.kind === b.layers[i]!.kind &&
+      l.oldPath === b.layers[i]!.oldPath
+  );
+
+// Cards are memoised on their file object, so an unchanged entry keeps the
+// identity it had before the refresh.
+const reuseFiles = (
+  prev: ChangedFile[] | undefined,
+  next: ChangedFile[]
+): ChangedFile[] => {
+  if (!prev?.length) return next;
+  const known = new Map(prev.map((f) => [f.path, f]));
+  let reused = 0;
+  const out = next.map((f) => {
+    const old = known.get(f.path);
+    if (!old || !sameFile(old, f)) return f;
+    reused++;
+    return old;
+  });
+  return reused === next.length && next.length === prev.length ? prev : out;
+};
+
 const applyTitle = (state: RepoState): void => {
   const name = state.title ?? state.repoRoot?.split('/').pop() ?? 'review';
   document.title = `looksee · ${name}`;
@@ -246,7 +282,11 @@ export const useReview = create<ReviewStore>((set, get) => {
   const doRefresh = async (force: boolean) => {
     const wasReady = get().status === 'ready' && get().state !== null;
     try {
-      const [state, session] = await Promise.all([api.state(), api.session()]);
+      const [fresh, session] = await Promise.all([api.state(), api.session()]);
+      const state: RepoState = {
+        ...fresh,
+        files: reuseFiles(get().state?.files, fresh.files),
+      };
       const prevRepo = get().state?.repoRoot;
       if (!wasReady || prevRepo !== state.repoRoot) {
         set({

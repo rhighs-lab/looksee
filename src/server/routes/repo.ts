@@ -408,7 +408,7 @@ export function repoRoutes(ctx: AppContext): Hono {
       const plain = lines.length > MAX_HIGHLIGHT_LINES;
       const html = plain
         ? null
-        : await highlightLines(lines, inferLanguage(filePath));
+        : await highlightLines(lines, inferLanguage(filePath), 'classed');
       return c.json<ContextResponse>({
         from,
         eof,
@@ -453,7 +453,7 @@ export function repoRoutes(ctx: AppContext): Hono {
     const html =
       plain || binary
         ? null
-        : await highlightLines(lines, inferLanguage(filePath));
+        : await highlightLines(lines, inferLanguage(filePath), 'classed');
     let changedLines: number[] = [];
     if (entry && !deleted && !binary) {
       const [diff] = await buildFileDiffs(ctx.repoRoot, scope, diffCtx, {

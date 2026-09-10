@@ -4,6 +4,10 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import type { AppContext, AppOpts } from '@/server/context.js';
 import { gitDir } from '@/server/git/exec.js';
+import {
+  highlightStylesheet,
+  highlightStylesVersion,
+} from '@/server/render/highlighter.js';
 import { ensureSession } from '@/server/review/session.js';
 import { repoRoutes } from '@/server/routes/repo.js';
 import { reviewRoutes } from '@/server/routes/review.js';
@@ -67,6 +71,17 @@ export function createApp(opts: AppOpts): LookseeApp {
     const proto = new URL(c.req.url).protocol;
     if (!origin || origin === `${proto}//${host}`) return next();
     return c.json({ error: 'cross-origin request rejected' }, 403);
+  });
+
+  app.use('/api/*', async (c, next) => {
+    await next();
+    c.header('x-looksee-hl', String(highlightStylesVersion()));
+  });
+
+  app.get('/api/highlight.css', (c) => {
+    c.header('content-type', 'text/css; charset=utf-8');
+    c.header('cache-control', 'no-cache');
+    return c.body(highlightStylesheet());
   });
 
   app.route('/', repoRoutes(ctx));

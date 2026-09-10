@@ -509,6 +509,19 @@ body {
   display: none;
 }
 
+/* Off-screen diffs skip layout and paint; the placeholder height keeps the
+   scrollbar honest until a card has been laid out once. */
+.diff-container > .file > .file-body {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+/* paint containment clips below the body, so the last expander's tip goes up */
+.diff-container .boundary-trailing [data-tooltip]::after {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
 .collapse-btn {
   display: inline-flex;
   align-items: center;

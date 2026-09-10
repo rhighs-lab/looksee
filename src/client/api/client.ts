@@ -31,6 +31,42 @@ export const CLIENT_ID = (globalThis.crypto?.randomUUID?.() ??
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+let hlVersion = 0;
+let hlLoading: Promise<boolean> | null = null;
+
+async function loadHighlightStyles(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/highlight.css', { cache: 'no-cache' });
+    if (!res.ok) return false;
+    const css = await res.text();
+    let el = document.getElementById('hl-styles');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'hl-styles';
+      document.head.appendChild(el);
+    }
+    el.textContent = css;
+    hlVersion = Math.max(hlVersion, Number(res.headers.get('x-looksee-hl')));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Token colors live in one shared stylesheet the server grows as it meets new
+// styles; a response announcing more rules than we hold is held back until
+// the sheet is refreshed, so the html it carries never paints uncolored.
+async function ensureHighlightStyles(header: string | null): Promise<void> {
+  const want = Number(header);
+  if (!header || !Number.isFinite(want)) return;
+  while (want > hlVersion) {
+    hlLoading ??= loadHighlightStyles().finally(() => {
+      hlLoading = null;
+    });
+    if (!(await hlLoading)) return;
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -73,6 +109,7 @@ async function request<T>(
   } catch {
     data = text;
   }
+  await ensureHighlightStyles(res.headers.get('x-looksee-hl'));
   if (!res.ok) {
     const msg =
       data && typeof data === 'object' && 'error' in data

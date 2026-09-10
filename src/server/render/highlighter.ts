@@ -66,6 +66,8 @@ interface Tok {
 const cache = new Map<string, Tok[][]>();
 const CACHE_MAX = 800;
 
+const COLOR_VAR = /^--shiki-[a-z]+$/;
+
 function tokenStyle(tok: Tok): string {
   const st = tok.htmlStyle;
   if (!st || typeof st === 'string') return typeof st === 'string' ? st : '';
@@ -73,20 +75,86 @@ function tokenStyle(tok: Tok): string {
   if (!color) return '';
   const parts = [`color:${color}`];
   for (const [k, v] of Object.entries(st))
-    if (k.startsWith('--shiki-')) parts.push(`${k}:${v}`);
+    if (COLOR_VAR.test(k)) parts.push(`${k}:${v}`);
   return parts.join(';');
 }
 
+// Every distinct style tuple becomes one shared class, so a token costs a few
+// bytes instead of one inline declaration per theme.
+const styleIds = new Map<string, string>();
+const styleRules = new Map<string, string>();
+
+const hashStyle = (css: string): string => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < css.length; i++) {
+    h ^= css.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `t${h.toString(36)}`;
+};
+
+function styleClass(css: string): string {
+  const hit = styleIds.get(css);
+  if (hit) return hit;
+  let id = hashStyle(css);
+  while (styleRules.has(id) && styleRules.get(id) !== css) id = `${id}x`;
+  styleIds.set(css, id);
+  styleRules.set(id, css);
+  return id;
+}
+
+export const highlightStylesVersion = (): number => styleRules.size;
+
+export const highlightStylesheet = (): string => {
+  let out = '';
+  for (const [id, css] of styleRules) out += `.${id}{${css}}\n`;
+  return out;
+};
+
+export type TokenMode = 'inline' | 'classed';
+
+interface StyledRun {
+  content: string;
+  style: string;
+}
+
+const BLANK = /^\s*$/;
+
+// Whitespace takes no color of its own and neighbours often share one, so
+// runs of equal style collapse into a single span.
+function mergeRuns(tokens: Tok[]): StyledRun[] {
+  const runs: StyledRun[] = [];
+  let lead = '';
+  for (const tok of tokens) {
+    const prev = runs[runs.length - 1];
+    if (BLANK.test(tok.content)) {
+      if (prev) prev.content += tok.content;
+      else lead += tok.content;
+      continue;
+    }
+    const style = tokenStyle(tok);
+    if (prev && prev.style === style) prev.content += tok.content;
+    else runs.push({ content: lead + tok.content, style });
+    lead = '';
+  }
+  if (lead) runs.push({ content: lead, style: '' });
+  return runs;
+}
+
 function tokenToHtml(
-  tok: Tok,
+  tok: StyledRun,
   base: number,
-  ranges: Range[] | undefined
+  ranges: Range[] | undefined,
+  mode: TokenMode
 ): string {
-  const style = tokenStyle(tok);
+  const style = tok.style;
   const content = tok.content;
-  const styleAttr = style ? ` style="${style}"` : '';
+  const classed = style && mode === 'classed' ? ` ${styleClass(style)}` : '';
+  const styleAttr = style && mode === 'inline' ? ` style="${style}"` : '';
   if (!ranges || ranges.length === 0)
-    return `<span class="tok"${styleAttr}>${escapeHtml(content)}</span>`;
+    return style
+      ? `<span class="tok${classed}"${styleAttr}>${escapeHtml(content)}</span>`
+      : escapeHtml(content);
   const inRange = (abs: number) => ranges.some(([s, e]) => abs >= s && abs < e);
   let out = '';
   let i = 0;
@@ -94,7 +162,7 @@ function tokenToHtml(
     const changed = inRange(base + i);
     let j = i + 1;
     while (j < content.length && inRange(base + j) === changed) j++;
-    out += `<span class="${changed ? 'tok wd' : 'tok'}"${styleAttr}>${escapeHtml(content.slice(i, j))}</span>`;
+    out += `<span class="${changed ? 'tok wd' : 'tok'}${classed}"${styleAttr}>${escapeHtml(content.slice(i, j))}</span>`;
     i = j;
   }
   return out;
@@ -102,14 +170,15 @@ function tokenToHtml(
 
 function assembleLine(
   lineTokens: Tok[] | undefined,
-  ranges: Range[] | undefined
+  ranges: Range[] | undefined,
+  mode: TokenMode
 ): string {
   if (!lineTokens) return '';
   let html = '';
   let pos = 0;
-  for (const tok of lineTokens) {
-    html += tokenToHtml(tok, pos, ranges);
-    pos += tok.content.length;
+  for (const run of mergeRuns(lineTokens)) {
+    html += tokenToHtml(run, pos, ranges, mode);
+    pos += run.content.length;
   }
   return html;
 }
@@ -137,13 +206,14 @@ function tokensForText(hl: Highlighter, text: string, lang: string): Tok[][] {
 
 export async function highlightLines(
   lines: string[],
-  lang: string | null
+  lang: string | null,
+  mode: TokenMode = 'inline'
 ): Promise<string[] | null> {
   if (!lang) return null;
   const hl = await getHighlighter();
   if (!(await ensureLang(hl, lang))) return null;
   return tokensForText(hl, lines.join('\n'), lang).map((tl) =>
-    assembleLine(tl, undefined)
+    assembleLine(tl, undefined, mode)
   );
 }
 
@@ -176,7 +246,7 @@ export async function highlightHunks(
     for (const line of lines) {
       const tokens = line.type === 'del' ? oldTokens[oi] : newTokens[ni];
       if (lang || line.wordRanges?.length)
-        line.html = assembleLine(tokens, line.wordRanges);
+        line.html = assembleLine(tokens, line.wordRanges, 'classed');
       if (line.type === 'context') {
         ni++;
         oi++;
