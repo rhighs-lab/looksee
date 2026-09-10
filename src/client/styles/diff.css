@@ -894,7 +894,7 @@ body {
 .commentable .add-comment {
   position: absolute;
   top: 1px;
-  right: 2px;
+  left: 2px;
   width: 18px;
   height: 18px;
   display: none;
@@ -945,7 +945,7 @@ body {
 }
 
 [data-comments-enabled="1"] .diff-table .commentable:hover::before {
-  visibility: hidden; /* hide the number while the + overlays the gutter */
+  color: var(--fgColor-default, #1f2328);
 }
 
 /* comment thread + compose rows (full-width, injected after a line) */

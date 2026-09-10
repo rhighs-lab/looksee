@@ -77,7 +77,7 @@ function castBar(anchor: HTMLElement, target: HTMLElement): void {
       chip.textContent = '+';
       file.appendChild(chip);
     }
-    chip.style.left = `${rects[0]!.right - f.left - 21}px`;
+    chip.style.left = `${rects[0]!.left - f.left + 2}px`;
     chip.style.top = `${r.top - f.top + (r.height - 18) / 2}px`;
     n++;
   }
@@ -157,13 +157,24 @@ export function useRangeSelection(
       const end = cell ? Number(cell.dataset['commentLine']) : d.line;
       onPick({ filePath: d.filePath, side: d.side, a: d.line, b: end });
     };
+    const onLeave = () => {
+      if (!drag.current) return;
+      drag.current = null;
+      document.body.style.userSelect = '';
+      clearCast();
+      clearRangeHighlight();
+    };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+    window.addEventListener('blur', onLeave);
     return () => {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      window.removeEventListener('blur', onLeave);
     };
   }, [enabled, onPick]);
 
