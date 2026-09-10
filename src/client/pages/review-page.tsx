@@ -57,6 +57,7 @@ export function ReviewPage({
 }: ReviewPageProps) {
   useSubnavHeight();
   const status = useReview((s) => s.status);
+  const switching = useReview((s) => s.switching);
   const error = useReview((s) => s.error);
   const state = useReview((s) => s.state);
   const scope = useReview((s) => s.scope);
@@ -201,7 +202,17 @@ export function ReviewPage({
             )}
           </TreePane>
         )}
-        <main className="diff-container">
+        <main
+          className={`diff-container${switching ? ' is-switching' : ''}`}
+          aria-busy={switching}
+        >
+          {switching && (
+            <div
+              className="diff-progress"
+              role="progressbar"
+              aria-label="Loading the new comparison"
+            />
+          )}
           {above}
           {status === 'loading' && (
             <Loading

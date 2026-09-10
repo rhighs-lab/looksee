@@ -72,6 +72,12 @@ body {
   margin-left: auto;
 }
 
+.scope-pickers {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .pr-refs {
   display: inline-flex;
   align-items: center;
@@ -142,10 +148,47 @@ body {
 }
 
 .diff-container {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0; /* allow the column to shrink so wide tables wrap, not overflow */
   margin: 0 0 16px;
   padding: var(--file-gap) 16px 0;
+}
+
+/* A comparison switch keeps the current diff on screen and readable; a thin
+   bar under the subnav says the next one is on its way. */
+.diff-progress {
+  position: sticky;
+  top: var(--subnav-h, 62px);
+  z-index: 21;
+  height: 2px;
+  margin: calc(-1 * var(--file-gap)) 0 calc(var(--file-gap) - 2px);
+  overflow: hidden;
+  background-color: var(--bgColor-accent-muted, #ddf4ff);
+}
+.diff-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -40%;
+  width: 40%;
+  background-color: var(--fgColor-accent, #0969da);
+  animation: diff-progress 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes diff-progress {
+  to {
+    transform: translateX(350%);
+  }
+}
+.diff-container.is-switching > .file {
+  opacity: 0.6;
+  transition: opacity 0.15s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .diff-progress::after {
+    animation: none;
+    inset: 0;
+    width: auto;
+  }
 }
 
 /* Draggable divider between the file pane and the diff. It spans the full

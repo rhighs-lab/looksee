@@ -45,6 +45,7 @@ export type Expansions = Record<string, LoadedSegment[]>;
 
 export interface ReviewStore {
   status: LoadStatus;
+  switching: boolean;
   error: string | null;
   connection: Connection;
   state: RepoState | null;
@@ -279,14 +280,27 @@ export const useReview = create<ReviewStore>((set, get) => {
     }
   };
 
-  const doRefresh = async (force: boolean) => {
+  interface RefreshOpts {
+    force?: boolean;
+    // keep what is on screen until the new diffs have arrived, then swap
+    // state and diffs in one commit
+    hold?: boolean;
+    scope?: Scope;
+  }
+
+  const doRefresh = async ({ force, hold, scope: to }: RefreshOpts = {}) => {
     const wasReady = get().status === 'ready' && get().state !== null;
+    const scope = to ?? get().scope;
     try {
       const [fresh, session] = await Promise.all([api.state(), api.session()]);
       const state: RepoState = {
         ...fresh,
         files: reuseFiles(get().state?.files, fresh.files),
       };
+      const held =
+        hold && !state.error
+          ? await api.diff(scope, undefined, false, get().colorByLayer)
+          : null;
       const prevRepo = get().state?.repoRoot;
       if (!wasReady || prevRepo !== state.repoRoot) {
         set({
@@ -298,6 +312,7 @@ export const useReview = create<ReviewStore>((set, get) => {
       set({
         state,
         session,
+        scope,
         preset:
           state.comparison?.preset ??
           prefs.scope(state.repoRoot) ??
@@ -316,8 +331,8 @@ export const useReview = create<ReviewStore>((set, get) => {
         set({ status: 'error', error: state.error });
         return;
       }
-      const scope = get().scope;
-      if (!wasReady || force || scope !== 'cumulative')
+      if (held) applyDiffs(held.files, true, state.files);
+      else if (!wasReady || force || scope !== 'cumulative')
         await loadAll(scope, state);
       else await loadChanged(scope, state);
       const key = cacheKey(scope, state);
@@ -331,8 +346,19 @@ export const useReview = create<ReviewStore>((set, get) => {
     }
   };
 
+  const swap = async (opts: RefreshOpts) => {
+    set({ switching: true });
+    try {
+      refreshChain = refreshChain.then(() => doRefresh(opts));
+      await refreshChain;
+    } finally {
+      set({ switching: false });
+    }
+  };
+
   return {
     status: 'loading',
+    switching: false,
     error: null,
     connection: 'off',
     state: null,
@@ -397,7 +423,7 @@ export const useReview = create<ReviewStore>((set, get) => {
     },
 
     refresh() {
-      refreshChain = refreshChain.then(() => doRefresh(false));
+      refreshChain = refreshChain.then(() => doRefresh());
       return refreshChain;
     },
 
@@ -408,9 +434,7 @@ export const useReview = create<ReviewStore>((set, get) => {
         set({ scope, expansions: {}, diffs: hit, status: 'ready' });
         return;
       }
-      set({ scope, expansions: {}, diffs: {}, status: 'loading' });
-      refreshChain = refreshChain.then(() => doRefresh(true));
-      await refreshChain;
+      await swap({ force: true, hold: true, scope });
     },
 
     setView(view) {
@@ -462,9 +486,8 @@ export const useReview = create<ReviewStore>((set, get) => {
     async setColorByLayer(val) {
       if (val === get().colorByLayer) return;
       prefs.setColorByLayer(val);
-      set({ colorByLayer: val, diffs: {} });
-      refreshChain = refreshChain.then(() => doRefresh(true));
-      await refreshChain;
+      set({ colorByLayer: val });
+      await swap({ force: true, hold: true });
     },
 
     async loadFull(path) {
@@ -553,17 +576,16 @@ export const useReview = create<ReviewStore>((set, get) => {
         preset === 'custom' && !custom && !get().session?.custom
           ? customFrom(prev, get().session, get().state?.refs ?? null)
           : custom;
-      set({ preset, expansions: {}, diffs: {}, status: 'loading' });
+      set({ preset, switching: true });
       try {
         const state = await api.setScope(preset, body);
         prefs.setScope(state.repoRoot, preset);
-        set({ state });
       } catch (err) {
-        set({ preset: prev });
+        set({ preset: prev, switching: false });
         get().showToast(`Could not switch scope: ${(err as Error).message}`);
+        return;
       }
-      refreshChain = refreshChain.then(() => doRefresh(true));
-      await refreshChain;
+      await swap({ force: true, hold: true });
     },
 
     async repin() {
@@ -573,9 +595,7 @@ export const useReview = create<ReviewStore>((set, get) => {
         get().showToast(`Could not re-pin: ${(err as Error).message}`);
         return;
       }
-      set({ expansions: {}, diffs: {} });
-      refreshChain = refreshChain.then(() => doRefresh(true));
-      await refreshChain;
+      await swap({ force: true, hold: true });
     },
 
     async endSession() {
@@ -585,9 +605,7 @@ export const useReview = create<ReviewStore>((set, get) => {
         get().showToast(`Could not end session: ${(err as Error).message}`);
         return;
       }
-      set({ expansions: {}, diffs: {} });
-      refreshChain = refreshChain.then(() => doRefresh(true));
-      await refreshChain;
+      await swap({ force: true, hold: true });
     },
 
     showToast(message, action) {
