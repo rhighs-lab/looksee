@@ -44,12 +44,58 @@ const scanFrom = (
   return { score: score - text.length * 0.05, hits };
 };
 
-const scanTerm = (
+const isBoundary = (lower: string, at: number): boolean =>
+  at === 0 || BOUNDARY.includes(lower[at - 1] ?? '');
+
+const substringMatch = (
   term: string,
   text: string,
   lower: string,
   base: number
 ): TermMatch | null => {
+  let at = lower.indexOf(term, base);
+  if (at === -1) at = lower.indexOf(term);
+  if (at === -1) return null;
+  const hits: number[] = [];
+  for (let i = 0; i < term.length; i++) hits.push(at + i);
+  let score = term.length * 7;
+  if (isBoundary(lower, at)) score += 4;
+  if (at >= base) score += 3;
+  return { score: score - text.length * 0.05, hits };
+};
+
+const boundaryScan = (
+  term: string,
+  text: string,
+  lower: string,
+  base: number
+): TermMatch | null => {
+  const hits: number[] = [];
+  let score = 0;
+  let i = 0;
+  for (const ch of term) {
+    let at = lower.indexOf(ch, i);
+    while (at !== -1 && !isBoundary(lower, at)) at = lower.indexOf(ch, at + 1);
+    if (at === -1) return null;
+    score += at >= base ? 8 : 5;
+    hits.push(at);
+    i = at + 1;
+  }
+  return { score: score - text.length * 0.05, hits };
+};
+
+const scanTerm = (
+  term: string,
+  text: string,
+  lower: string,
+  base: number,
+  strict: boolean
+): TermMatch | null => {
+  if (strict)
+    return (
+      substringMatch(term, text, lower, base) ??
+      boundaryScan(term, text, lower, base)
+    );
   const whole = scanFrom(term, text, lower, base, 0);
   if (base === 0) return whole;
   const named = scanFrom(term, text, lower, base, base);
@@ -63,12 +109,13 @@ const terms = (query: string): string[] =>
 
 const scoreIndexed = <T>(
   query: string[],
-  entry: Indexed<T>
+  entry: Indexed<T>,
+  strict: boolean
 ): TermMatch | null => {
   let score = 0;
   const seen = new Set<number>();
   for (const term of query) {
-    const m = scanTerm(term, entry.text, entry.lower, entry.base);
+    const m = scanTerm(term, entry.text, entry.lower, entry.base, strict);
     if (!m) return null;
     score += m.score;
     for (const h of m.hits) seen.add(h);
@@ -94,15 +141,21 @@ export function fuzzyScore(
 ): { score: number; hits: number[] } | null {
   const q = terms(query);
   if (!q.length) return { score: 0, hits: [] };
-  return scoreIndexed(q, indexOne(null, text));
+  return scoreIndexed(q, indexOne(null, text), false);
+}
+
+export interface SearchOpts<T> {
+  bonus?: (item: T) => number;
+  strict?: boolean;
 }
 
 export function fuzzySearch<T>(
   index: Indexed<T>[],
   query: string,
   limit: number,
-  bonus?: (item: T) => number
+  opts: SearchOpts<T> = {}
 ): FuzzyMatch<T>[] {
+  const { bonus, strict = false } = opts;
   const q = terms(query);
   if (!q.length)
     return index
@@ -110,7 +163,7 @@ export function fuzzySearch<T>(
       .map(({ item }) => ({ item, score: 0, hits: [] }));
   const out: FuzzyMatch<T>[] = [];
   for (const entry of index) {
-    const m = scoreIndexed(q, entry);
+    const m = scoreIndexed(q, entry, strict);
     if (!m) continue;
     const extra = bonus ? bonus(entry.item) : 0;
     out.push({ item: entry.item, score: m.score + extra, hits: m.hits });

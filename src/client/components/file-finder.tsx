@@ -54,7 +54,9 @@ export function FileFinder({
   const changed = useMemo(() => new Set(entries.map((e) => e.path)), [entries]);
   const matches = useMemo(
     () =>
-      fuzzySearch(index, query, LIMIT, (e) => (changed.has(e.path) ? 4 : 0)),
+      fuzzySearch(index, query, LIMIT, {
+        bonus: (e) => (changed.has(e.path) ? 4 : 0),
+      }),
     [index, query, changed]
   );
 

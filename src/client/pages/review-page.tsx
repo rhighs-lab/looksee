@@ -99,7 +99,9 @@ export function ReviewPage({
   const query = useDeferredValue(filter.trim());
   const { shown, hits, first } = useMemo(() => {
     if (!query) return { shown: files, hits: null, first: null };
-    const found = fuzzySearch(index, query, Number.POSITIVE_INFINITY);
+    const found = fuzzySearch(index, query, Number.POSITIVE_INFINITY, {
+      strict: true,
+    });
     const hits = new Map(found.map((m) => [m.item.path, m.hits]));
     return {
       shown: files.filter((f) => hits.has(f.path)),

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'vitest';
-import { fuzzyFilter, fuzzyScore, segments } from '@/client/lib/fuzzy.js';
+import {
+  fuzzyFilter,
+  fuzzyIndex,
+  fuzzyScore,
+  fuzzySearch,
+  segments,
+} from '@/client/lib/fuzzy.js';
 
 describe('fuzzyScore', () => {
   it('rejects text missing a query character', () => {
@@ -86,5 +92,35 @@ describe('multi-term queries', () => {
     const m = fuzzyScore('repo', 'src/server/routes/repo.ts');
     assert.ok(m);
     assert.deepEqual(m.hits, [18, 19, 20, 21]);
+  });
+});
+
+describe('strict search', () => {
+  const files = [
+    'src/client/styles/diff.css',
+    'src/client/ui/ui.css',
+    'src/client/pages/review-page.tsx',
+    'src/server/routes/repo.ts',
+  ].map((path) => ({ path }));
+  const index = fuzzyIndex(files, (f) => f.path);
+  const paths = (q: string) =>
+    fuzzySearch(index, q, 10, { strict: true })
+      .map((m) => m.item.path)
+      .sort();
+
+  it('keeps only files where every term is a substring', () => {
+    assert.deepEqual(paths('client css'), [
+      'src/client/styles/diff.css',
+      'src/client/ui/ui.css',
+    ]);
+  });
+
+  it('accepts a boundary abbreviation', () => {
+    assert.deepEqual(paths('rp'), ['src/client/pages/review-page.tsx']);
+    assert.deepEqual(paths('cp'), ['src/client/pages/review-page.tsx']);
+  });
+
+  it('rejects a scattered subsequence', () => {
+    assert.deepEqual(paths('clientcss'), []);
   });
 });
