@@ -43,6 +43,7 @@ export interface ReviewPageProps {
   commentCounts?: Record<string, number> | undefined;
   headerRight?: ReactNode;
   above?: ReactNode;
+  aside?: ReactNode;
 }
 
 export function ReviewPage({
@@ -52,6 +53,7 @@ export function ReviewPage({
   commentCounts,
   headerRight,
   above,
+  aside,
 }: ReviewPageProps) {
   useSubnavHeight();
   const status = useReview((s) => s.status);
@@ -240,6 +242,7 @@ export function ReviewPage({
               />
             ))}
         </main>
+        {aside}
       </div>
       {finder && (
         <FileFinder

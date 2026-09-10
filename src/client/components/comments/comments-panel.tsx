@@ -106,20 +106,17 @@ export function CommentsPanelToggle() {
 }
 
 function useJump(root: DecoratedComment): () => void {
-  const setOpen = useReview((s) => s.setCommentsPanel);
   const scope = useReview((s) => s.scope);
   const line = root.startLine || null;
   return () => {
     const el = inDiff(root.id);
     if (el) {
-      setOpen(false);
       el.scrollIntoView({ block: 'center' });
       flash(el);
       return;
     }
     const card = document.getElementById(fileAnchor(root.filePath));
     if (card) {
-      setOpen(false);
       card.scrollIntoView({ block: 'start' });
       return;
     }
@@ -160,7 +157,6 @@ function PanelItem({ thread }: { thread: Thread }) {
     go();
   };
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the card is a link-like surface wrapping a thread with its own controls
     <div
       className="comments-panel-item"
       role="link"
@@ -204,55 +200,45 @@ export function CommentsPanel() {
   const openCount = posted.filter((t) => t.root.status !== 'resolved').length;
   const answered = posted.filter(awaitsUser).length;
 
+  if (!open) return null;
   return (
-    <>
-      <div
-        className="panel-scrim"
-        data-open={open ? '1' : '0'}
-        onClick={() => setOpen(false)}
-        aria-hidden="true"
-      />
-      <aside
-        className="comments-panel"
-        data-open={open ? '1' : '0'}
-        aria-label="All comments"
-        aria-hidden={!open}
-        inert={!open}
-      >
-        <header className="comments-panel-head">
-          <span>
+    <aside className="comments-panel" aria-label="All comments">
+      <header className="comments-panel-head">
+        <span>
+          Comments
+          <span className="comments-panel-count">
             {openCount} open · {posted.length - openCount} resolved
             {answered ? ` (${answered} with an agent reply to read)` : ''}
             {drafts.length ? ` · ${drafts.length} draft` : ''}
           </span>
-          <Button
-            variant="invisible"
-            icon
-            small
-            title="Close"
-            aria-label="Close comments"
-            onClick={() => setOpen(false)}
-          >
-            <Close />
-          </Button>
-        </header>
-        <div className="comments-panel-body">
-          {drafts.length > 0 && (
-            <div className="comments-panel-group">
-              Drafts in your unsubmitted review
-            </div>
-          )}
-          {drafts.map((t) => (
-            <PanelItem key={t.root.id} thread={t} />
-          ))}
-          {drafts.length > 0 && posted.length > 0 && (
-            <div className="comments-panel-group">Submitted</div>
-          )}
-          {posted.map((t) => (
-            <PanelItem key={t.root.id} thread={t} />
-          ))}
-        </div>
-      </aside>
-    </>
+        </span>
+        <Button
+          variant="invisible"
+          icon
+          small
+          title="Close"
+          aria-label="Close comments"
+          onClick={() => setOpen(false)}
+        >
+          <Close />
+        </Button>
+      </header>
+      <div className="comments-panel-body">
+        {drafts.length > 0 && (
+          <div className="comments-panel-group">
+            Drafts in your unsubmitted review
+          </div>
+        )}
+        {drafts.map((t) => (
+          <PanelItem key={t.root.id} thread={t} />
+        ))}
+        {drafts.length > 0 && posted.length > 0 && (
+          <div className="comments-panel-group">Submitted</div>
+        )}
+        {posted.map((t) => (
+          <PanelItem key={t.root.id} thread={t} />
+        ))}
+      </div>
+    </aside>
   );
 }

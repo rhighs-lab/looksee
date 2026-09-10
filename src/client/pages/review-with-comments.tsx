@@ -27,13 +27,13 @@ export function ReviewWithComments() {
 
   return (
     <>
-      {enabled && <CommentsPanel />}
       <ReviewPage
         slotsFor={enabled ? (f) => slotsFor(f.path) : undefined}
         fileCommentsFor={enabled ? (f) => fileCommentsFor(f.path) : undefined}
         onFileComment={enabled ? onFileComment : undefined}
         commentCounts={enabled ? commentCounts : undefined}
         above={enabled ? <ReviewBanner /> : null}
+        aside={enabled ? <CommentsPanel /> : null}
         headerRight={
           enabled ? (
             <>
