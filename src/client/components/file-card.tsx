@@ -209,8 +209,13 @@ export const FileCard = memo(function FileCard({
           {diff && !diff.binary && diff.hunks.length > 0 && (
             <FileExpandAll diff={diff} />
           )}
+          <LinkButton href={viewHref} className="file-view-link-folded">
+            View file
+          </LinkButton>
         </HeaderActions>
-        <LinkButton href={viewHref}>View file</LinkButton>
+        <LinkButton href={viewHref} className="file-view-link">
+          View file
+        </LinkButton>
         <label className="viewed-toggle">
           <input
             type="checkbox"

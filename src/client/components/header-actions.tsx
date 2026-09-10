@@ -1,20 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Button } from '@/client/ui/index.js';
 
-/** Keep secondary file actions available without wrapping the file header. */
+/** Secondary file actions fold into a menu when the header runs out of room. */
 export function HeaderActions({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [compact, setCompact] = useState(true);
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const header = ref.current?.closest('.file-header');
-    if (!header) return;
-    const observer = new ResizeObserver(() =>
-      setCompact(header.clientWidth < 1000)
-    );
-    observer.observe(header);
-    return () => observer.disconnect();
-  }, []);
   useEffect(() => {
     if (!open) return;
     const dismiss = (event: MouseEvent) => {
@@ -34,24 +24,18 @@ export function HeaderActions({ children }: { children: ReactNode }) {
     };
   }, [open]);
   return (
-    <span className="header-actions" ref={ref}>
-      {compact && (
-        <Button
-          small
-          icon
-          aria-label="More file actions"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          …
-        </Button>
-      )}
-      <span
-        hidden={compact && !open}
-        className={compact ? 'menu header-action-menu' : 'header-action-items'}
+    <span className="header-actions" ref={ref} data-open={open ? '1' : '0'}>
+      <Button
+        small
+        icon
+        className="header-actions-more"
+        aria-label="More file actions"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
       >
-        {children}
-      </span>
+        …
+      </Button>
+      <span className="header-action-items">{children}</span>
     </span>
   );
 }

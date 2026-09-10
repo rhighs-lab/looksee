@@ -500,6 +500,7 @@ body {
 }
 
 .file-header:has(.menu),
+.file-header:has(.header-actions[data-open="1"]),
 .file-header:has([data-tooltip]:hover),
 .file-header:has([data-tooltip]:focus-visible) {
   z-index: 19;
@@ -1019,6 +1020,21 @@ body {
   background-color: var(--bgColor-muted, #f6f8fa);
   border-top: 1px solid var(--borderColor-default, #d1d9e0);
   white-space: normal;
+  overflow: hidden;
+}
+
+/* a narrow pane wraps the card's rows instead of letting them run over the
+   other side of the split */
+.comment-thread,
+.comment-compose {
+  min-width: 0;
+  max-width: min(900px, 100%);
+}
+.comment-header {
+  flex-wrap: wrap;
+}
+.comment-body {
+  overflow-wrap: anywhere;
 }
 
 /* the opposite side of a split-view comment: keep the separator line but no
@@ -3260,32 +3276,67 @@ a.commit-row:hover {
   font-size: 12px;
 }
 
+/* The header is its own size container, so the toolbar folds by CSS alone:
+   under 1000px the secondary actions live in a menu, under 640px "View file"
+   joins them and the diffstat squares go; the path keeps a readable minimum. */
+.file-header {
+  container-type: inline-size;
+}
 .header-actions {
   position: relative;
   flex: none;
+}
+.header-actions > .header-actions-more {
+  display: none;
 }
 .header-action-items {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-.header-action-menu {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  min-width: 240px;
-  padding: 12px;
-}
-.header-actions [hidden] {
+.header-action-items .file-view-link-folded {
   display: none;
 }
 .file-header .file-info {
   flex: 1 1 0;
+  min-width: 96px;
   overflow: hidden;
 }
 .file-header .file-path {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+@container (max-width: 999px) {
+  .header-actions > .header-actions-more {
+    display: inline-flex;
+  }
+  .header-action-items {
+    display: none;
+  }
+  .header-actions[data-open="1"] .header-action-items {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 60;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 240px;
+    padding: 12px;
+    background-color: var(--overlay-bgColor, #fff);
+    border: 1px solid var(--borderColor-default, #d1d9e0);
+    border-radius: 12px;
+    box-shadow: var(--shadow-floating-small);
+  }
+}
+@container (max-width: 639px) {
+  .file-header > .file-view-link,
+  .file-header > .diffstat {
+    display: none;
+  }
+  .header-action-items .file-view-link-folded {
+    display: inline-flex;
+  }
 }
