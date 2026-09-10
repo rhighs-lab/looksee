@@ -8,6 +8,7 @@
   --ui-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
+  --prose-font: Charter, "Literata Variable", "Iowan Old Style", Georgia, serif;
   --ui-radius: 6px;
   --ui-list-gap: 2px;
   --ui-border: var(--borderColor-default, #d1d9e0);

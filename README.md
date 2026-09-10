@@ -142,3 +142,6 @@ Inspired by [prequel](https://github.com/mdesjardins/prequel).
 ## License
 
 [MIT](LICENSE) (c) Roberto Montalti
+
+Bundled fonts ([Literata](https://github.com/googlefonts/literata)) are
+licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).

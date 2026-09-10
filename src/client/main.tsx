@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@primer/primitives/dist/css/functional/themes/light.css';
 import '@primer/primitives/dist/css/functional/themes/dark.css';
+import '@fontsource-variable/literata/index.css';
+import '@fontsource-variable/literata/wght-italic.css';
 import '@/client/styles/diff.css';
 import '@/client/ui/ui.css';
 import '@/client/styles/app.css';

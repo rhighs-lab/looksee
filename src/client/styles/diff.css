@@ -1084,8 +1084,9 @@ body {
 
 .comment-body {
   padding: 4px 12px 12px;
+  font-family: var(--prose-font);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--fgColor-default, #1f2328);
 }
 .comment-body > :first-child {
@@ -1276,7 +1277,9 @@ body {
 .comment-preview {
   min-height: 68px;
   padding: 8px;
+  font-family: var(--prose-font);
   font-size: 14px;
+  line-height: 1.55;
   border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
 }
 .composer-muted {
@@ -2831,6 +2834,7 @@ a.commit-row:hover {
 /* ---- rendered markdown --------------------------------------------------- */
 .markdown-doc {
   padding: 24px 32px 32px;
+  font-family: var(--prose-font);
   font-size: 15px;
   line-height: 1.6;
 }
