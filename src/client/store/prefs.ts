@@ -1,3 +1,9 @@
+import {
+  type CodeFont,
+  isCodeFont,
+  isProseFont,
+  type ProseFont,
+} from '@/client/lib/fonts.js';
 import type { Appearance, ScopePreset, Theme } from '@/shared/protocol.js';
 
 export type View = 'split' | 'unified';
@@ -28,6 +34,16 @@ export const prefs = {
   setTheme: (v: Theme) => write('looksee:theme', v),
   appearance: (): Appearance => read<Appearance>('looksee:appearance', 'auto'),
   setAppearance: (v: Appearance) => write('looksee:appearance', v),
+  proseFont: (): ProseFont => {
+    const v = read<unknown>('looksee:prose-font', 'charter');
+    return isProseFont(v) ? v : 'charter';
+  },
+  setProseFont: (v: ProseFont) => write('looksee:prose-font', v),
+  codeFont: (): CodeFont => {
+    const v = read<unknown>('looksee:code-font', 'system');
+    return isCodeFont(v) ? v : 'system';
+  },
+  setCodeFont: (v: CodeFont) => write('looksee:code-font', v),
   newLineAttention: (): boolean => read('looksee:new-line-attention', false),
   setNewLineAttention: (v: boolean) => write('looksee:new-line-attention', v),
   setView: (v: View) => write('looksee:view', v),

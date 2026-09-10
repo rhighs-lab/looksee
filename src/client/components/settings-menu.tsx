@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Gear } from '@/client/components/icons.js';
 import {
+  CODE_FONT_LABEL,
+  CODE_FONTS,
+  PROSE_FONT_LABEL,
+  PROSE_FONTS,
+} from '@/client/lib/fonts.js';
+import {
   APPEARANCES,
   isDarkOnly,
   THEME_LABEL,
@@ -103,6 +109,10 @@ export function SettingsMenu() {
   const setTreeHidden = useReview((s) => s.setTreeHidden);
   const newLineAttention = useReview((s) => s.newLineAttention);
   const setNewLineAttention = useReview((s) => s.setNewLineAttention);
+  const proseFont = useReview((s) => s.proseFont);
+  const setProseFont = useReview((s) => s.setProseFont);
+  const codeFont = useReview((s) => s.codeFont);
+  const setCodeFont = useReview((s) => s.setCodeFont);
   const isRepo = useReview((s) => Boolean(s.state?.repoRoot));
 
   useEffect(() => {
@@ -183,6 +193,34 @@ export function SettingsMenu() {
           <Row active={!treeHidden} onClick={() => setTreeHidden(!treeHidden)}>
             File tree
           </Row>
+          <div className="menu-sep" />
+          <div className="menu-label">Prose font</div>
+          {PROSE_FONTS.map((f) => (
+            <Row
+              key={f}
+              active={f === proseFont}
+              onClick={() => setProseFont(f)}
+            >
+              {PROSE_FONT_LABEL[f]}
+            </Row>
+          ))}
+          <div className="menu-label">Code font</div>
+          {CODE_FONTS.map((f) => (
+            <Row key={f} active={f === codeFont} onClick={() => setCodeFont(f)}>
+              {CODE_FONT_LABEL[f]}
+            </Row>
+          ))}
+          <div className="font-preview" aria-hidden="true">
+            <p className="font-preview-prose">
+              Review prose reads like writing, with <code>inline code</code> set
+              in the code font.
+            </p>
+            <pre className="font-preview-code">
+              {
+                'const total = items.reduce((n, i) => n + i, 0);\nreturn `${total} of ${items.length}`;'
+              }
+            </pre>
+          </div>
           <div className="menu-sep" />
           <div className="menu-label">Experimental</div>
           <Row

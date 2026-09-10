@@ -10,6 +10,11 @@ import {
   newArrivals,
   nextArrivalSeq,
 } from '@/client/lib/arrivals.js';
+import {
+  applyFonts,
+  type CodeFont,
+  type ProseFont,
+} from '@/client/lib/fonts.js';
 import { applyTheme } from '@/client/lib/theme.js';
 import { prefs, type View } from '@/client/store/prefs.js';
 import type {
@@ -47,6 +52,8 @@ export interface ReviewStore {
   view: View;
   theme: Theme;
   appearance: Appearance;
+  proseFont: ProseFont;
+  codeFont: CodeFont;
   colorByLayer: boolean;
   diffs: Record<string, FileDiff>;
   pendingPaths: string[];
@@ -73,6 +80,8 @@ export interface ReviewStore {
   setScope(scope: Scope): Promise<void>;
   setTheme(theme: Theme): void;
   setAppearance(appearance: Appearance): void;
+  setProseFont(font: ProseFont): void;
+  setCodeFont(font: CodeFont): void;
   setNewLineAttention(on: boolean): void;
   acknowledgeArrival(seq: number): void;
   setView(view: View): void;
@@ -288,6 +297,8 @@ export const useReview = create<ReviewStore>((set, get) => {
     view: prefs.view(),
     theme: prefs.theme(),
     appearance: prefs.appearance(),
+    proseFont: prefs.proseFont(),
+    codeFont: prefs.codeFont(),
     colorByLayer: prefs.colorByLayer(),
     diffs: {},
     pendingPaths: [],
@@ -375,6 +386,18 @@ export const useReview = create<ReviewStore>((set, get) => {
       set({ appearance });
       applyTheme(get().theme, appearance);
       void api.setUiPrefs({ appearance }).catch(() => undefined);
+    },
+
+    setProseFont(font) {
+      prefs.setProseFont(font);
+      set({ proseFont: font });
+      applyFonts(font, get().codeFont);
+    },
+
+    setCodeFont(font) {
+      prefs.setCodeFont(font);
+      set({ codeFont: font });
+      applyFonts(get().proseFont, font);
     },
 
     setNewLineAttention(on) {

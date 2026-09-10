@@ -19,6 +19,25 @@
   --ui-bg-muted: var(--bgColor-muted, #f6f8fa);
 }
 
+:root[data-prose-font="sans"] {
+  --prose-font: var(--ui-font);
+}
+
+:root[data-prose-font="literata"] {
+  --prose-font: "Literata Variable", Charter, Georgia, serif;
+}
+
+:root[data-code-font="source-code-pro"] {
+  --ui-mono:
+    "Source Code Pro Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-code-font="jetbrains-mono"] {
+  --ui-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-ligatures: none;
+}
+
 body,
 button,
 input,

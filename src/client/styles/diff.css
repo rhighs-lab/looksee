@@ -1915,6 +1915,42 @@ kbd {
   height: 14px;
 }
 
+.font-preview {
+  margin: 4px 8px 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--borderColor-muted, #d8dee4);
+  border-radius: 6px;
+  background-color: var(--bgColor-muted, #f6f8fa);
+}
+
+.font-preview-prose {
+  margin: 0 0 6px;
+  font-family: var(--prose-font);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.font-preview-prose code,
+.font-preview-code {
+  font-family: var(--ui-mono);
+}
+
+.font-preview-prose code {
+  font-size: 85%;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--bgColor-neutral-muted, rgba(129, 139, 152, 0.12));
+}
+
+.font-preview-code {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--fgColor-default, #1f2328);
+}
+
 /* ---- Image blobs -------------------------------------------------------- */
 .image-pair {
   display: flex;
