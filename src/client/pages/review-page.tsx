@@ -8,6 +8,7 @@ import {
   useFileFinderHotkey,
 } from '@/client/components/file-finder.js';
 import { Header } from '@/client/components/header.js';
+import { CommentIcon } from '@/client/components/icons.js';
 import { KindIcon, LayerLetters } from '@/client/components/layer-badges.js';
 import { Loading } from '@/client/components/loading.js';
 import {
@@ -26,6 +27,7 @@ export interface ReviewPageProps {
   slotsFor?: ((file: ChangedFile) => LineSlots) | undefined;
   fileCommentsFor?: ((file: ChangedFile) => ReactNode) | undefined;
   onFileComment?: ((path: string) => void) | undefined;
+  commentCounts?: Record<string, number> | undefined;
   headerRight?: ReactNode;
 }
 
@@ -33,6 +35,7 @@ export function ReviewPage({
   slotsFor,
   fileCommentsFor,
   onFileComment,
+  commentCounts,
   headerRight,
 }: ReviewPageProps) {
   useSubnavHeight();
@@ -61,28 +64,40 @@ export function ReviewPage({
   const tree = useMemo(() => buildTree(shown, (f) => f.path), [shown]);
   const pending = useMemo(() => new Set(pendingPaths), [pendingPaths]);
 
-  const renderFile = (file: ChangedFile, name: string, depth: number) => (
-    <a
-      key={file.path}
-      className={`tree-row tree-file-row${activePath === file.path ? ' is-active' : ''}${viewed[file.path] !== undefined ? ' is-viewed' : ''}`}
-      href={`#${fileAnchor(file.path)}`}
-      style={{ paddingLeft: 8 + depth * 14 + 14 }}
-      title={file.path}
-      onClick={() => setActivePath(file.path)}
-    >
-      <KindIcon kind={file.kind} />
-      <span className="tree-name">{name}</span>
-      {updated[file.path] && (
-        <span className="updated-dot" title="Changed since you last looked" />
-      )}
-      <LayerLetters file={file} />
-      <span className="tree-counts ui-mono">
-        <span className="tree-add">+{file.additions}</span>{' '}
-        <span className="tree-del">−{file.deletions}</span>
-      </span>
-      <TreeCheck />
-    </a>
-  );
+  const renderFile = (file: ChangedFile, name: string, depth: number) => {
+    const n = commentCounts?.[file.path] ?? 0;
+    return (
+      <a
+        key={file.path}
+        className={`tree-row tree-file-row${activePath === file.path ? ' is-active' : ''}${viewed[file.path] !== undefined ? ' is-viewed' : ''}`}
+        href={`#${fileAnchor(file.path)}`}
+        style={{ paddingLeft: 8 + depth * 14 + 14 }}
+        title={file.path}
+        onClick={() => setActivePath(file.path)}
+      >
+        <KindIcon kind={file.kind} />
+        <span className="tree-name">{name}</span>
+        {updated[file.path] && (
+          <span className="updated-dot" title="Changed since you last looked" />
+        )}
+        {n > 0 && (
+          <span
+            className="tree-comments"
+            title={`${n} open comment${n === 1 ? '' : 's'}`}
+          >
+            <CommentIcon width={12} height={12} />
+            {n}
+          </span>
+        )}
+        <LayerLetters file={file} />
+        <span className="tree-counts ui-mono">
+          <span className="tree-add">+{file.additions}</span>{' '}
+          <span className="tree-del">−{file.deletions}</span>
+        </span>
+        <TreeCheck />
+      </a>
+    );
+  };
 
   return (
     <>

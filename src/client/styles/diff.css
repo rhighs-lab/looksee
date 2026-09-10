@@ -322,6 +322,20 @@ body {
   color: var(--fgColor-danger, #d1242f);
 }
 
+.tree-comments {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fgColor-accent, #0969da);
+}
+
+.tree-comments svg {
+  fill: currentColor;
+}
+
 .tree-check {
   display: none;
   flex: none;

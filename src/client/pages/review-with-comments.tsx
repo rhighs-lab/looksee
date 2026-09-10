@@ -12,6 +12,16 @@ import { Button } from '@/client/ui/index.js';
 export function ReviewWithComments() {
   const { enabled, slotsFor, fileCommentsFor, onFileComment } =
     useCommentSlots();
+  const commentCounts = useComments(
+    useShallow((s) => {
+      const counts: Record<string, number> = {};
+      for (const t of Object.values(s.threads)) {
+        if (t.root.status === 'resolved') continue;
+        counts[t.root.filePath] = (counts[t.root.filePath] ?? 0) + 1;
+      }
+      return counts;
+    })
+  );
 
   return (
     <>
@@ -20,6 +30,7 @@ export function ReviewWithComments() {
         slotsFor={enabled ? (f) => slotsFor(f.path) : undefined}
         fileCommentsFor={enabled ? (f) => fileCommentsFor(f.path) : undefined}
         onFileComment={enabled ? onFileComment : undefined}
+        commentCounts={enabled ? commentCounts : undefined}
         headerRight={
           enabled ? (
             <>
