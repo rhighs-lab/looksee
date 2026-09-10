@@ -56,7 +56,9 @@ async function loadHighlightStyles(): Promise<boolean> {
 // Token colors live in one shared stylesheet the server grows as it meets new
 // styles; a response announcing more rules than we hold is held back until
 // the sheet is refreshed, so the html it carries never paints uncolored.
-async function ensureHighlightStyles(header: string | null): Promise<void> {
+export async function ensureHighlightStyles(
+  header: string | null
+): Promise<void> {
   const want = Number(header);
   if (!header || !Number.isFinite(want)) return;
   while (want > hlVersion) {

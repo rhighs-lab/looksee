@@ -26,7 +26,10 @@ import { safeRelPath } from '@/server/git/paths.js';
 import { listBranches } from '@/server/git/refs.js';
 import { readStatus } from '@/server/git/state.js';
 import { packageRoot } from '@/server/pkg-root.js';
-import { highlightLines } from '@/server/render/highlighter.js';
+import {
+  highlightLines,
+  highlightStylesVersion,
+} from '@/server/render/highlighter.js';
 import { resolveAvatars } from '@/server/review/gh-avatars.js';
 import { isMarkdownPath, renderDoc } from '@/server/review/markdown.js';
 import {
@@ -747,13 +750,11 @@ export function repoRoutes(ctx: AppContext): Hono {
 
   app.get('/api/events', (c) =>
     streamSSE(c, async (stream) => {
-      const send = (ev: ServerEvent) =>
-        stream.writeSSE({ data: JSON.stringify(ev) });
+      const frame = (ev: ServerEvent) =>
+        JSON.stringify({ ...ev, hl: highlightStylesVersion() });
+      const send = (ev: ServerEvent) => stream.writeSSE({ data: frame(ev) });
       await stream.writeSSE({
-        data: JSON.stringify({
-          type: 'hello',
-          version: ctx.state().version,
-        } satisfies ServerEvent),
+        data: frame({ type: 'hello', version: ctx.state().version }),
         retry: 2000,
       });
       const unsubscribe = ctx.hub.subscribe(

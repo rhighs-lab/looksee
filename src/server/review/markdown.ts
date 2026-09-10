@@ -71,7 +71,9 @@ function collectFences(r: InstanceType<typeof marked.Renderer>) {
     for (const f of fences) {
       const lang = f.lang ? (inferLanguage(`x.${f.lang}`) ?? f.lang) : null;
       const lines = f.text.replace(/\n$/, '').split('\n');
-      const painted = await highlightLines(lines, lang).catch(() => null);
+      const painted = await highlightLines(lines, lang, 'classed').catch(
+        () => null
+      );
       const inner = (painted ?? lines.map(escapeHtml))
         .map((l) => `<span class="doc-line">${l}</span>`)
         .join('\n');

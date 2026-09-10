@@ -8,7 +8,8 @@ describe('comment markdown', () => {
     );
     expect(html).toContain('<pre class="doc-code"><code>');
     expect(html).toContain('class="doc-line"');
-    expect(html).toContain('class="tok"');
+    expect(html).toMatch(/class="tok t[0-9a-z]+"/);
+    expect(html).not.toContain('style="');
     expect(html).toContain('number');
   });
 

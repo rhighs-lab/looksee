@@ -1,3 +1,4 @@
+import { ensureHighlightStyles } from '@/client/api/client.js';
 import type { ServerEvent } from '@/shared/protocol.js';
 
 export type Connection = 'off' | 'connecting' | 'live' | 'reconnecting';
@@ -20,6 +21,7 @@ export function connectEvents(
   let es: EventSource | null = null;
   let everOpened = false;
   let closed = false;
+  let chain: Promise<void> = Promise.resolve();
   onStatus('connecting');
 
   const open = () => {
@@ -31,11 +33,16 @@ export function connectEvents(
       everOpened = true;
     };
     es.onmessage = (e) => {
+      let ev: ServerEvent & { hl?: number };
       try {
-        onEvent(JSON.parse(e.data) as ServerEvent);
+        ev = JSON.parse(e.data) as ServerEvent & { hl?: number };
       } catch {
-        /* malformed frame */
+        return;
       }
+      const { hl, ...rest } = ev;
+      chain = chain
+        .then(() => ensureHighlightStyles(hl === undefined ? null : String(hl)))
+        .then(() => onEvent(rest as ServerEvent));
     };
     es.onerror = () => {
       onStatus('reconnecting');
