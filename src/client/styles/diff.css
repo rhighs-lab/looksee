@@ -174,8 +174,21 @@ body {
   background-color: var(--fgColor-accent, #0969da);
 }
 
-.review-layout.tree-hidden .tree-resizer {
-  display: none;
+.tree-resizer {
+  transition:
+    width 0.2s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.12s ease-out 0.08s;
+}
+
+.review-layout.tree-hidden .tree-resizer,
+.tree-resizer.is-hidden {
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 0.2s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.12s ease-out,
+    visibility 0s linear 0.2s;
 }
 
 /* anchor targets scroll clear of the sticky subnav */
@@ -195,6 +208,16 @@ body {
   max-height: calc(100vh - var(--subnav-h, 62px));
   overflow: hidden;
   padding: 8px 0 8px 8px;
+  transition:
+    width 0.2s cubic-bezier(0.2, 0, 0, 1),
+    padding 0.2s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.12s ease-out 0.08s;
+}
+
+/* rows keep their width while the pane closes over them, so they slide out
+   instead of rewrapping */
+.file-tree-pane > * {
+  min-width: calc(var(--tree-w, 300px) - 8px);
 }
 
 /* the shell holds its own scroll: only the list scrolls, so the scrollbar
@@ -206,8 +229,32 @@ body {
   padding-right: 8px;
 }
 
-.review-layout.tree-hidden .file-tree-pane {
-  display: none;
+.file-tree-pane.is-resizing {
+  transition: none;
+}
+
+.review-layout.tree-hidden .file-tree-pane,
+.file-tree-pane.is-hidden {
+  width: 0;
+  padding-left: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 0.2s cubic-bezier(0.2, 0, 0, 1),
+    padding 0.2s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.12s ease-out,
+    visibility 0s linear 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file-tree-pane,
+  .file-tree-pane.is-hidden,
+  .tree-resizer,
+  .tree-resizer.is-hidden,
+  .review-layout.tree-hidden .file-tree-pane,
+  .review-layout.tree-hidden .tree-resizer {
+    transition: none;
+  }
 }
 
 .tree-header {

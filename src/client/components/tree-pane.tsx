@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   type ReactNode,
   useCallback,
   useEffect,
@@ -56,7 +57,7 @@ export function TreePane({
           W_MIN,
           Math.min(wMax(), Math.round(startW + ev.clientX - startX))
         );
-        paneRef.current?.style.setProperty('width', `${last}px`);
+        paneRef.current?.style.setProperty('--tree-w', `${last}px`);
       };
       const up = () => {
         document.removeEventListener('mousemove', move);
@@ -72,14 +73,17 @@ export function TreePane({
     [setWidth]
   );
 
-  if (hidden) return null;
   return (
     <>
       <aside
-        className="file-tree-pane"
+        className={`file-tree-pane${hidden ? ' is-hidden' : ''}${dragging ? ' is-resizing' : ''}`}
         ref={paneRef}
-        style={width ? { width } : undefined}
+        style={
+          width ? ({ '--tree-w': `${width}px` } as CSSProperties) : undefined
+        }
         aria-label={header}
+        aria-hidden={hidden}
+        inert={hidden}
       >
         <div className="tree-header">{header}</div>
         {search && (
@@ -115,12 +119,13 @@ export function TreePane({
         <nav className="file-tree">{children}</nav>
       </aside>
       <div
-        className={`tree-resizer${dragging ? ' is-dragging' : ''}`}
+        className={`tree-resizer${dragging ? ' is-dragging' : ''}${hidden ? ' is-hidden' : ''}`}
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize file pane"
         aria-valuenow={width ?? 0}
-        tabIndex={0}
+        aria-hidden={hidden}
+        tabIndex={hidden ? -1 : 0}
         title="Drag to resize, double-click to reset"
         onMouseDown={onMouseDown}
         onDoubleClick={() => setWidth(null)}
