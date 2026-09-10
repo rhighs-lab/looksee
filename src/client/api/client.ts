@@ -8,8 +8,9 @@ import type {
   DecoratedAnswer,
   DecoratedComment,
   DiffResponse,
+  FileHistoryInfo,
   FileHistoryResponse,
-  FileInfoResponse,
+  FileStatInfo,
   FileViewResponse,
   IdentitiesResponse,
   RepoState,
@@ -114,8 +115,13 @@ export const api = {
     ),
   file: (path: string, scope: Scope) =>
     request<FileViewResponse>('GET', `/api/file${q({ path, scope })}`),
-  fileInfo: (path: string) =>
-    request<FileInfoResponse>('GET', `/api/file-info${q({ path })}`),
+  fileStat: (path: string) =>
+    request<FileStatInfo>('GET', `/api/file-info${q({ path, part: 'stat' })}`),
+  fileHistoryInfo: (path: string) =>
+    request<FileHistoryInfo>(
+      'GET',
+      `/api/file-info${q({ path, part: 'history' })}`
+    ),
   branches: () => request<BranchesResponse>('GET', '/api/branches'),
   commits: () => request<CommitsResponse>('GET', '/api/commits'),
   commit: (sha: string) =>

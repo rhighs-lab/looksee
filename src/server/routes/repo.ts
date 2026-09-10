@@ -53,8 +53,10 @@ import type {
   ContextResponse,
   DiffResponse,
   FileHistoryEntry,
+  FileHistoryInfo,
   FileHistoryResponse,
   FileInfoResponse,
+  FileStatInfo,
   FileViewResponse,
   HealthResponse,
   RefSelection,
@@ -651,43 +653,59 @@ export function repoRoutes(ctx: AppContext): Hono {
     const filePath = safeRelPath(c.req.query('path'));
     if (!filePath) return c.json({ error: 'not found' }, 404);
     const root = ctx.repoRoot;
-    const SEP = '\u001f';
-    const [log, blob, stat] = await Promise.all([
-      git(root, [
+    const part = c.req.query('part');
+    const stat = async (): Promise<FileStatInfo> => {
+      const [blob, st] = await Promise.all([
+        git(root, ['rev-parse', `HEAD:${filePath}`]).catch(() => ''),
+        fs.promises.stat(path.join(root, filePath)).catch(() => null),
+      ]);
+      return {
+        path: filePath,
+        size: st?.size ?? null,
+        blob: blob.trim() || null,
+        tracked: Boolean(blob.trim()),
+      };
+    };
+    const history = async (): Promise<FileHistoryInfo> => {
+      const SEP = '\u001f';
+      const log = await git(root, [
         'log',
         '--follow',
         `--format=%H${SEP}%an${SEP}%aI${SEP}%s`,
         '--',
         filePath,
-      ]).catch(() => ''),
-      git(root, ['rev-parse', `HEAD:${filePath}`]).catch(() => ''),
-      fs.promises.stat(path.join(root, filePath)).catch(() => null),
-    ]);
-    const entries = log
-      .split('\n')
-      .filter(Boolean)
-      .map((l) => l.split(SEP))
-      .filter((p) => p.length === 4)
-      .map(([sha, author, date, subject]) => ({
-        sha: sha!,
-        author: author!,
-        date: date!,
-        subject: subject!,
-      }));
-    const byAuthor = new Map<string, number>();
-    for (const e of entries)
-      byAuthor.set(e.author, (byAuthor.get(e.author) ?? 0) + 1);
+      ]).catch(() => '');
+      const entries = log
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => l.split(SEP))
+        .filter((p) => p.length === 4)
+        .map(([sha, author, date, subject]) => ({
+          sha: sha!,
+          author: author!,
+          date: date!,
+          subject: subject!,
+        }));
+      const byAuthor = new Map<string, number>();
+      for (const e of entries)
+        byAuthor.set(e.author, (byAuthor.get(e.author) ?? 0) + 1);
+      return {
+        path: filePath,
+        commits: entries.length,
+        authors: [...byAuthor]
+          .map(([name, commits]) => ({ name, commits }))
+          .sort((a, b) => b.commits - a.commits),
+        first: entries.at(-1) ?? null,
+        last: entries[0] ?? null,
+      };
+    };
+    if (part === 'stat') return c.json<FileStatInfo>(await stat());
+    if (part === 'history') return c.json<FileHistoryInfo>(await history());
+    const [st, hi] = await Promise.all([stat(), history()]);
     return c.json<FileInfoResponse>({
-      path: filePath,
-      size: stat?.size ?? null,
-      blob: blob.trim() || null,
-      tracked: entries.length > 0 || Boolean(blob.trim()),
-      commits: entries.length,
-      authors: [...byAuthor]
-        .map(([name, commits]) => ({ name, commits }))
-        .sort((a, b) => b.commits - a.commits),
-      first: entries.at(-1) ?? null,
-      last: entries[0] ?? null,
+      ...st,
+      ...hi,
+      tracked: st.tracked || hi.commits > 0,
     });
   });
 

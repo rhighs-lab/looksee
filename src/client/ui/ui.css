@@ -693,3 +693,34 @@ textarea.ui-input,
 .history-row {
   margin-block-end: var(--ui-list-gap);
 }
+
+.ui-skeleton {
+  display: inline-block;
+  height: 0.9em;
+  max-width: 100%;
+  vertical-align: middle;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bgColor-muted, #f6f8fa) 25%,
+    var(--bgColor-inset, #eaeef2) 37%,
+    var(--bgColor-muted, #f6f8fa) 63%
+  );
+  background-size: 400% 100%;
+  animation: ui-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes ui-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton {
+    animation: none;
+  }
+}

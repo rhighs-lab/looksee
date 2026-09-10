@@ -165,6 +165,10 @@ export function Counter({ n }: { n: number }) {
   return <span className="ui-counter">{n}</span>;
 }
 
+export function Skeleton({ width = 80 }: { width?: number }) {
+  return <span className="ui-skeleton" style={{ width }} aria-hidden="true" />;
+}
+
 export function Label({
   tone = 'muted',
   children,

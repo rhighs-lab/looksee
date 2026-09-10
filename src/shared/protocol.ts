@@ -303,16 +303,29 @@ export interface FileHistoryAuthor {
   commits: number;
 }
 
-export interface FileInfoResponse {
+export interface FileInfoCommit {
+  sha: string;
+  author: string;
+  date: string;
+  subject: string;
+}
+
+export interface FileStatInfo {
   path: string;
   size: number | null;
   blob: string | null;
   tracked: boolean;
+}
+
+export interface FileHistoryInfo {
+  path: string;
   commits: number;
   authors: FileHistoryAuthor[];
-  first: { sha: string; author: string; date: string; subject: string } | null;
-  last: { sha: string; author: string; date: string; subject: string } | null;
+  first: FileInfoCommit | null;
+  last: FileInfoCommit | null;
 }
+
+export type FileInfoResponse = FileStatInfo & FileHistoryInfo;
 
 export interface CodeSymbol {
   id: string;
