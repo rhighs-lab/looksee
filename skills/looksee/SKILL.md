@@ -61,15 +61,20 @@ looksee listen --not-me --pending --wait 60
 
 Run it again after each round of replies to pick up the next item.
 
+### Codex and other turn-based harnesses
+
 Do not park `looksee listen` in the background instead. Output from a
 background process does not start a new turn, so a listener running there
 does not make you react to a new comment: you would only see it the next
-time the user writes to you. Drop `--wait` only when the host can wake you
-on process output.
+time the user writes to you. Never tell the user you are monitoring the
+review when all you have is a background process. Drop `--wait` only when
+the host can wake you on process output.
 
 When the review is still open and you are about to stop, say so: tell the
 user that nothing has arrived yet and that they should send a message when
-they have commented, or poll once more with `--wait`.
+they have commented, or poll once more with `--wait`. At the start of the
+next turn, poll first: `--pending` replays whatever arrived while you were
+idle.
 
 Each line is one JSON event and one work item. Every comment and every
 `review.submitted` carries an `expects` hint telling you what to do:

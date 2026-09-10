@@ -103,6 +103,36 @@ echo '{"question":"...","summary":"markdown","hits":[
    "symbol":"readPrefs","role":"reads disk","why":"..."}]}' | looksee answer
 ```
 
+## Agents
+
+`looksee init` writes a standing rule into the instruction file of every
+agent installed on the machine (`CLAUDE.md`, Codex's `AGENTS.md`,
+`GEMINI.md`, opencode), or into this repo's `AGENTS.md` with `--local`. The
+rule tells the agent to offer a review after a set of changes and how to
+work the comment loop. `looksee agent` prints the full guide.
+
+### Codex and other turn-based harnesses
+
+A turn-based agent only runs while it is answering. Output from a process
+it left in the background is buffered, not delivered: it never starts a new
+turn. So `looksee listen` in the background is not monitoring, and the
+installed rule never asks for it.
+
+The rule uses a bounded poll in the foreground instead:
+
+```bash
+looksee listen --not-me --pending --wait 60
+```
+
+It prints anything still unanswered, then blocks until one event arrives or
+the timeout ends, and exits. The agent acts, replies, and runs it again.
+When the round is still open as its turn ends, the agent says so and asks
+for a message to resume. A comment left while the agent is idle is picked
+up by the next poll, which the user's next message triggers.
+
+Drop `--wait` only on a host that can wake an idle agent on process output;
+there the stream itself is the subscription.
+
 ## CLI
 
 | Command | What it does |

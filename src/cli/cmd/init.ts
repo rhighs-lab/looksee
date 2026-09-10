@@ -33,7 +33,8 @@ const BLOCK = [
   'run it again. Do not leave a listener running in the background: its',
   'output cannot start a new turn, so it will not make you react to a new',
   'comment. If the round is still open when you stop, say that you are',
-  'waiting and that a message from the user resumes it.',
+  'waiting and that a message from the user resumes it; on that next turn',
+  'poll first, since --pending replays what arrived while you were idle.',
   '',
   '`looksee agent` prints the full guide.',
 ].join('\n');
